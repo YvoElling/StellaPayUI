@@ -1,0 +1,3 @@
+[submodule "PythonNFCReader"]
+	path = PythonNFCReader
+	url = https://github.com/YvoElling/PythonNFCReader.git
