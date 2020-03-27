@@ -6,7 +6,49 @@
         size: self.texture_size      
 
 <WelcomeScreen>
+    label: label
+        
     Label:
-        id: "person_name"
+        id: label
         text: "FIRSTNAME LASTNAME" 
         font_size: '100sp'
+
+    Label:
+        id: hello
+        markup: True
+        text: "[b]Hallo[/b]"
+        font_size: '40sp'
+        pos: 0, 100
+    
+    BoxLayout:
+        orientation: 'horizontal'
+        padding: 20
+        pos: 540, 350
+
+        Button:
+            id: vmk
+            text: 'Voor mezelf kopen'
+            font_size: '25sp'
+            size: 250, 50
+            size_hint: None, None
+            pos: -250, 50
+    
+        Button:
+            id: stop
+            text: 'Stop'
+            font_size: '25sp'
+            size: 200, 50
+            size_hint: None, None
+            on_release: root.on_cancel()
+            
+        Button:
+            id: via
+            text: 'Voor iemand anders kopen'
+            font_size: '25sp'
+            size: 350, 50
+            size_hint: None, None
+    
+    #Button:
+    #    id: stop
+    #    text: 'Stop'
+    

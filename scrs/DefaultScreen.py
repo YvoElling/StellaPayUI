@@ -50,7 +50,13 @@ class DefaultScreen(Screen):
 
         #Move to WelcomeScreen
         self.manager.transition = SlideTransition(direction='left')
+        self.manager.get_screen('WelcomeScreen').label.text = 'Vincent Bolta'
         self.manager.current = 'WelcomeScreen'
 
-
-
+    #
+    # restarts the card listener upon reentry of the screen
+    #
+#    def on_enter(self, *args):
+#        #   super(DefaultScreen, self).on_enter(**args)
+#        if self.nfc_r is not None:
+#            self.nfc_r.enable_card_listener()

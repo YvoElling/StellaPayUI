@@ -24,10 +24,10 @@ if __name__ == '__main__':
     # Set background image to match color of STE logo
     Window.clearcolor = (0.12549, 0.12549, 0.12549, 0)
 
-    #Load .kv file
+    # Load .kv file
     Builder.load_file('kvs/screens.kv')
 
-    #Load screenloader and add screens
+    # Load screenloader and add screens
     sm = ScreenManager()
     sm.add_widget(DefaultScreen(name='DefaultScreen'))
     sm.add_widget(WelcomeScreen(name='WelcomeScreen'))
