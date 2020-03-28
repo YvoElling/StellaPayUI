@@ -9,3 +9,11 @@ class WelcomeScreen(Screen):
     def on_cancel(self):
         self.manager.transition = SlideTransition(direction='right')
         self.manager.current = 'DefaultScreen'
+
+    #
+    # Called when buy is pressed
+    #
+    #
+    def on_buy(self):
+        self.manager.transition = SlideTransition(direction='left')
+        self.manager.current = 'ProductScreen'
