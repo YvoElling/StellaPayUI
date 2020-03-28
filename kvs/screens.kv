@@ -3,7 +3,15 @@
     
     Image:
         source: 'img/STEsmall.png'
-        size: self.texture_size      
+        size: self.texture_size  
+        
+    Label:
+        id: stella_pay
+        text: "[b]STELLA PAY[/b]"
+        font_size: '50sp'
+        pos: 0, -250
+        font_name: 'DejaVuSans'
+        markup: True
 
 <WelcomeScreen>
     label: label
@@ -41,13 +49,6 @@
             size_hint: None, None
             on_release: root.on_cancel()
             
-        Button:
-            id: via
-            text: 'Voor iemand anders kopen'
-            font_size: '25sp'
-            size: 350, 50
-            size_hint: None, None
-    
     #Button:
     #    id: stop
     #    text: 'Stop'
