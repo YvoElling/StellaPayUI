@@ -10,15 +10,18 @@
         text: "[b]STELLA PAY[/b]"
         font_size: '50sp'
         pos: 0, -250
-        font_name: 'DejaVuSans'
+        font_name: 'Roboto-Bold'
         markup: True
 
 <WelcomeScreen>
     label: label
+    name: 'WelcomeScreen'
         
     Label:
         id: label
-        text: "FIRSTNAME LASTNAME" 
+        text: "FIRSTNAME LASTNAME"
+        size_hint: None, None
+        pos_hint: {"center_x":0.5,"center_y":0.52}
         font_size: '100sp'
 
     Label:
@@ -26,31 +29,41 @@
         markup: True
         text: "[b]Hallo[/b]"
         font_size: '40sp'
-        pos: 0, 100
-    
-    BoxLayout:
-        orientation: 'horizontal'
-        padding: 20
-        pos: 540, 350
+        size_hint: None, None
+        pos_hint: {"center_x": 0.5,"center_y":0.6}
+        #pos: 0, 100
 
-        Button:
-            id: vmk
-            text: 'Voor mezelf kopen'
-            font_size: '25sp'
-            size: 250, 50
-            size_hint: None, None
-            pos: -250, 50
-            on_release: root.on_buy()
+    Button:
+        id: vmk
+        markup: True
+        text: '[b]Koop[/b]'
+        background_normal: 'img/confirmButtonBackground.png'
+        border: 30, 30, 30, 30
+        font_size: '25sp'
+        size_hint: None, None
+        size: 200, 75
+        pos_hint: {"center_x": 0.43,"center_y":0.4}
+        pos_hint_x: root.center_x
+        pos_hint_y: root.center_y
+        on_release: root.on_buy()
+
+    Button:
+        id: stop
+        text: '[b]Stop[/b]'
+        markup: True
+        background_normal: 'img/cancelButtonBackground.png'
+        border: 30, 30, 30, 30
+        font_size: '25sp'
+        size_hint: None, None
+        pos_hint: {"center_x": 0.57,"center_y":0.4}
+        size: 200, 75
+        font_size: '25sp'
+        on_release: root.on_cancel()
     
-        Button:
-            id: stop
-            text: 'Stop'
-            font_size: '25sp'
-            size: 200, 50
-            size_hint: None, None
-            on_release: root.on_cancel()
-            
-    #Button:
-    #    id: stop
-    #    text: 'Stop'
-    
+<ProductScreen>
+    Label:
+        id: stella_pay
+        text: '[b]STELLA PAY[/b]'
+        markup: True
+        size_hint: None, None
+        pos_hint: {"center_x": 0.05,"center_y":0.95}

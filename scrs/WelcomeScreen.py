@@ -15,5 +15,6 @@ class WelcomeScreen(Screen):
     #
     #
     def on_buy(self):
+        self.manager.get_screen('DefaultScreen').restart_listeners()
         self.manager.transition = SlideTransition(direction='left')
         self.manager.current = 'ProductScreen'
