@@ -1,6 +1,7 @@
 from kivy.uix.screenmanager import Screen, SlideTransition
 from PythonNFCReader import NFCReader as nfc
 import threading
+import requests
 
 
 # defaultScreen class
@@ -43,10 +44,14 @@ class DefaultScreen(Screen):
         # Wait for the @nfc_thread thread to finish
         nfc_thread.join()
         # get UID for presented NFC card
-        self.nfc_uid = self.nfc_r.get_uid()
+        self.nfc_uid = self.nfc_r.get_uid().replace(" ", "")
 
-        #Send UID to Django database to validate person
-        #placeholder
+
+        # Send UID to Django database to validate person
+        # placeholder
+        name_request = "staartvin.com:8181/identification/request-user/" + self.nfc_uid + "/"
+        response = requests.get(url=name_request)
+        #print(response)
 
         #Move to WelcomeScreen
         self.manager.transition = SlideTransition(direction='left')
