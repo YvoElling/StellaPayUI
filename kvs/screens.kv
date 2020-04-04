@@ -2,53 +2,82 @@
     name: 'DefaultScreen'
     
     Image:
-        source: 'img/STEsmall.png'
-        size: self.texture_size      
+        source: 'img/STEverysmall.png'
+        size: 350, 500
+        
+    Label:
+        id: stella_pay
+        text: "[b]STELLA PAY[/b]"
+        font_size: '15sp'
+        pos: 0, -100
+        font_name: 'Roboto-Bold'
+        markup: True
 
 <WelcomeScreen>
     label: label
+    name: 'WelcomeScreen'
         
     Label:
         id: label
-        text: "FIRSTNAME LASTNAME" 
-        font_size: '100sp'
+        text: "FIRSTNAME LASTNAME"
+        size_hint: None, None
+        pos_hint: {"center_x":0.5,"center_y":0.52}
+        font_size: '75sp'
 
     Label:
         id: hello
         markup: True
         text: "[b]Hallo[/b]"
-        font_size: '40sp'
-        pos: 0, 100
-    
-    BoxLayout:
-        orientation: 'horizontal'
-        padding: 20
-        pos: 540, 350
+        font_size: '20sp'
+        size_hint: None, None
+        pos_hint: {"center_x": 0.5,"center_y":0.62}
 
-        Button:
-            id: vmk
-            text: 'Voor mezelf kopen'
-            font_size: '25sp'
-            size: 250, 50
-            size_hint: None, None
-            pos: -250, 50
+    Label:
+        id: stella_pay
+        text: "[b]STELLA PAY[/b]"
+        font_size: '15sp'
+        pos: 0, 220
+        font_name: 'Roboto-Bold'
+        markup: True
+
+    Button:
+        id: vmk
+        markup: True
+        text: '[b]Koop[/b]'
+        background_normal: 'img/confirmButtonBackground.png'
+        background_down: 'img/confirmedPressedButtonBackground.png'
+        border: 30, 30, 30, 30
+        font_size: '25sp'
+        size_hint: None, None
+        size: 140, 60
+        pos_hint: {"center_x": 0.40,"center_y":0.35}
+        pos_hint_x: root.center_x
+        pos_hint_y: root.center_y
+        on_release: root.on_buy()
+
+    Button:
+        id: stop
+        text: '[b]Stop[/b]'
+        markup: True
+        background_normal: 'img/cancelButtonBackground.png'
+        background_down: 'img/cancelPressedButtonBackground.png'
+        border: 30, 30, 30, 30
+        font_size: '25sp'
+        size_hint: None, None
+        pos_hint: {"center_x": 0.60,"center_y":0.35}
+        pos_hint_x: root.center_x
+        pos_hint_y: root.center_y
+        size: 140, 60
+        on_release: root.on_cancel()
     
-        Button:
-            id: stop
-            text: 'Stop'
-            font_size: '25sp'
-            size: 200, 50
-            size_hint: None, None
-            on_release: root.on_cancel()
-            
-        Button:
-            id: via
-            text: 'Voor iemand anders kopen'
-            font_size: '25sp'
-            size: 350, 50
-            size_hint: None, None
-    
-    #Button:
-    #    id: stop
-    #    text: 'Stop'
-    
+<ProductScreen>
+    Label:
+        id: stella_pay
+        text: '[b]STELLA PAY[/b]'
+        markup: True
+        size_hint: None, None
+        pos_hint: {"center_x": 0.05,"center_y":0.95}
+
+<RegisterUIDScreen>
+    Label:
+        text: 'You shall not pass!'

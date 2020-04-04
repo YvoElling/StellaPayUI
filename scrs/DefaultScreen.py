@@ -1,6 +1,7 @@
 from kivy.uix.screenmanager import Screen, SlideTransition
 from PythonNFCReader import NFCReader as nfc
 import threading
+import requests
 
 
 # defaultScreen class
@@ -8,6 +9,8 @@ import threading
 # changes when a card is presented
 #
 class DefaultScreen(Screen):
+    # URL for query
+    api_url = "http://staartvin.com:8181/identification/request-user/"
 
     def __init__(self, **kwargs):
         # Call to super (Screen class)
@@ -43,20 +46,31 @@ class DefaultScreen(Screen):
         # Wait for the @nfc_thread thread to finish
         nfc_thread.join()
         # get UID for presented NFC card
-        self.nfc_uid = self.nfc_r.get_uid()
+        self.nfc_uid = self.nfc_r.get_uid().replace(" ", "")
 
-        #Send UID to Django database to validate person
-        #placeholder
+        # Send UID to Django database to validate person
+        name_request = self.api_url + '12345' + '/'
+        response = requests.get(url=name_request)
 
-        #Move to WelcomeScreen
-        self.manager.transition = SlideTransition(direction='left')
-        self.manager.get_screen('WelcomeScreen').label.text = 'Vincent Bolta'
-        self.manager.current = 'WelcomeScreen'
+        # Check response code to validate whether this user existed already. If so, proceed
+        # to the productScreen, else proceed to the registerUID screen
+        if response.ok:
+            # store result in JSON
+            query_json = response.json()
+
+            # Move to WelcomeScreen
+            self.manager.transition = SlideTransition(direction='left')
+            # Set the retrieved name as the name of the user on the next page
+            self.manager.get_screen('WelcomeScreen').label.text = query_json["owner"]
+            self.manager.current = 'WelcomeScreen'
+
+        else:
+            # User was not found, proceed to registerUID file
+            self.manager.transition = SlideTransition(direction='left')
+            self.manager.current = 'RegisterUIDScreen'
 
     #
     # restarts the card listener upon reentry of the screen
     #
-#    def on_enter(self, *args):
-#        #   super(DefaultScreen, self).on_enter(**args)
-#        if self.nfc_r is not None:
-#            self.nfc_r.enable_card_listener()
+    # def restart_listeners(self):
+    #    self.nfc_r.enable_card_listener()
