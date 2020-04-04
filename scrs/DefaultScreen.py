@@ -74,3 +74,6 @@ class DefaultScreen(Screen):
     #
     # def restart_listeners(self):
     #    self.nfc_r.enable_card_listener()
+
+    def on_enter(self, *args):
+        self.__init__()
