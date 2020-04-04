@@ -2,14 +2,14 @@
     name: 'DefaultScreen'
     
     Image:
-        source: 'img/STEsmall.png'
-        size: self.texture_size  
+        source: 'img/STEverysmall.png'
+        size: 350, 500
         
     Label:
         id: stella_pay
         text: "[b]STELLA PAY[/b]"
-        font_size: '50sp'
-        pos: 0, -250
+        font_size: '15sp'
+        pos: 0, -100
         font_name: 'Roboto-Bold'
         markup: True
 
@@ -22,27 +22,35 @@
         text: "FIRSTNAME LASTNAME"
         size_hint: None, None
         pos_hint: {"center_x":0.5,"center_y":0.52}
-        font_size: '100sp'
+        font_size: '75sp'
 
     Label:
         id: hello
         markup: True
         text: "[b]Hallo[/b]"
-        font_size: '40sp'
+        font_size: '20sp'
         size_hint: None, None
-        pos_hint: {"center_x": 0.5,"center_y":0.6}
-        #pos: 0, 100
+        pos_hint: {"center_x": 0.5,"center_y":0.62}
+
+    Label:
+        id: stella_pay
+        text: "[b]STELLA PAY[/b]"
+        font_size: '15sp'
+        pos: 0, 220
+        font_name: 'Roboto-Bold'
+        markup: True
 
     Button:
         id: vmk
         markup: True
         text: '[b]Koop[/b]'
         background_normal: 'img/confirmButtonBackground.png'
+        background_down: 'img/confirmedPressedButtonBackground.png'
         border: 30, 30, 30, 30
         font_size: '25sp'
         size_hint: None, None
-        size: 200, 75
-        pos_hint: {"center_x": 0.43,"center_y":0.4}
+        size: 140, 60
+        pos_hint: {"center_x": 0.40,"center_y":0.35}
         pos_hint_x: root.center_x
         pos_hint_y: root.center_y
         on_release: root.on_buy()
@@ -52,12 +60,14 @@
         text: '[b]Stop[/b]'
         markup: True
         background_normal: 'img/cancelButtonBackground.png'
+        background_down: 'img/cancelPressedButtonBackground.png'
         border: 30, 30, 30, 30
         font_size: '25sp'
         size_hint: None, None
-        pos_hint: {"center_x": 0.57,"center_y":0.4}
-        size: 200, 75
-        font_size: '25sp'
+        pos_hint: {"center_x": 0.60,"center_y":0.35}
+        pos_hint_x: root.center_x
+        pos_hint_y: root.center_y
+        size: 140, 60
         on_release: root.on_cancel()
     
 <ProductScreen>
@@ -67,3 +77,7 @@
         markup: True
         size_hint: None, None
         pos_hint: {"center_x": 0.05,"center_y":0.95}
+
+<RegisterUIDScreen>
+    Label:
+        text: 'You shall not pass!'

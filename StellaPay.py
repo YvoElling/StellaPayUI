@@ -9,6 +9,7 @@ from scrs.ProductScreen import ProductScreen
 from scrs.ProfileScreen import ProfileScreen
 from scrs.RegisterUIDScreen import RegisterUIDScreen
 from kivy.core.window import Window
+from kivy.config import Config
 
 import kivy
 kivy.require('1.11.1')
@@ -22,6 +23,11 @@ class StellaPay(App):
 if __name__ == '__main__':
     # Set background image to match color of STE logo
     Window.clearcolor = (0.12549, 0.12549, 0.12549, 0)
+
+    # Disable full screen (classic Python, doesn't do anything)
+    Config.set('graphics', 'width', '800')
+    Config.set('graphics', 'height', ' 480')
+    Config.write()
 
     # Load .kv file
     Builder.load_file('kvs/screens.kv')

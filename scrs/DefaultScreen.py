@@ -9,6 +9,8 @@ import requests
 # changes when a card is presented
 #
 class DefaultScreen(Screen):
+    # URL for query
+    api_url = "http://staartvin.com:8181/identification/request-user/"
 
     def __init__(self, **kwargs):
         # Call to super (Screen class)
@@ -46,20 +48,29 @@ class DefaultScreen(Screen):
         # get UID for presented NFC card
         self.nfc_uid = self.nfc_r.get_uid().replace(" ", "")
 
-
         # Send UID to Django database to validate person
-        # placeholder
-        name_request = "staartvin.com:8181/identification/request-user/" + self.nfc_uid + "/"
+        name_request = self.api_url + '12345' + '/'
         response = requests.get(url=name_request)
-        #print(response)
 
-        #Move to WelcomeScreen
-        self.manager.transition = SlideTransition(direction='left')
-        self.manager.get_screen('WelcomeScreen').label.text = 'Vincent Bolta'
-        self.manager.current = 'WelcomeScreen'
+        # Check response code to validate whether this user existed already. If so, proceed
+        # to the productScreen, else proceed to the registerUID screen
+        if response.ok:
+            # store result in JSON
+            query_json = response.json()
+
+            # Move to WelcomeScreen
+            self.manager.transition = SlideTransition(direction='left')
+            # Set the retrieved name as the name of the user on the next page
+            self.manager.get_screen('WelcomeScreen').label.text = query_json["owner"]
+            self.manager.current = 'WelcomeScreen'
+
+        else:
+            # User was not found, proceed to registerUID file
+            self.manager.transition = SlideTransition(direction='left')
+            self.manager.current = 'RegisterUIDScreen'
 
     #
     # restarts the card listener upon reentry of the screen
     #
-    def restart_listeners(self):
-        self.nfc_r.enable_card_listener()
+    # def restart_listeners(self):
+    #    self.nfc_r.enable_card_listener()
