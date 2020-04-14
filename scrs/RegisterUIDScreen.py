@@ -5,7 +5,10 @@ from kivy.lang import Builder
 class RegisterUIDScreen(Screen):
 
     def __init__(self, **kwargs):
-        super(RegisterUIDScreen, self).__init__(**kwargs)
-
         # Load KV file for this screen
         Builder.load_file('kvs/RegisterUIDScreen.kv')
+
+        # call to user with arguments
+        super(RegisterUIDScreen, self).__init__(**kwargs)
+
+
