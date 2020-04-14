@@ -6,3 +6,54 @@
         pos: 0, 220
         font_name: 'Roboto-Bold'
         markup: True
+
+    Label:
+        id: nfc_unknown
+        text: "NFC-kaart niet herkend"
+        size_hint: None, None
+        pos_hint: {"center_x":0.5,"center_y":0.75}
+        font_size: '45sp'
+
+    Label:
+        id: coupled
+        text: "Is deze al gekopped?"
+        size_hint: None, None
+        pos_hint: {"center_x":0.5,"center_y":0.65}
+        font_size: '20sp'
+
+    TextInput:
+        id: couple_name
+        hint_text:'Wat is je naam?'
+        pos_hint: {'center_x': 0.4, 'center_y': 0.45}
+        multiline: False
+        size_hint: 0.25, 0.08
+
+    Button:
+        id: continue
+        markup: True
+        text: '[b]Voeg toe[/b]'
+        background_normal: 'img/confirmButtonBackground.png'
+        background_down: 'img/confirmedPressedButtonBackground.png'
+        border: 30, 30, 30, 30
+        font_size: '25sp'
+        size_hint: None, None
+        size: 120, 70
+        pos_hint: {"center_x": 0.62,"center_y":0.45}
+        pos_hint_x: root.center_x
+        pos_hint_y: root.center_y
+        #on_release: root.on_buy()
+
+    Button:
+        id: stop
+        text: '[b]Stop[/b]'
+        markup: True
+        background_normal: 'img/cancelButtonBackground.png'
+        background_down: 'img/cancelPressedButtonBackground.png'
+        border: 30, 30, 30, 30
+        font_size: '25sp'
+        size_hint: None, None
+        pos_hint: {"center_x": 0.77,"center_y":0.45}
+        pos_hint_x: root.center_x
+        pos_hint_y: root.center_y
+        size: 120, 70
+        on_release: root.on_cancel()

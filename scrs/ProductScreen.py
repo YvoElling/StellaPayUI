@@ -13,12 +13,12 @@ class ProductScreen(Screen):
         super(ProductScreen, self).__init__(**kwargs)
 
         # Schedule on_cancel() event in @timeout seconds
-        self.timeout_event = Clock.schedule_once(self.on_cancel, self.timeout)
+        self.timeout_event = Clock.schedule_once(self.on_timeout, self.timeout)
 
     #
     # Called when the 'stop' button is pressed
     #
-    def on_cancel(self, dt):
+    def on_timeout(self, dt):
         self.manager.transition = SlideTransition(direction='right')
         self.manager.current = 'DefaultScreen'
 
@@ -31,4 +31,4 @@ class ProductScreen(Screen):
     #
     def on_touch_up(self, touch):
         Clock.unschedule(self.timeout_event)
-        self.timeout_event = Clock.schedule_once(self.on_cancel, self.timeout)
+        self.timeout_event = Clock.schedule_once(self.on_timeout, self.timeout)

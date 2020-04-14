@@ -11,4 +11,3 @@ class RegisterUIDScreen(Screen):
         # call to user with arguments
         super(RegisterUIDScreen, self).__init__(**kwargs)
 
-
