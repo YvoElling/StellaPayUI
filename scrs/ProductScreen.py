@@ -1,5 +1,6 @@
 from kivy.uix.screenmanager import Screen, SlideTransition
 from kivy.clock import Clock
+from kivy.lang import Builder
 
 
 class ProductScreen(Screen):
@@ -7,6 +8,8 @@ class ProductScreen(Screen):
     timeout = 30
 
     def __init__(self, **kwargs):
+        # Load screen
+        Builder.load_file('kvs/ProductScreen.kv')
         super(ProductScreen, self).__init__(**kwargs)
 
         # Schedule on_cancel() event in @timeout seconds
@@ -16,6 +19,10 @@ class ProductScreen(Screen):
     # Called when the 'stop' button is pressed
     #
     def on_cancel(self, dt):
+        self.manager.transition = SlideTransition(direction='right')
+        self.manager.current = 'DefaultScreen'
+
+    def on_cancel(self):
         self.manager.transition = SlideTransition(direction='right')
         self.manager.current = 'DefaultScreen'
 

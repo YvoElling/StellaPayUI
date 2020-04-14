@@ -1,5 +1,6 @@
 from kivy.uix.screenmanager import Screen, SlideTransition
 from kivy.clock import Clock
+from kivy.lang import Builder
 
 
 class WelcomeScreen(Screen):
@@ -8,6 +9,7 @@ class WelcomeScreen(Screen):
     timeout = 15
 
     def __init__(self, **kwargs):
+        Builder.load_file('kvs/WelcomeScreen.kv')
         super(WelcomeScreen, self).__init__(**kwargs)
 
         # Schedule a timeout in @timeout seconds upon start
@@ -18,6 +20,10 @@ class WelcomeScreen(Screen):
     #
     def on_cancel(self, dt):
         Clock.unschedule(self.timeout_event)
+        self.manager.transition = SlideTransition(direction='right')
+        self.manager.current = 'DefaultScreen'
+
+    def on_cancel(self):
         self.manager.transition = SlideTransition(direction='right')
         self.manager.current = 'DefaultScreen'
 

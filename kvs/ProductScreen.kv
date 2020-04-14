@@ -1,0 +1,22 @@
+<ProductScreen>
+    Label:
+        id: stella_pay
+        text: '[b]STELLA PAY[/b]'
+        markup: True
+        size_hint: None, None
+        pos_hint: {"center_x": 0.10,"center_y":0.95}
+
+    Button:
+        id: stop
+        text: '[b]Stop[/b]'
+        markup: True
+        background_normal: 'img/cancelButtonBackground.png'
+        background_down: 'img/cancelPressedButtonBackground.png'
+        border: 30, 30, 30, 30
+        font_size: '15sp'
+        size_hint: None, None
+        pos_hint: {"center_x": 0.80,"center_y":0.95}
+        pos_hint_x: root.center_x
+        pos_hint_y: root.center_y
+        size: 90, 40
+        on_release: root.on_cancel()

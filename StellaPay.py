@@ -30,7 +30,7 @@ if __name__ == '__main__':
     Config.write()
 
     # Load .kv file
-    Builder.load_file('kvs/screens.kv')
+    Builder.load_file('kvs/DefaultScreen.kv')
 
     # Load screenloader and add screens
     screen_manager = ScreenManager()
