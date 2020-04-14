@@ -61,7 +61,7 @@ class DefaultScreen(Screen):
             # Move to WelcomeScreen
             self.manager.transition = SlideTransition(direction='left')
             # Set the retrieved name as the name of the user on the next page
-            self.manager.get_screen('WelcomeScreen').label.text = query_json["owner"]
+            self.manager.get_screen('WelcomeScreen').label.text = query_json["owner"]["name"]
             self.manager.current = 'WelcomeScreen'
 
         else:
