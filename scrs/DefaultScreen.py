@@ -49,7 +49,7 @@ class DefaultScreen(Screen):
         self.nfc_uid = self.nfc_r.get_uid().replace(" ", "")
 
         # Send UID to Django database to validate person
-        name_request = self.api_url + '123245' + '/'
+        name_request = self.api_url + '122345' + '/'
         response = requests.get(url=name_request)
 
         # Check response code to validate whether this user existed already. If so, proceed
@@ -72,8 +72,5 @@ class DefaultScreen(Screen):
     #
     # restarts the card listener upon reentry of the screen
     #
-    # def restart_listeners(self):
-    #    self.nfc_r.enable_card_listener()
-
     def on_enter(self, *args):
         self.__init__()
