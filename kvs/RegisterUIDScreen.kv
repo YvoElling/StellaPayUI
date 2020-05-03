@@ -1,34 +1,3 @@
-<UserDropDown>:
-    Button:
-        id: dropdown
-        text: 'Selecteer'
-        on_release: dropdown.open(self)
-        pos_hint: {'center_x': 0.5, 'center_y': 0.4}
-        size_hint: 0.1, 0.05
-
-    DropDown:
-
-        id: dropdown
-        on_parent: self.dismiss()
-        on_select: btn.text = '{}'.format(args[1])
-
-        Button:
-            text: 'First Item'
-            size_hint_y: None
-            height: '48dp'
-            on_release: dropdown.select('First Item')
-
-        Label:
-            text: 'Second Item'
-            size_hint_y: None
-            height: '48dp'
-
-        Button:
-            text: 'Third Item'
-            size_hint_y: None
-            height: '48dp'
-            on_release: dropdown.select('Third Item')
-
 <RegisterUIDScreen>
     Label:
         id: stella_pay
@@ -55,9 +24,17 @@
     TextInput:
         id: couple_name
         hint_text:'Wat is je naam?'
-        pos_hint: {'center_x': 0.4, 'center_y': 0.5}
+        pos_hint: {'center_x': 0.4, 'center_y': 0.48}
         multiline: False
         size_hint: 0.25, 0.08
+
+    Spinner:
+        id: user_spinner
+        size_hint: 0.25, 0.08
+        pos_hint: {'center_x': 0.4, 'center_y': 0.38}
+        text: 'Selecteer'
+        values: 'Home', 'Work', 'Other', 'Custom', 'Another', 'No', 'Anyhow', 'Yes'
+        on_text: root.on_spinner_select(user_spinner.text)
 
     Button:
         id: continue
@@ -72,7 +49,7 @@
         pos_hint: {"center_x": 0.62,"center_y":0.45}
         pos_hint_x: root.center_x
         pos_hint_y: root.center_y
-        #on_release: root.on_buy()
+        on_release: root.on_save_user()
 
     Button:
         id: stop
@@ -88,3 +65,11 @@
         pos_hint_y: root.center_y
         size: 120, 70
         on_release: root.on_cancel()
+
+    Label:
+        id: warning
+        text: "De NFC-chips in smartphones veranderen vaak van UID; wij raden daarom af om je telefoon te gebruiken"
+        size_hint: None, None
+        pos_hint: {"center_x":0.5,"center_y":0.05}
+        font_size: '16sp'
+        color: 1, 0, 0, 1

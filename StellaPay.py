@@ -14,6 +14,8 @@ from kivy.config import Config
 import kivy
 kivy.require('1.11.1')
 
+screen_manager = ScreenManager()
+
 
 class StellaPay(App):
     def build(self):
@@ -33,14 +35,13 @@ if __name__ == '__main__':
     Builder.load_file('kvs/DefaultScreen.kv')
 
     # Load screenloader and add screens
-    screen_manager = ScreenManager()
     screen_manager.add_widget(DefaultScreen(name='DefaultScreen'))
     screen_manager.add_widget(WelcomeScreen(name='WelcomeScreen'))
+    screen_manager.add_widget(RegisterUIDScreen(name='RegisterUIDScreen'))
     screen_manager.add_widget(ConfirmedScreen(name='ConfirmedScreen'))
-    screen_manager.add_widget(CreditsScreen(name="CreditsScreen"))
-    screen_manager.add_widget(ProductScreen(name="ProductScreen"))
-    screen_manager.add_widget(ProfileScreen(name="ProfileScreen"))
-    screen_manager.add_widget(RegisterUIDScreen(name="RegisterUIDScreen"))
+    screen_manager.add_widget(CreditsScreen(name='CreditsScreen'))
+    screen_manager.add_widget(ProductScreen(name='ProductScreen'))
+    screen_manager.add_widget(ProfileScreen(name='ProfileScreen'))
 
     # run the application
     StellaPay().run()

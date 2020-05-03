@@ -5,18 +5,16 @@ from kivy.lang import Builder
 
 class WelcomeScreen(Screen):
 
-    # timeout time in seconds
-    timeout = 15
-
     def __init__(self, **kwargs):
         Builder.load_file('kvs/WelcomeScreen.kv')
         super(WelcomeScreen, self).__init__(**kwargs)
 
         # Schedule a timeout in @timeout seconds upon start
+        self.timeout = 25
         self.timeout_event = Clock.schedule_once(self.on_timeout, self.timeout)
 
     #
-    # Called when the 'stop' button is pressed
+    # Called when the 'stop' button is pressed or timeout is induced
     #
     def on_timeout(self, dt):
         Clock.unschedule(self.timeout_event)
