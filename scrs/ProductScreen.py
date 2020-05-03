@@ -4,8 +4,6 @@ from kivy.lang import Builder
 
 
 class ProductScreen(Screen):
-    # Timer timeout in @timeout seconds
-    timeout = 30
 
     def __init__(self, **kwargs):
         # Load screen
@@ -13,6 +11,7 @@ class ProductScreen(Screen):
         super(ProductScreen, self).__init__(**kwargs)
 
         # Schedule on_cancel() event in @timeout seconds
+        self.timeout = 30
         self.timeout_event = Clock.schedule_once(self.on_timeout, self.timeout)
 
     #
