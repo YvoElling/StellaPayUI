@@ -6,8 +6,9 @@ import requests
 
 class RegisterUIDScreen(Screen):
     # APIs
-    get_users_api = "http://staartvin.com:8181/users/"
-    add_use_api = "http://staartvin.com:8181/identification/set-card-mapping/"
+    get_users_api = "http://staartvin.com:8181/users"
+    add_user_api = "http://staartvin.com:8181/identification/add-card-mapping"
+    api_url = "http://staartvin.com:8181/identification/request-user/"
 
     def __init__(self, **kwargs):
         # Load KV file for this screen
@@ -20,20 +21,19 @@ class RegisterUIDScreen(Screen):
         self.timeout = 60
         self.timeout_event = Clock.schedule_once(self.on_timeout, self.timeout)
 
-        # Retrieve UID from the defaultScreen
-        self.uid_nfc = 5 #self.manager.get_screen('DefaultScreen').ids.nfc_uid
-
         # Get all users from the database
         user_data = requests.get(self.get_users_api)
 
         if user_data.ok :
+            user_json = user_data.json()
+
             # Iterate over all users and add them to the dropdown list
-            for user in user_data:
+            for user in user_json:
+
                 self.ids.user_spinner.values.append(user['email'])
 
-    # On add user set the text field to the selected user
-    def on_spinner_select(self, text):
-        self.ids.couple_name.text = text
+        # Sort list by name
+        self.ids.user_spinner.values.sort()
 
     # Return to default screen when cancelled
     def on_cancel(self):
@@ -55,10 +55,11 @@ class RegisterUIDScreen(Screen):
     # Saves user-card-mapping to the database
     def on_save_user(self):
         # Store the email adress of the user
-        user_mail = self.ids.couple_name.text
+        user_mail = self.ids.user_spinner.text
 
         # Use a POST command to add connect this UID to the user
-        request = requests.post(self.add_use_api, data={user_mail: self.uid_nfc})
+        uid = self.manager.get_screen('DefaultScreen').nfc_uid
+        request = requests.post(self.add_user_api, json={'card_id': str(uid), 'email': user_mail})
 
         # If the users was added successfully ( status_code : 200), proceed to WelcomeScreen
         if request.ok:
@@ -70,12 +71,13 @@ class RegisterUIDScreen(Screen):
 
         else:
             # User could not be added succesfully, give error 2.
-            print("An error occurred when trying to add the user: error code " + request.status_code)
+            print("Error " + str(request.status_code) + " occurred when trying to add the user: error message: " +
+                  request.reason)
             exit("2")
 
     def request_name(self):
         # Prepare API request
-        name_request = self.api_url + '122345' + '/'
+        name_request = self.api_url + self.uid_nfc
         # Make API request
         response = requests.get(url=name_request)
 
@@ -86,5 +88,5 @@ class RegisterUIDScreen(Screen):
 
         else:
             # Print errorcode 3 when the user mapped to that e-mailadress does not exist
-            print("An error occured when trying to access the name of the newly added account")
+            print("An error " + str(response) + ": occured when trying to access the name of the newly added account")
             exit(3)

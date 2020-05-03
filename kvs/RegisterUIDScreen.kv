@@ -21,20 +21,13 @@
         pos_hint: {"center_x":0.5,"center_y":0.65}
         font_size: '20sp'
 
-    TextInput:
-        id: couple_name
-        hint_text:'Wat is je naam?'
-        pos_hint: {'center_x': 0.4, 'center_y': 0.48}
-        multiline: False
-        size_hint: 0.25, 0.08
 
     Spinner:
         id: user_spinner
-        size_hint: 0.25, 0.08
-        pos_hint: {'center_x': 0.4, 'center_y': 0.38}
+        size_hint: 0.45, 0.14
+        pos_hint: {'center_x': 0.33, 'center_y': 0.45}
         text: 'Selecteer'
-        values: 'Home', 'Work', 'Other', 'Custom', 'Another', 'No', 'Anyhow', 'Yes'
-        on_text: root.on_spinner_select(user_spinner.text)
+        values: ''
 
     Button:
         id: continue
@@ -46,7 +39,7 @@
         font_size: '25sp'
         size_hint: None, None
         size: 120, 70
-        pos_hint: {"center_x": 0.62,"center_y":0.45}
+        pos_hint: {"center_x": 0.65,"center_y":0.45}
         pos_hint_x: root.center_x
         pos_hint_y: root.center_y
         on_release: root.on_save_user()
@@ -60,7 +53,7 @@
         border: 30, 30, 30, 30
         font_size: '25sp'
         size_hint: None, None
-        pos_hint: {"center_x": 0.77,"center_y":0.45}
+        pos_hint: {"center_x": 0.80,"center_y":0.45}
         pos_hint_x: root.center_x
         pos_hint_y: root.center_y
         size: 120, 70
