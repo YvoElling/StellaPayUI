@@ -31,6 +31,7 @@ class WelcomeScreen(Screen):
     #
     def on_buy(self):
         Clock.unschedule(self.timeout_event)
+        self.manager.get_screen('ProductScreen').user_name = self.ids.label.text
         self.manager.transition = SlideTransition(direction='left')
         self.manager.current = 'ProductScreen'
 

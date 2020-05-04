@@ -8,7 +8,7 @@ class RegisterUIDScreen(Screen):
     # APIs
     get_users_api = "http://staartvin.com:8181/users"
     add_user_api = "http://staartvin.com:8181/identification/add-card-mapping"
-    api_url = "http://staartvin.com:8181/identification/request-user/"
+    get_name_uid_api = "http://staartvin.com:8181/identification/request-user/"
     nfc_id = None
 
     def __init__(self, **kwargs):
@@ -78,7 +78,7 @@ class RegisterUIDScreen(Screen):
 
     def request_name(self):
         # Prepare API request
-        name_request = self.api_url + self.uid_nfc
+        name_request = self.get_name_uid_api + self.uid_nfc
         # Make API request
         response = requests.get(url=name_request)
 
