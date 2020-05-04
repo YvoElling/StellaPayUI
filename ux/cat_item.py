@@ -1,8 +1,8 @@
-from kivy.uix.boxlayout import BoxLayout
+
 from kivy.uix.button import Button
 
 
-class CategoryItem(BoxLayout):
+class CategoryItem(Button):
 
     def __init__(self, img, title, callback):
         # Call to super object
@@ -17,5 +17,4 @@ class CategoryItem(BoxLayout):
         cat_btn.background_normal = img
 
         # Sets the size of this button
-        cat_btn.size_hint = None, None
-        cat_btn.size = 50, 50
+        cat_btn.size_hint = 1, 0.5

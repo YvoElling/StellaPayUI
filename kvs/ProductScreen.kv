@@ -1,17 +1,111 @@
 <ProductScreen>
+    Label:
+        id: stella_pay
+        text: '[b]STELLA PAY[/b]'
+        font_size: '25sp'
+        markup: True
+        size_hint: None, None
+        pos_hint: {"center_x": 0.15,"center_y":0.9}
+
+    Button:
+        id: stop
+        text: '[b]Stop[/b]'
+        markup: True
+        background_normal: 'img/cancelButtonBackground.png'
+        background_down: 'img/cancelPressedButtonBackground.png'
+        border: 30, 30, 30, 30
+        font_size: '20sp'
+        size_hint: None, None
+        pos_hint: {"center_x": 0.80,"center_y":0.9}
+        pos_hint_x: root.center_x
+        pos_hint_y: root.center_y
+        size: 130, 60
+        on_release: root.on_cancel()
+
+    Button:
+        id: profile
+        text: '[b]P[/b]'
+        markup: True
+        border: 30, 30, 30, 30
+        font_size: '20sp'
+        size_hint: None, None
+        pos_hint: {"center_x": 0.93,"center_y":0.9}
+        pos_hint_x: root.center_x
+        pos_hint_y: root.center_y
+        size: 50, 50
+        on_release: root.on_cancel()
+
     BoxLayout:
-        orientation: 'vertical'
+        spacing: '15px'
+        orientation: 'horizontal'
+        pos_hint: {"center_x": 0.50,"center_y":0.42}
+        size_hint: 0.95, 0.8
 
-        BoxLayout:
-            orientation: 'horizontal'
-            size_hint: 1, None
+        Button:
+            id: ic_drinks
+            pos_hint: {"center_x": 0.50,"center_y":0.62}
+            size_hint: 1, 0.7
+            font_size: '20sp'
+            text: "[b]Drinken[/b]"
+            text_size: self.size
+            markup: True
+            halign: 'center'
+            valign: 'top'
 
-#    Label:
-#        id: stella_pay
-#        text: '[b]STELLA PAY[/b]'
-#        markup: True
-#        size_hint: None, None
-#        pos_hint: {"center_x": 0.10,"center_y":0.95}
+        Button:
+            id: ic_food
+            pos_hint: {"center_x": 0.50,"center_y":0.62}
+            size_hint: 1, 0.7
+            markup: True
+            font_size: '20sp'
+            text: "[b]Eten[/b]"
+            text_size: self.size
+            halign: 'center'
+            valign: 'top'
+
+        Button:
+            id: ic_alcohol
+            pos_hint: {"center_x": 0.50,"center_y":0.62}
+            size_hint: 1, 0.7
+            markup: True
+            font_size: '20sp'
+            text: "[b]Alcohol[/b]"
+            text_size: self.size
+            halign: 'center'
+            valign: 'top'
+
+
+    Button:
+        id: stop
+        text: '[b]Mand[/b]'
+        markup: True
+        background_normal: 'img/confirmButtonBackground.png'
+        background_down: 'img/confirmPressedButtonBackground.png'
+        border: 30, 30, 30, 30
+        font_size: '20sp'
+        size_hint: None, None
+        pos_hint: {"center_x": 0.88,"center_y":0.1}
+        pos_hint_x: root.center_x
+        pos_hint_y: root.center_y
+        size: 130, 60
+        on_release: root.on_cancel()
+
+
+    Button:
+        id: stop
+        text: '[b]Betaal[/b]'
+        markup: True
+        background_normal: 'img/confirmButtonBackground.png'
+        background_down: 'img/confirmPressedButtonBackground.png'
+        border: 30, 30, 30, 30
+        font_size: '20sp'
+        size_hint: None, None
+        pos_hint: {"center_x": 0.12,"center_y":0.1}
+        pos_hint_x: root.center_x
+        pos_hint_y: root.center_y
+        size: 130, 60
+        on_release: root.on_cancel()
+
 #
 #    Button:
 #        id: stop

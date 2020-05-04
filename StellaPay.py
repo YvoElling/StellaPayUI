@@ -42,6 +42,7 @@ if __name__ == '__main__':
     screen_manager.add_widget(CreditsScreen(name='CreditsScreen'))
     screen_manager.add_widget(ProductScreen(name='ProductScreen'))
     screen_manager.add_widget(ProfileScreen(name='ProfileScreen'))
+    screen_manager.add_widget(ProfileScreen(name='ItemScreen'))
 
     # run the application
     StellaPay().run()
