@@ -9,6 +9,7 @@ class RegisterUIDScreen(Screen):
     get_users_api = "http://staartvin.com:8181/users"
     add_user_api = "http://staartvin.com:8181/identification/add-card-mapping"
     api_url = "http://staartvin.com:8181/identification/request-user/"
+    nfc_id = None
 
     def __init__(self, **kwargs):
         # Load KV file for this screen
@@ -24,7 +25,7 @@ class RegisterUIDScreen(Screen):
         # Get all users from the database
         user_data = requests.get(self.get_users_api)
 
-        if user_data.ok :
+        if user_data.ok:
             user_json = user_data.json()
 
             # Iterate over all users and add them to the dropdown list
@@ -58,8 +59,8 @@ class RegisterUIDScreen(Screen):
         user_mail = self.ids.user_spinner.text
 
         # Use a POST command to add connect this UID to the user
-        uid = self.manager.get_screen('DefaultScreen').nfc_uid
-        request = requests.post(self.add_user_api, json={'card_id': str(uid), 'email': user_mail})
+        # uid = self.manager.get_screen('DefaultScreen').nfc_uid
+        request = requests.post(self.add_user_api, json={'card_id': str(self.nfc_id), 'email': user_mail})
 
         # If the users was added successfully ( status_code : 200), proceed to WelcomeScreen
         if request.ok:
@@ -87,6 +88,6 @@ class RegisterUIDScreen(Screen):
             return query_json["owner"]["name"]
 
         else:
-            # Print errorcode 3 when the user mapped to that e-mailadress does not exist
+            # Print errorcode 3 when the user mapped to that e-mailadress does not exist, SHOULD NOT HAPPEN
             print("An error " + str(response) + ": occured when trying to access the name of the newly added account")
             exit(3)

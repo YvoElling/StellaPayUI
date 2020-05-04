@@ -1,4 +1,5 @@
 from kivy.uix.screenmanager import Screen, SlideTransition
+from ux.cat_item import CategoryItem
 from kivy.clock import Clock
 from kivy.lang import Builder
 
@@ -13,6 +14,18 @@ class ProductScreen(Screen):
         # Schedule on_cancel() event in @timeout seconds
         self.timeout = 30
         self.timeout_event = Clock.schedule_once(self.on_timeout, self.timeout)
+
+        # add categories to productScreen
+        self.add_categories()
+
+    def add_categories(self):
+        ci_drinks = CategoryItem('img/STEverysmall.png', "Drinken", self.drinks_callback)
+        self.children[0].children[0].add_widget(ci_drinks)
+
+
+    def drinks_callback(self):
+        print("here!")
+        pass
 
     #
     # Called when the 'stop' button is pressed

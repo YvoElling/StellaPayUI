@@ -49,7 +49,7 @@ class DefaultScreen(Screen):
         self.nfc_uid = self.nfc_r.get_uid().replace(" ", "")
 
         # Send UID to Django database to validate person
-        name_request = self.api_url + '012345'
+        name_request = self.api_url + '12345'
         response = requests.get(url=name_request)
 
         # Check response code to validate whether this user existed already. If so, proceed
@@ -67,6 +67,7 @@ class DefaultScreen(Screen):
         else:
             # User was not found, proceed to registerUID file
             self.manager.transition = SlideTransition(direction='left')
+            self.manager.get_screen('RegisterUIDScreen').nfc_id = self.nfc_uid
             self.manager.current = 'RegisterUIDScreen'
 
     #
