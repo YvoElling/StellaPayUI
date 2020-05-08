@@ -22,42 +22,63 @@
         font_size: '20sp'
 
 
-    Spinner:
-        id: user_spinner
-        size_hint: 0.45, 0.14
-        pos_hint: {'center_x': 0.33, 'center_y': 0.45}
-        text: 'Selecteer'
-        values: ''
+#    Spinner:
+#        id: user_spinner
+#        size_hint: 0.45, 0.14
+#        pos_hint: {'center_x': 0.33, 'center_y': 0.45}
+#        text: 'Selecteer'
+#        values: ''
 
-    Button:
-        id: continue
+    MDFillRoundFlatIconButton:
+        icon: "plus"
+        width: dp(260)
+        height: dp(55)
+        id: user_spinner
         markup: True
-        text: '[b]Voeg toe[/b]'
-        background_normal: 'img/confirmButtonBackground.png'
-        background_down: 'img/confirmedPressedButtonBackground.png'
-        border: 30, 30, 30, 30
+        text: '[b]KIES[/b]'
+        md_bg_color: 0.396, 0.380, 0.364, 1
         font_size: '25sp'
         size_hint: None, None
-        size: 120, 70
-        pos_hint: {"center_x": 0.65,"center_y":0.45}
+        pos_hint: {'center_x': 0.36, 'center_y': 0.45}
+        pos_hint_x: root.center_x
+        pos_hint_y: root.center_y
+        on_release: root.on_select_mail()
+
+    Label:
+        id: selected_on_mail
+        text: ""
+        font_size: '20sp'
+        markup: True
+        pos_hint: {'center_x': 0.51, 'center_y': 0.35}
+
+
+    MDFillRoundFlatButton:
+        width: dp(110)
+        height: dp(55)
+        id: vmk
+        markup: True
+        text: '[b]Voeg toe[/b]'
+        md_bg_color: 0.062, 0.898, 0.105, 1
+        font_size: '25sp'
+        pos_hint: {"center_x": 0.53,"center_y":0.45}
         pos_hint_x: root.center_x
         pos_hint_y: root.center_y
         on_release: root.on_save_user()
 
-    Button:
+    MDFillRoundFlatButton:
+        width: dp(260)
+        height: dp(55)
         id: stop
-        text: '[b]Stop[/b]'
         markup: True
-        background_normal: 'img/cancelButtonBackground.png'
-        background_down: 'img/cancelPressedButtonBackground.png'
-        border: 30, 30, 30, 30
+        text: '[b]STOP[/b]'
+        md_bg_color: 0.933, 0.203, 0.125, 1
         font_size: '25sp'
         size_hint: None, None
-        pos_hint: {"center_x": 0.80,"center_y":0.45}
+        pos_hint: {"center_x": 0.68,"center_y":0.45}
         pos_hint_x: root.center_x
         pos_hint_y: root.center_y
-        size: 120, 70
         on_release: root.on_cancel()
+
 
     Label:
         id: warning

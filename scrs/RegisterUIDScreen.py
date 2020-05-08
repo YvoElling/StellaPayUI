@@ -2,6 +2,7 @@ from kivy.clock import Clock
 from kivy.uix.screenmanager import Screen, SlideTransition
 from kivy.lang import Builder
 import requests
+from kivymd.uix.bottomsheet import MDListBottomSheet
 
 
 class RegisterUIDScreen(Screen):
@@ -21,20 +22,24 @@ class RegisterUIDScreen(Screen):
         # Initialize timeout call
         self.timeout = 60
         self.timeout_event = Clock.schedule_once(self.on_timeout, self.timeout)
+        self.mail_list = []
 
         # Get all users from the database
         user_data = requests.get(self.get_users_api)
 
         if user_data.ok:
-            user_json = user_data.json()
+            # convert to json
+            self.user_json = user_data.json()
 
-            # Iterate over all users and add them to the dropdown list
-            for user in user_json:
+            # append json to list and sort the list
+            for user in self.user_json:
+                # store all emails adressed in the sheet_menu
+                self.mail_list.append(user)
+        else:
+            print("Error: addresses could not be fetched from server")
+            exit(4)
 
-                self.ids.user_spinner.values.append(user['email'])
-
-        # Sort list by name
-        self.ids.user_spinner.values.sort()
+        self.mail_list.sort()
 
     # Return to default screen when cancelled
     def on_cancel(self):
@@ -55,12 +60,10 @@ class RegisterUIDScreen(Screen):
 
     # Saves user-card-mapping to the database
     def on_save_user(self):
-        # Store the email adress of the user
-        user_mail = self.ids.user_spinner.text
-
         # Use a POST command to add connect this UID to the user
         # uid = self.manager.get_screen('DefaultScreen').nfc_uid
-        request = requests.post(self.add_user_api, json={'card_id': str(self.nfc_id), 'email': user_mail})
+        request = requests.post(self.add_user_api, json={'card_id': str(self.nfc_id),
+                                                         'email': self.ids.selected_on_mail.text})
 
         # If the users was added successfully ( status_code : 200), proceed to WelcomeScreen
         if request.ok:
@@ -76,6 +79,7 @@ class RegisterUIDScreen(Screen):
                   request.reason)
             exit("2")
 
+    # Request name to go to WelcomeScreen
     def request_name(self):
         # Prepare API request
         name_request = self.get_name_uid_api + self.uid_nfc
@@ -91,3 +95,17 @@ class RegisterUIDScreen(Screen):
             # Print errorcode 3 when the user mapped to that e-mailadress does not exist, SHOULD NOT HAPPEN
             print("An error " + str(response) + ": occured when trying to access the name of the newly added account")
             exit(3)
+
+    #
+    # Select email adress from server query
+    #
+    def on_select_mail(self):
+        bottom_sheet_menu = MDListBottomSheet(height="200dp", )
+        for user in self.mail_list:
+            # store all emails adressed in the sheet_menu
+            bottom_sheet_menu.add_item(user, self.on_set_mail)
+        # open the bottom sheet menu
+        bottom_sheet_menu.open()
+
+    def on_set_mail(self, item):
+        self.ids.selected_on_mail.text = "[b]" + item.text + "[/b]"
