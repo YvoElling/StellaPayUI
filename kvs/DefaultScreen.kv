@@ -1,10 +1,13 @@
 <DefaultScreen>:
     name: 'DefaultScreen'
     
-    Image:
-        source: 'img/STEverysmall.png'
-        size: 350, 500
-        
+    MDIconButton:
+        icon: 'img/STEverysmall.png'
+        user_font_size: "195sp"
+        size_hint: None, None
+        pos_hint: {"center_x":0.5,"center_y":0.53}
+        on_release: root.to_credits()
+
     Label:
         id: stella_pay
         text: "[b]STELLA PAY[/b]"

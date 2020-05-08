@@ -1,4 +1,4 @@
-from kivy.uix.screenmanager import Screen, SlideTransition
+from kivy.uix.screenmanager import Screen, SlideTransition, CardTransition
 from PythonNFCReader import NFCReader as nfc
 import threading
 import requests
@@ -75,3 +75,11 @@ class DefaultScreen(Screen):
     #
     def on_enter(self, *args):
         self.__init__()
+
+    #
+    #
+    #
+    def to_credits(self):
+        self.manager.transition = CardTransition(direction="up", mode="pop")
+        self.manager.get_screen('CreditsScreen').nfc_id = self.nfc_uid
+        self.manager.current = 'CreditsScreen'

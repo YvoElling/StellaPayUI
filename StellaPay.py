@@ -1,6 +1,8 @@
 from kivy.app import App
 from kivy.lang import Builder
 from kivy.uix.screenmanager import ScreenManager, FadeTransition
+from kivymd.app import MDApp
+
 from scrs.DefaultScreen import DefaultScreen
 from scrs.ItemScreen import ItemScreen
 from scrs.WelcomeScreen import WelcomeScreen
@@ -18,32 +20,37 @@ kivy.require('1.11.1')
 screen_manager = ScreenManager()
 
 
-class StellaPay(App):
+class StellaPay(MDApp):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+
     def build(self):
+        self.theme_cls.theme_style = "Dark"
+
+        # Set background image to match color of STE logo
+        Window.clearcolor = (0.12549, 0.12549, 0.12549, 0)
+
+        # Disable full screen (classic Python, doesn't do anything)
+        Config.set('graphics', 'width', '800')
+        Config.set('graphics', 'height', ' 480')
+        Config.write()
+
+        # Load .kv file
+        Builder.load_file('kvs/DefaultScreen.kv')
+
+        # Load screenloader and add screens
+        screen_manager.add_widget(DefaultScreen(name='DefaultScreen'))
+        screen_manager.add_widget(WelcomeScreen(name='WelcomeScreen'))
+        screen_manager.add_widget(RegisterUIDScreen(name='RegisterUIDScreen'))
+        screen_manager.add_widget(ConfirmedScreen(name='ConfirmedScreen'))
+        screen_manager.add_widget(CreditsScreen(name='CreditsScreen'))
+        screen_manager.add_widget(ProductScreen(name='ProductScreen'))
+        screen_manager.add_widget(ProfileScreen(name='ProfileScreen'))
+        screen_manager.add_widget(ItemScreen(name='ItemScreen'))
+
         return screen_manager
 
 
 if __name__ == '__main__':
-    # Set background image to match color of STE logo
-    Window.clearcolor = (0.12549, 0.12549, 0.12549, 0)
-
-    # Disable full screen (classic Python, doesn't do anything)
-    Config.set('graphics', 'width', '800')
-    Config.set('graphics', 'height', ' 480')
-    Config.write()
-
-    # Load .kv file
-    Builder.load_file('kvs/DefaultScreen.kv')
-
-    # Load screenloader and add screens
-    screen_manager.add_widget(DefaultScreen(name='DefaultScreen'))
-    screen_manager.add_widget(WelcomeScreen(name='WelcomeScreen'))
-    screen_manager.add_widget(RegisterUIDScreen(name='RegisterUIDScreen'))
-    screen_manager.add_widget(ConfirmedScreen(name='ConfirmedScreen'))
-    screen_manager.add_widget(CreditsScreen(name='CreditsScreen'))
-    screen_manager.add_widget(ProductScreen(name='ProductScreen'))
-    screen_manager.add_widget(ProfileScreen(name='ProfileScreen'))
-    screen_manager.add_widget(ItemScreen(name='ItemScreen'))
-
     # run the application
     StellaPay().run()
