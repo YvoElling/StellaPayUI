@@ -34,7 +34,7 @@ class RegisterUIDScreen(Screen):
             # append json to list and sort the list
             for user in self.user_json:
                 # store all emails adressed in the sheet_menu
-                self.mail_list.append(user)
+                self.mail_list.append(user["email"])
         else:
             print("Error: addresses could not be fetched from server")
             exit(4)

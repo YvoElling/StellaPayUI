@@ -9,3 +9,6 @@ class CreditsScreen(Screen):
 
         # call to user with arguments
         super(CreditsScreen, self).__init__(**kwargs)
+
+    def on_stop(self):
+        self.manager.current = 'DefaultScreen'

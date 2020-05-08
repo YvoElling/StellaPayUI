@@ -53,6 +53,7 @@ class ProductScreen(Screen):
     # move to profile screen
     #
     def on_profile_screen(self):
+        Clock.unschedule(self.timeout_event)
         self.manager.current = 'ProfileScreen'
 
     #

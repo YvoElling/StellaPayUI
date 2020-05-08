@@ -49,7 +49,7 @@ class DefaultScreen(Screen):
         self.nfc_uid = self.nfc_r.get_uid().replace(" ", "")
 
         # Send UID to Django database to validate person
-        name_request = self.api_url + '121345'
+        name_request = self.api_url + '12345'
         response = requests.get(url=name_request)
 
         # Check response code to validate whether this user existed already. If so, proceed
