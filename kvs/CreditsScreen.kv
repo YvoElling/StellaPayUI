@@ -1,3 +1,13 @@
 <CreditsScreen>:
-    Label:
-        text: "Hello Credits"
+    BoxLayout:
+        orientation: "vertical"
+
+        MDToolbar:
+                #id: stella_pay
+            title: 'STELLA PAY'
+            right_action_items: [["account", lambda x: app.callback()]]
+            type: 'top'
+
+        MDTabs:
+            id: android_tabs
+            on_tab_switch: root.on_tab_switch(*args)

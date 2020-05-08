@@ -1,6 +1,7 @@
 from kivy.uix.screenmanager import Screen, SlideTransition
 from kivy.clock import Clock
 from kivy.lang import Builder
+from kivymd.uix.taptargetview import MDTapTargetView
 
 
 class WelcomeScreen(Screen):
@@ -12,6 +13,15 @@ class WelcomeScreen(Screen):
         # Schedule a timeout in @timeout seconds upon start
         self.timeout = 25
         self.timeout_event = Clock.schedule_once(self.on_timeout, self.timeout)
+
+        # connect taptargetview
+        self.tap_target_view = MDTapTargetView(
+            widget=self.ids.info,
+            title_text="Stella Pay",
+            description_text="Stella Pay is a payment tool used by\n Solar Team Eindhoven to match a \n  "
+                             "purchase with the TU/e campus \n  card, or any readable NFC card",
+            widget_position="right_bottom",
+        )
 
     #
     # Called when the 'stop' button is pressed or timeout is induced
@@ -41,3 +51,12 @@ class WelcomeScreen(Screen):
     def on_touch_up(self, touch):
         Clock.unschedule(self.timeout_event)
         self.timeout_event = Clock.schedule_once(self.on_timeout, self.timeout)
+
+    #
+    #
+    #
+    def tap_target_start(self):
+        if self.tap_target_view.state == "close":
+            self.tap_target_view.start()
+        else:
+            self.tap_target_view.stop()

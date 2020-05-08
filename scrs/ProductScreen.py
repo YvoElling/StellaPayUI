@@ -1,6 +1,8 @@
+from kivy.uix.floatlayout import FloatLayout
 from kivy.uix.screenmanager import Screen, SlideTransition, NoTransition
 from kivy.clock import Clock
 from kivy.lang import Builder
+from kivymd.uix.tab import MDTabsBase
 
 
 class ProductScreen(Screen):
@@ -14,6 +16,11 @@ class ProductScreen(Screen):
         # Schedule on_cancel() event in @timeout seconds
         self.timeout = 30
         self.timeout_event = Clock.schedule_once(self.on_timeout, self.timeout)
+
+        # Configure tabs
+        self.ids.android_tabs.add_widget(Tab(text=f"Eten"))
+        self.ids.android_tabs.add_widget(Tab(text=f"Drinken"))
+        self.ids.android_tabs.add_widget(Tab(text=f"Alcohol"))
 
     #
     # Called when the 'stop' button is pressed
@@ -47,3 +54,13 @@ class ProductScreen(Screen):
     #
     def on_profile_screen(self):
         self.manager.current = 'ProfileScreen'
+
+    #
+    # on switch tab
+    #
+    def on_tab_switch(self, *args):
+        pass
+
+
+class Tab(FloatLayout, MDTabsBase):
+    pass

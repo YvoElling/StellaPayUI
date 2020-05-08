@@ -12,10 +12,8 @@ class ItemScreen(Screen):
 
         # Call to super
         super(ItemScreen, self).__init__(**kwargs)
-
-        # Schedule timeout
-        self.timeout = 30
-        self.timeout_event = Clock.schedule_once(self.on_timeout, self.timeout)
+        self.timeout = None
+        self.timeout_event = None
 
         # Get items from API
         cat = self.ids.title.text
@@ -37,8 +35,13 @@ class ItemScreen(Screen):
         Clock.unschedule(self.timeout_event)
         self.timeout_event = Clock.schedule_once(self.on_timeout, self.timeout)
 
-    def on_timeout(self):
+    def on_timeout(self, dt):
         self.manager.current = 'DefaultScreen'
+
+    def on_enter(self, *args):
+        # Schedule timeout
+        self.timeout = 30
+        self.timeout_event = Clock.schedule_once(self.on_timeout, self.timeout)
 
     def on_profile_screen(self):
         self.manager.current = 'ProfileScreen'

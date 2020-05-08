@@ -7,7 +7,7 @@
         text: "FIRSTNAME LASTNAME"
         size_hint: None, None
         pos_hint: {"center_x":0.5,"center_y":0.52}
-        font_size: '75sp'
+        font_size: '70sp'
 
     Label:
         id: hello
@@ -25,32 +25,39 @@
         font_name: 'Roboto-Bold'
         markup: True
 
-    Button:
+    MDFillRoundFlatIconButton:
+        icon: "shopping"
+        width: dp(110)
+        height: dp(55)
         id: vmk
         markup: True
-        text: '[b]Koop[/b]'
-        background_normal: 'img/confirmButtonBackground.png'
-        background_down: 'img/confirmedPressedButtonBackground.png'
-        border: 30, 30, 30, 30
+        text: '[b]KOOP[/b]'
+        md_bg_color: 0.062, 0.898, 0.105, 1
         font_size: '25sp'
-        size_hint: None, None
-        size: 140, 60
-        pos_hint: {"center_x": 0.40,"center_y":0.35}
+        pos_hint: {"center_x": 0.42,"center_y":0.35}
         pos_hint_x: root.center_x
         pos_hint_y: root.center_y
         on_release: root.on_buy()
 
-    Button:
+    MDFillRoundFlatButton:
+        width: dp(260)
+        height: dp(55)
         id: stop
-        text: '[b]Stop[/b]'
         markup: True
-        background_normal: 'img/cancelButtonBackground.png'
-        background_down: 'img/cancelPressedButtonBackground.png'
-        border: 30, 30, 30, 30
+        text: '[b]STOP[/b]'
+        md_bg_color: 0.933, 0.203, 0.125, 1
         font_size: '25sp'
         size_hint: None, None
-        pos_hint: {"center_x": 0.60,"center_y":0.35}
+        pos_hint: {"center_x": 0.58,"center_y":0.35}
         pos_hint_x: root.center_x
         pos_hint_y: root.center_y
-        size: 140, 60
         on_release: root.on_cancel()
+
+    MDFloatingActionButton:
+        id: info
+        icon: "information"
+        pos_hint: {"center_x": 0.94,"center_y":0.07}
+        pos_hint_x: root.center_x
+        pos_hint_y: root.center_y
+        size: 40, 40
+        on_release: root.tap_target_start()
