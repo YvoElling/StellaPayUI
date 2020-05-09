@@ -1,5 +1,5 @@
 class Purchase:
-    def __init__(self, name, product, count):
-        self.__name = name
-        self.__product = product
-        self.__count = count
+    def __init__(self, mail, product, count):
+        self.mail = mail
+        self.product = product
+        self.count = count
