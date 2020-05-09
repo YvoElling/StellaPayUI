@@ -4,6 +4,8 @@ from kivy.clock import Clock
 from kivy.lang import Builder
 from kivymd.uix.tab import MDTabsBase
 
+from scrs.TabDisplay import TabDisplay
+
 
 class ProductScreen(Screen):
     user_name = None
@@ -14,13 +16,25 @@ class ProductScreen(Screen):
         super(ProductScreen, self).__init__(**kwargs)
 
         # Schedule on_cancel() event in @timeout seconds
-        self.timeout = 30
+        self.timeout = 45
+        self.timeout_event = None
+
+        # Add tabs to the tab bar
+        self.ids.android_tabs.add_widget(TabDisplay(text=f"Eten"))
+        self.ids.android_tabs.add_widget(TabDisplay(text=f"Drinken"))
+        self.ids.android_tabs.add_widget(TabDisplay(text=f"Alcohol"))
+
+    #
+    # upon entering the screen, set the timeout
+    #
+    def on_enter(self, *args):
         self.timeout_event = Clock.schedule_once(self.on_timeout, self.timeout)
 
-        # Configure tabs
-        self.ids.android_tabs.add_widget(Tab(text=f"Eten"))
-        self.ids.android_tabs.add_widget(Tab(text=f"Drinken"))
-        self.ids.android_tabs.add_widget(Tab(text=f"Alcohol"))
+    #
+    # upon leaving the screen, cancel the timeout event
+    #
+    def on_leave(self, *args):
+        Clock.unschedule(self.timeout_event)
 
     #
     # Called when the 'stop' button is pressed
@@ -57,11 +71,7 @@ class ProductScreen(Screen):
         self.manager.current = 'ProfileScreen'
 
     #
-    # on switch tab
+    # callback function for when tab is switched
     #
     def on_tab_switch(self, *args):
         pass
-
-
-class Tab(FloatLayout, MDTabsBase):
-    pass

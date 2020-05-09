@@ -4,6 +4,7 @@
 
         MDToolbar:
             title: 'STELLA PAY'
+            font_name: 'fonts/orbitron/Orbitron-Bold.ttf'
             md_bg_color: 0.078, 0.537, 0.882, 1
             right_action_items: [["account", lambda x: root.on_profile_screen()]]
             elevation: 10
@@ -11,6 +12,9 @@
 
         MDTabs:
             id: android_tabs
+            tab_bar_height: '35dp'
+            #tab_indicator_anim: True
+            #allow_stretch: True
             on_tab_switch: root.on_tab_switch(*args)
 
 

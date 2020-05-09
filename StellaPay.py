@@ -1,10 +1,8 @@
 from kivy.app import App
 from kivy.lang import Builder
-from kivy.uix.screenmanager import ScreenManager, FadeTransition
+from kivy.uix.screenmanager import ScreenManager
 from kivymd.app import MDApp
-
 from scrs.DefaultScreen import DefaultScreen
-from scrs.ItemScreen import ItemScreen
 from scrs.WelcomeScreen import WelcomeScreen
 from scrs.ConfirmedScreen import ConfirmedScreen
 from scrs.CreditsScreen import CreditsScreen
@@ -46,7 +44,6 @@ class StellaPay(MDApp):
         screen_manager.add_widget(CreditsScreen(name='CreditsScreen'))
         screen_manager.add_widget(ProductScreen(name='ProductScreen'))
         screen_manager.add_widget(ProfileScreen(name='ProfileScreen'))
-        screen_manager.add_widget(ItemScreen(name='ItemScreen'))
 
         return screen_manager
 

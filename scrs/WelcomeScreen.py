@@ -17,10 +17,9 @@ class WelcomeScreen(Screen):
         # connect taptargetview
         self.tap_target_view = MDTapTargetView(
             widget=self.ids.info,
-            title_text="Stella Pay",
-            description_text="Stella Pay is a payment tool used by\n Solar Team Eindhoven to match a \n  "
-                             "purchase with the TU/e campus \n  card, or any readable NFC card",
-            widget_position="right_bottom",
+            title_text="Information",
+            description_text="Version 0.1\n",
+            widget_position="right_bottom"
         )
 
     #
