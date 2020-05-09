@@ -55,3 +55,15 @@ class ShoppingCart:
                 return True
         # No item was found, append the item to the back of the list
         return False
+
+    #
+    # get shopping cart data
+    #
+    def get_shopping_cart(self):
+        return self.purchases
+
+    #
+    # get total sum
+    #
+    def get_total_price(self):
+        return self.total_sum

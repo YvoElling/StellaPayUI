@@ -39,6 +39,7 @@
         pos_hint_x: root.center_x
         pos_hint_y: root.center_y
         size: 80, 70
+        on_release: root.open_confirmation()
 
     MDFloatingActionButton:
         icon: "shopping"
@@ -47,3 +48,4 @@
         pos_hint_x: root.center_x
         pos_hint_y: root.center_y
         size: 80, 70
+        on_release: root.show_shoppingcart()
