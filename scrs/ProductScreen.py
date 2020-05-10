@@ -5,7 +5,7 @@ from kivymd.uix.button import MDFlatButton, MDRaisedButton
 from kivymd.uix.dialog import MDDialog
 from kivymd.uix.list import OneLineListItem
 
-from ds import Product
+from ds.Product import Product
 from ds.ShoppingCart import ShoppingCart
 from scrs.TabDisplay import TabDisplay
 import requests
@@ -19,6 +19,7 @@ class ProductScreen(Screen):
 
     # api link
     get_cat_api_url = "http://staartvin.com:8181/products/"
+    get_all_cat_api = "http://staartvin.com:8181/categories"
 
     # shopping cart
     shoppping_cart = ShoppingCart()
@@ -29,16 +30,27 @@ class ProductScreen(Screen):
         super(ProductScreen, self).__init__(**kwargs)
 
         # Class level variables
-        self.timeout = 45
+        self.timeout = 120
         self.timeout_event = None
         self.direct_confirm = None
         self.shoppingcart = None
 
-        # Add tabs to the tab bar
-        categories = ["Eten", "Drinken", "Alcohol"]
-        for cat in categories:
-            self.ids.android_tabs.add_widget(TabDisplay(text=cat))
-            self.local_items[cat] = []
+        # Get all categories names
+        response = requests.get(url=self.get_all_cat_api)
+
+        # Check status response
+        if response.ok:
+            categories = response.json()
+
+            # add all tabs to the tabbar
+            for cat in categories:
+                self.ids.android_tabs.add_widget(TabDisplay(text=cat['name']))
+                self.local_items[cat['name']] = []
+        else:
+            # Error
+            print("Categories could not be retrieved: " + response)
+            exit(6)
+
 
     #
     # upon entering the screen, set the timeout
@@ -98,12 +110,12 @@ class ProductScreen(Screen):
                 for product in products_json:
                     # Only add the product to the list if the product must be shown
                     if product['shown']:
-                        p = Product.create_from_json(product)
+                        p = Product().create_from_json(product)
                         self.local_items[tab_text].append(p)
 
-        # For all items in the local_items list, add them to the container and display them
-        for product in self.local_items[tab_text]:
-            self.ids.container.add_widget(OneLineListItem(text=product.get_name()))
+            # For all items in the local_items list, add them to the container and display them
+            for product in self.local_items[tab_text]:
+                instance_tab.ids.container.add_widget(OneLineListItem(text=product.get_name()))
 
     #
     # open confirmation dialog
