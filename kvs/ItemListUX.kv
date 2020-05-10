@@ -1,4 +1,19 @@
-<ItemListUX>:
+<ItemListUX@@OneLineAvatarIconListItem>
+    MDIconButton:
+        id: plus
+        md_bg_color: 0.062, 0.898, 0.105, 1
+        user_font_size: "25sp"
+        icon: "plus"
+        pos_hint: {"center_x": 0.88,"center_y":0.5}
+        on_release: root.on_add_product()
+
+    MDIconButton:
+        id: minus
+        user_font_size: "25sp"
+        md_bg_color: 0.933, 0.203, 0.125, 1
+        icon: "minus"
+        pos_hint: {"center_x": 0.95,"center_y":0.5}
+        on_release: root.on_remove_product()
 
     MDLabel:
         text: "0"
@@ -16,18 +31,6 @@
         text_color: 1, 1, 1, 1
         font_size: '25sp'
 
-    MDIconButton:
-        id: plus
-        md_bg_color: 0.062, 0.898, 0.105, 1
-        user_font_size: "25sp"
-        icon: "plus"
-        pos_hint: {"center_x": 0.88,"center_y":0.5}
 
-    MDIconButton:
-        id: minus
-        user_font_size: "25sp"
-        md_bg_color: 0.933, 0.203, 0.125, 1
-        icon: "minus"
-        pos_hint: {"center_x": 0.95,"center_y":0.5}
 
 

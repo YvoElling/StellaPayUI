@@ -20,6 +20,7 @@ class DefaultScreen(Screen):
         # (Apparently Python wants them here)
         self.nfc_r = None
         self.nfc_uid = None
+        self.user_mail = None
 
         # Create and start a thread to listen for NFC card presentation
         nfc_thread = threading.Thread(name="NFC_reader",
@@ -63,6 +64,9 @@ class DefaultScreen(Screen):
             # Set the retrieved name as the name of the user on the next page
             self.manager.get_screen('WelcomeScreen').label.text = query_json["owner"]["name"]
             self.manager.current = 'WelcomeScreen'
+
+            # store user-mail for payment confirmation later
+            self.user_mail = query_json["owner"]["email"]
 
         else:
             # User was not found, proceed to registerUID file

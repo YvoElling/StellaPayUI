@@ -20,9 +20,10 @@ class ProductScreen(Screen):
     # api link
     get_cat_api_url = "http://staartvin.com:8181/products/"
     get_all_cat_api = "http://staartvin.com:8181/categories"
+    confirm_api = "http://staartvin.com:8181/transactions/create/"
 
     # shopping cart
-    shoppping_cart = ShoppingCart()
+    shopping_cart = ShoppingCart()
 
     def __init__(self, **kwargs):
         # Load screen
@@ -116,8 +117,10 @@ class ProductScreen(Screen):
             # For all items in the local_items list, add them to the container and display them
             for product in self.local_items[tab_text]:
                 instance_tab.ids.container.add_widget(ItemListUX(text=product.get_name(),
+                                                                 user_mail=self.manager.get_screen("DefaultScreen")
+                                                                 .user_mail,
                                                                  price="€" + product.get_price(),
-                                                                 shoppingcart=self.shoppingcart,
+                                                                 shoppingcart=self.shopping_cart,
                                                                  secondary_text="Fun fact about " + product.get_name(),
                                                                  secondary_theme_text_color="Custom",
                                                                  secondary_text_color=[0.509, 0.509, 0.509, 1]))
@@ -137,6 +140,7 @@ class ProductScreen(Screen):
                     ),
                     MDRaisedButton(
                         text="BEVESTIG",
+                        on_release=self.on_confirm,
                         md_bg_color=[0.933, 0.203, 0.125, 1]
                     ),
                 ],
@@ -173,6 +177,22 @@ class ProductScreen(Screen):
     def on_return_direct_confirm(self, dt):
         self.direct_confirm.dismiss()
 
+    #
+    # Confirms a payment
+    #
+    def on_confirm(self, dt):
+        pass
+        # response = requests.post(self.confirm_api, json={})
+        #
+        # if response.ok:
+        #     # TODO
+        #     # Clear all self.counts ids of items
+        #     # Clear shopping cart
+        #     pass
+        #
+        # else:
+        #     print("Payment could not be made: error: " + response.text)
+        #     exit(7)
     #
     # Confirm addition
     #

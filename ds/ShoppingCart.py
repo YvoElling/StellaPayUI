@@ -13,7 +13,7 @@ class ShoppingCart:
     #
     def add_to_cart(self, purchase):
         # Update the total sum of the shopping cart
-        self.total_sum += purchase.product.get_price() * purchase.count
+        # self.total_sum += purchase.product.get_price() * purchase.count
 
         # Check cart if this product for this user is already in cart, if so update
         # Otherwise append the new purchase to the shopping cart list
@@ -28,13 +28,7 @@ class ShoppingCart:
     #
     def remove_from_cart(self, purchase):
         # Check if the item is in the list
-        if not self.__find_duplicates(False, purchase):
-            return False
-
-        else:
-            # Update the total sum of the shopping cart
-            self.total_sum -= purchase.product.get_price() * purchase.count
-            return True
+        self.__find_duplicates(False, purchase)
 
     # check for duplicates in purchase list
     #
@@ -45,9 +39,9 @@ class ShoppingCart:
             # so we increment or decrement this field with @purchase.count
             if p.mail == purchase.mail and p.product == purchase.product:
                 if add:
-                    p.count = p.count + purchase.count
+                    p.count = p.count + 1
                 else:
-                    p.count = p.count - purchase.count
+                    p.count = p.count - 1
                     # If p.count has become zero, remove p completly from the list
                     if p.count == 0:
                         self.purchases.remove(p)

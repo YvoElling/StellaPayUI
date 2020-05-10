@@ -15,7 +15,6 @@
             tab_bar_height: '35dp'
             on_tab_switch: root.on_tab_switch(*args)
 
-
     MDFillRoundFlatButton:
         width: dp(200)
         height: dp(45)
@@ -33,17 +32,17 @@
     MDFloatingActionButton:
         icon: "currency-eur"
         md_bg_color: 0.062, 0.898, 0.105, 1
-        pos_hint: {"center_x": 0.91,"center_y":0.1}
+        pos_hint: {"center_x": 0.93,"center_y":0.1}
         pos_hint_x: root.center_x
         pos_hint_y: root.center_y
-        size: 80, 70
+        size: 70, 70
         on_release: root.open_confirmation()
 
     MDFloatingActionButton:
         icon: "shopping"
         md_bg_color: 0.062, 0.898, 0.105, 1
-        pos_hint: {"center_x": 0.09,"center_y":0.1}
+        pos_hint: {"center_x": 0.07,"center_y":0.1}
         pos_hint_x: root.center_x
         pos_hint_y: root.center_y
-        size: 80, 70
+        size: 70, 70
         on_release: root.show_shoppingcart()
