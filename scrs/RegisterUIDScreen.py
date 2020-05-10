@@ -61,6 +61,11 @@ class RegisterUIDScreen(Screen):
 
     # Saves user-card-mapping to the database
     def on_save_user(self):
+        # Validate that a user is indeed selected
+        if self.ids.selected_on_mail.text == "" or self.ids.selected_on_mail.text == "Selecteer een account":
+            self.ids.selected_on_mail.text = "Selecteer een account"
+            return
+
         # Use a POST command to add connect this UID to the user
         # uid = self.manager.get_screen('DefaultScreen').nfc_uid
         pattern = '(\[b\])([a-zA-Z\.@]+)'
