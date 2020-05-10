@@ -3,12 +3,12 @@ from kivy.clock import Clock
 from kivy.lang import Builder
 from kivymd.uix.button import MDFlatButton, MDRaisedButton
 from kivymd.uix.dialog import MDDialog
-from kivymd.uix.list import OneLineListItem
-
 from ds.Product import Product
 from ds.ShoppingCart import ShoppingCart
 from scrs.TabDisplay import TabDisplay
 import requests
+from ux.ItemListUX import ItemListUX
+
 
 class ProductScreen(Screen):
     # Store user_name
@@ -115,7 +115,12 @@ class ProductScreen(Screen):
 
             # For all items in the local_items list, add them to the container and display them
             for product in self.local_items[tab_text]:
-                instance_tab.ids.container.add_widget(OneLineListItem(text=product.get_name()))
+                instance_tab.ids.container.add_widget(ItemListUX(text=product.get_name(),
+                                                                 price="€" + product.get_price(),
+                                                                 shoppingcart=self.shoppingcart,
+                                                                 secondary_text="Fun fact about " + product.get_name(),
+                                                                 secondary_theme_text_color="Custom",
+                                                                 secondary_text_color=[0.509, 0.509, 0.509, 1]))
 
     #
     # open confirmation dialog
