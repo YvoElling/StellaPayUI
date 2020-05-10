@@ -2,6 +2,7 @@ from kivy.clock import Clock
 from kivy.uix.screenmanager import Screen, SlideTransition
 from kivy.lang import Builder
 import requests
+import re
 from kivymd.uix.bottomsheet import MDListBottomSheet
 
 
@@ -62,8 +63,10 @@ class RegisterUIDScreen(Screen):
     def on_save_user(self):
         # Use a POST command to add connect this UID to the user
         # uid = self.manager.get_screen('DefaultScreen').nfc_uid
+        pattern = '(\[b\])([a-zA-Z\.@]+)'
+        filtered_mail = re.search(pattern, str(self.ids.selected_on_mail.text))
         request = requests.post(self.add_user_api, json={'card_id': str(self.nfc_id),
-                                                         'email': self.ids.selected_on_mail.text})
+                                                         'email': str(filtered_mail.group(2))})
 
         # If the users was added successfully ( status_code : 200), proceed to WelcomeScreen
         if request.ok:
@@ -76,13 +79,13 @@ class RegisterUIDScreen(Screen):
         else:
             # User could not be added succesfully, give error 2.
             print("Error " + str(request.status_code) + " occurred when trying to add the user: error message: " +
-                  request.reason)
+                  request.text)
             exit("2")
 
     # Request name to go to WelcomeScreen
     def request_name(self):
         # Prepare API request
-        name_request = self.get_name_uid_api + self.uid_nfc
+        name_request = self.get_name_uid_api + self.nfc_id
         # Make API request
         response = requests.get(url=name_request)
 
@@ -100,7 +103,7 @@ class RegisterUIDScreen(Screen):
     # Select email adress from server query
     #
     def on_select_mail(self):
-        bottom_sheet_menu = MDListBottomSheet(height="200dp", )
+        bottom_sheet_menu = MDListBottomSheet(height="200dp")
         for user in self.mail_list:
             # store all emails adressed in the sheet_menu
             bottom_sheet_menu.add_item(user, self.on_set_mail)

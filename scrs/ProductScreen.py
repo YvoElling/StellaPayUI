@@ -3,28 +3,42 @@ from kivy.clock import Clock
 from kivy.lang import Builder
 from kivymd.uix.button import MDFlatButton, MDRaisedButton
 from kivymd.uix.dialog import MDDialog
+from kivymd.uix.list import OneLineListItem
 
+from ds import Product
+from ds.ShoppingCart import ShoppingCart
 from scrs.TabDisplay import TabDisplay
-
+import requests
 
 class ProductScreen(Screen):
+    # Store user_name
     user_name = None
+
+    # Store items per category
+    local_items = {}
+
+    # api link
+    get_cat_api_url = "http://staartvin.com:8181/products/"
+
+    # shopping cart
+    shoppping_cart = ShoppingCart()
 
     def __init__(self, **kwargs):
         # Load screen
         Builder.load_file('kvs/ProductScreen.kv')
         super(ProductScreen, self).__init__(**kwargs)
 
-        # Schedule on_cancel() event in @timeout seconds
+        # Class level variables
         self.timeout = 45
         self.timeout_event = None
         self.direct_confirm = None
         self.shoppingcart = None
 
         # Add tabs to the tab bar
-        self.ids.android_tabs.add_widget(TabDisplay(text=f"Eten"))
-        self.ids.android_tabs.add_widget(TabDisplay(text=f"Drinken"))
-        self.ids.android_tabs.add_widget(TabDisplay(text=f"Alcohol"))
+        categories = ["Eten", "Drinken", "Alcohol"]
+        for cat in categories:
+            self.ids.android_tabs.add_widget(TabDisplay(text=cat))
+            self.local_items[cat] = []
 
     #
     # upon entering the screen, set the timeout
@@ -59,15 +73,6 @@ class ProductScreen(Screen):
         self.timeout_event = Clock.schedule_once(self.on_timeout, self.timeout)
 
     #
-    # when a category is selected, retrieve the items in that category
-    #
-    def on_cat_selected(self, cat):
-        Clock.unschedule(self.timeout_event)
-        self.manager.transition = NoTransition()
-        self.manager.get_screen('ItemScreen').ids.title.text = cat
-        self.manager.current = 'ItemScreen'
-
-    #
     # move to profile screen
     #
     def on_profile_screen(self):
@@ -77,8 +82,28 @@ class ProductScreen(Screen):
     #
     # callback function for when tab is switched
     #
-    def on_tab_switch(self, *args):
-        pass
+    def on_tab_switch(self, instance_tabs, instance_tab, instance_tab_label, tab_text):
+        # consult local_items first, if empty, request items from server
+        if not self.local_items[tab_text]:
+            # Request products from category tab_text
+            request = self.get_cat_api_url + tab_text
+            response = requests.get(request)
+
+            # Evaluate server response
+            if response.ok:
+                # convert response to json
+                products_json = response.json()
+
+                # Create a product object for all
+                for product in products_json:
+                    # Only add the product to the list if the product must be shown
+                    if product['shown']:
+                        p = Product.create_from_json(product)
+                        self.local_items[tab_text].append(p)
+
+        # For all items in the local_items list, add them to the container and display them
+        for product in self.local_items[tab_text]:
+            self.ids.container.add_widget(OneLineListItem(text=product.get_name()))
 
     #
     # open confirmation dialog
@@ -106,10 +131,6 @@ class ProductScreen(Screen):
             self.shoppingcart = MDDialog(
                 title="Winkelmandje",
                 type="confirmation",
-                # items=[
-                #     Item(text="Callisto"),
-                #
-                # ],
                 buttons=[
                     MDFlatButton(
                         text="CANCEL",
