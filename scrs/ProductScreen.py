@@ -6,8 +6,9 @@ from kivymd.uix.dialog import MDDialog
 from ds.Product import Product
 from ds.ShoppingCart import ShoppingCart
 from scrs.TabDisplay import TabDisplay
-import requests
 from ux.ItemListUX import ItemListUX
+import requests
+import json
 
 
 class ProductScreen(Screen):
@@ -181,21 +182,18 @@ class ProductScreen(Screen):
     # Confirms a payment
     #
     def on_confirm(self, dt):
-        pass
-        # response = requests.post(self.confirm_api, json={})
-        #
-        # if response.ok:
-        #     # TODO
-        #     # Clear all self.counts ids of items
-        #     # Clear shopping cart
-        #     pass
-        #
-        # else:
-        #     print("Payment could not be made: error: " + response.text)
-        #     exit(7)
-    #
-    # Confirm addition
-    #
-    def on_confirm(self, dt):
-        # Perform API purchase confirmation here
-        pass
+        # create json from list
+        json_shoppping = json.dumps(self.shopping_cart.get_shopping_cart())
+
+        # use a POST-request to forward the shopping cart
+        response = requests.post(self.confirm_api, json=json_shoppping)
+
+        if response.ok:
+            # TODO
+            # Clear all self.counts ids of items
+            # Clear shopping cart
+            pass
+
+        else:
+            print("Payment could not be made: error: " + response.text)
+            exit(7)
