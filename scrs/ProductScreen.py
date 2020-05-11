@@ -1,3 +1,6 @@
+import json
+from time import sleep
+
 from kivy.uix.screenmanager import Screen, SlideTransition, NoTransition
 from kivy.clock import Clock
 from kivy.lang import Builder
@@ -8,7 +11,6 @@ from ds.ShoppingCart import ShoppingCart
 from scrs.TabDisplay import TabDisplay
 from ux.ItemListUX import ItemListUX
 import requests
-import json
 
 
 class ProductScreen(Screen):
@@ -21,7 +23,7 @@ class ProductScreen(Screen):
     # api link
     get_cat_api_url = "http://staartvin.com:8181/products/"
     get_all_cat_api = "http://staartvin.com:8181/categories"
-    confirm_api = "http://staartvin.com:8181/transactions/create/"
+    confirm_api = "http://staartvin.com:8181/transactions/create"
 
     # shopping cart
     shopping_cart = ShoppingCart()
@@ -35,7 +37,6 @@ class ProductScreen(Screen):
         self.timeout = 120
         self.timeout_event = None
         self.direct_confirm = None
-        self.shoppingcart = None
 
         # Get all categories names
         response = requests.get(url=self.get_all_cat_api)
@@ -182,18 +183,27 @@ class ProductScreen(Screen):
     # Confirms a payment
     #
     def on_confirm(self, dt):
-        # create json from list
-        json_shoppping = json.dumps(self.shopping_cart.get_shopping_cart())
+        # Serialize the shopping cart
+        json_cart = self.shopping_cart.to_json()
 
         # use a POST-request to forward the shopping cart
-        response = requests.post(self.confirm_api, json=json_shoppping)
+        response = requests.post(self.confirm_api, json=json_cart)
 
         if response.ok:
-            # TODO
-            # Clear all self.counts ids of items
-            # Clear shopping cart
-            pass
+            # Clear the offline storage of the items per category
+            for cat in self.local_items:
+                self.local_items[cat] = []
+
+            # Clear the shopping cart
+            self.shopping_cart.emtpy_cart()
+
+            # Close the dialgo
+            self.direct_confirm.dismiss()
+
+            # Return to the default screen for a new user to log in
+            self.manager.transition = SlideTransition(direction='right')
+            self.manager.current = "DefaultScreen"
 
         else:
-            print("Payment could not be made: error: " + response.text)
+            print("Payment could not be made: error: " + response.content)
             exit(7)
