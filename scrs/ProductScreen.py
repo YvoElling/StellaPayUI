@@ -12,6 +12,8 @@ from scrs.TabDisplay import TabDisplay
 from ux.ItemListUX import ItemListUX
 import requests
 
+from ux.ShoppingCartItem import ShoppingCartItem
+
 
 class ProductScreen(Screen):
     # Store user_name
@@ -37,6 +39,8 @@ class ProductScreen(Screen):
         self.timeout = 120
         self.timeout_event = None
         self.direct_confirm = None
+        # Shopping_cart dialog screen object
+        self.shopping_cart_dialog = None
 
         # Get all categories names
         response = requests.get(url=self.get_all_cat_api)
@@ -53,7 +57,6 @@ class ProductScreen(Screen):
             # Error
             print("Categories could not be retrieved: " + response)
             exit(6)
-
 
     #
     # upon entering the screen, set the timeout
@@ -149,11 +152,20 @@ class ProductScreen(Screen):
             )
         self.direct_confirm.open()
 
+    #
+    # opens shoppingcart display
+    #
     def show_shoppingcart(self):
-        if not self.shoppingcart:
-            self.shoppingcart = MDDialog(
+        if not self.shopping_cart_dialog:
+            shopping_cart_items = []
+            for purchase in self.shopping_cart.get_shopping_cart():
+                item = ShoppingCartItem(purchase=purchase, secondary_text=purchase.product_name)
+                shopping_cart_items.append(item)
+
+            self.shopping_cart_dialog = MDDialog(
                 title="Winkelmandje",
                 type="confirmation",
+                items=shopping_cart_items,
                 buttons=[
                     MDFlatButton(
                         text="CANCEL",
@@ -165,13 +177,13 @@ class ProductScreen(Screen):
                     ),
                 ],
             )
-        self.shoppingcart.open()
+        self.shopping_cart_dialog.open()
 
     #
     # Close dialog when TERUG is pressed
     #
     def on_return_shoppingcart(self, dt):
-        self.shoppingcart.dismiss()
+        self.shopping_cart_dialog.dismiss()
 
     #
     # Close dialog when TERUG is pressed
