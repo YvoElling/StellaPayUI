@@ -3,9 +3,20 @@ class Product:
     #
     # Creates a product object
     #
-    def __init__(self, name, price):
+    def __init__(self, name, price, shown):
         self.__product_name = name
         self.__price = price
+        self.__shown = shown
+
+    #
+    # create Product object directly from json file
+    #
+    def create_from_json(self, json):
+        self.__product_name = json['name']
+        self.__price = json['price']
+        self.__shown = json['shown']
+        return self
+
 
     #
     # Empty constructor for when the objects
@@ -26,10 +37,3 @@ class Product:
     #
     def get_price(self):
         return self.__price
-
-    #
-    # create Product object directly from json file
-    #
-    def create_from_json(self, json):
-        self.__product_name = json['name']
-        self.__price = json['price']

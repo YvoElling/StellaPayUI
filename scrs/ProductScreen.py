@@ -1,30 +1,62 @@
+import json
+from time import sleep
+
 from kivy.uix.screenmanager import Screen, SlideTransition, NoTransition
 from kivy.clock import Clock
 from kivy.lang import Builder
 from kivymd.uix.button import MDFlatButton, MDRaisedButton
 from kivymd.uix.dialog import MDDialog
-
+from ds.Product import Product
+from ds.ShoppingCart import ShoppingCart
 from scrs.TabDisplay import TabDisplay
+from ux.ItemListUX import ItemListUX
+import requests
+
+from ux.ShoppingCartItem import ShoppingCartItem
 
 
 class ProductScreen(Screen):
+    # Store user_name
     user_name = None
+
+    # Store items per category
+    local_items = {}
+
+    # api link
+    get_cat_api_url = "http://staartvin.com:8181/products/"
+    get_all_cat_api = "http://staartvin.com:8181/categories"
+    confirm_api = "http://staartvin.com:8181/transactions/create"
+
+    # shopping cart
+    shopping_cart = ShoppingCart()
 
     def __init__(self, **kwargs):
         # Load screen
         Builder.load_file('kvs/ProductScreen.kv')
         super(ProductScreen, self).__init__(**kwargs)
 
-        # Schedule on_cancel() event in @timeout seconds
-        self.timeout = 45
+        # Class level variables
+        self.timeout = 120
         self.timeout_event = None
         self.direct_confirm = None
-        self.shoppingcart = None
+        # Shopping_cart dialog screen object
+        self.shopping_cart_dialog = None
 
-        # Add tabs to the tab bar
-        self.ids.android_tabs.add_widget(TabDisplay(text=f"Eten"))
-        self.ids.android_tabs.add_widget(TabDisplay(text=f"Drinken"))
-        self.ids.android_tabs.add_widget(TabDisplay(text=f"Alcohol"))
+        # Get all categories names
+        response = requests.get(url=self.get_all_cat_api)
+
+        # Check status response
+        if response.ok:
+            categories = response.json()
+
+            # add all tabs to the tabbar
+            for cat in categories:
+                self.ids.android_tabs.add_widget(TabDisplay(text=cat['name']))
+                self.local_items[cat['name']] = []
+        else:
+            # Error
+            print("Categories could not be retrieved: " + response)
+            exit(6)
 
     #
     # upon entering the screen, set the timeout
@@ -59,15 +91,6 @@ class ProductScreen(Screen):
         self.timeout_event = Clock.schedule_once(self.on_timeout, self.timeout)
 
     #
-    # when a category is selected, retrieve the items in that category
-    #
-    def on_cat_selected(self, cat):
-        Clock.unschedule(self.timeout_event)
-        self.manager.transition = NoTransition()
-        self.manager.get_screen('ItemScreen').ids.title.text = cat
-        self.manager.current = 'ItemScreen'
-
-    #
     # move to profile screen
     #
     def on_profile_screen(self):
@@ -77,8 +100,35 @@ class ProductScreen(Screen):
     #
     # callback function for when tab is switched
     #
-    def on_tab_switch(self, *args):
-        pass
+    def on_tab_switch(self, instance_tabs, instance_tab, instance_tab_label, tab_text):
+        # consult local_items first, if empty, request items from server
+        if not self.local_items[tab_text]:
+            # Request products from category tab_text
+            request = self.get_cat_api_url + tab_text
+            response = requests.get(request)
+
+            # Evaluate server response
+            if response.ok:
+                # convert response to json
+                products_json = response.json()
+
+                # Create a product object for all
+                for product in products_json:
+                    # Only add the product to the list if the product must be shown
+                    if product['shown']:
+                        p = Product().create_from_json(product)
+                        self.local_items[tab_text].append(p)
+
+            # For all items in the local_items list, add them to the container and display them
+            for product in self.local_items[tab_text]:
+                instance_tab.ids.container.add_widget(ItemListUX(text=product.get_name(),
+                                                                 user_mail=self.manager.get_screen("DefaultScreen")
+                                                                 .user_mail,
+                                                                 price="€" + product.get_price(),
+                                                                 shoppingcart=self.shopping_cart,
+                                                                 secondary_text="Fun fact about " + product.get_name(),
+                                                                 secondary_theme_text_color="Custom",
+                                                                 secondary_text_color=[0.509, 0.509, 0.509, 1]))
 
     #
     # open confirmation dialog
@@ -95,21 +145,27 @@ class ProductScreen(Screen):
                     ),
                     MDRaisedButton(
                         text="BEVESTIG",
+                        on_release=self.on_confirm,
                         md_bg_color=[0.933, 0.203, 0.125, 1]
                     ),
                 ],
             )
         self.direct_confirm.open()
 
+    #
+    # opens shoppingcart display
+    #
     def show_shoppingcart(self):
-        if not self.shoppingcart:
-            self.shoppingcart = MDDialog(
+        if not self.shopping_cart_dialog:
+            shopping_cart_items = []
+            for purchase in self.shopping_cart.get_shopping_cart():
+                item = ShoppingCartItem(purchase=purchase, secondary_text=purchase.product_name)
+                shopping_cart_items.append(item)
+
+            self.shopping_cart_dialog = MDDialog(
                 title="Winkelmandje",
                 type="confirmation",
-                # items=[
-                #     Item(text="Callisto"),
-                #
-                # ],
+                items=shopping_cart_items,
                 buttons=[
                     MDFlatButton(
                         text="CANCEL",
@@ -121,13 +177,13 @@ class ProductScreen(Screen):
                     ),
                 ],
             )
-        self.shoppingcart.open()
+        self.shopping_cart_dialog.open()
 
     #
     # Close dialog when TERUG is pressed
     #
     def on_return_shoppingcart(self, dt):
-        self.shoppingcart.dismiss()
+        self.shopping_cart_dialog.dismiss()
 
     #
     # Close dialog when TERUG is pressed
@@ -136,8 +192,30 @@ class ProductScreen(Screen):
         self.direct_confirm.dismiss()
 
     #
-    # Confirm addition
+    # Confirms a payment
     #
     def on_confirm(self, dt):
-        # Perform API purchase confirmation here
-        pass
+        # Serialize the shopping cart
+        json_cart = self.shopping_cart.to_json()
+
+        # use a POST-request to forward the shopping cart
+        response = requests.post(self.confirm_api, json=json_cart)
+
+        if response.ok:
+            # Clear the offline storage of the items per category
+            for cat in self.local_items:
+                self.local_items[cat] = []
+
+            # Clear the shopping cart
+            self.shopping_cart.emtpy_cart()
+
+            # Close the dialgo
+            self.direct_confirm.dismiss()
+
+            # Return to the default screen for a new user to log in
+            self.manager.transition = SlideTransition(direction='right')
+            self.manager.current = "DefaultScreen"
+
+        else:
+            print("Payment could not be made: error: " + response.content)
+            exit(7)
