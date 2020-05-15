@@ -165,20 +165,19 @@ class ProductScreen(Screen):
 
         # Retrieve all items from shopping cart and store in local shopping cart list
         for purchase in self.shopping_cart.get_shopping_cart():
-            item = ShoppingCartItem(purchase=purchase, secondary_text=purchase.product_name)
+            item = ShoppingCartItem(purchase=purchase,
+                                    text=purchase.product_name,
+                                    tertiary_text="Fun fact about " + purchase.product_name,
+                                    tertiary_theme_text_color="Custom",
+                                    tertiary_text_color=[0.509, 0.509, 0.509, 1])
             shopping_cart_items.append(item)
 
         # If there are items in the shopping cart, display them
         if shopping_cart_items:
             self.shopping_cart_dialog = MDDialog(
-                text="Winkelmandje",
                 type="confirmation",
                 items=shopping_cart_items,
                 buttons=[
-                    MDFlatButton(
-                        text="CANCEL",
-                        on_release=self.on_return_shoppingcart
-                    ),
                     MDFlatButton(
                         text="OK",
                         on_release=self.on_return_shoppingcart
