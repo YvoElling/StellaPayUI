@@ -1,7 +1,4 @@
-import json
-from time import sleep
-
-from kivy.uix.screenmanager import Screen, SlideTransition, NoTransition
+from kivy.uix.screenmanager import Screen, SlideTransition
 from kivy.clock import Clock
 from kivy.lang import Builder
 from kivymd.uix.button import MDFlatButton, MDRaisedButton
@@ -16,13 +13,12 @@ from ux.ShoppingCartItem import ShoppingCartItem
 
 
 class ProductScreen(Screen):
-    # Store user_name
-    user_name = None
-
-    # Store items per category
+    # Store items per category, these are stored locally to reduce the amount of queries required
     local_items = {}
+    # Store tab objects, these are later used to add the products
+    tabs = []
 
-    # api link
+    # API Links
     get_cat_api_url = "http://staartvin.com:8181/products/"
     get_all_cat_api = "http://staartvin.com:8181/categories"
     confirm_api = "http://staartvin.com:8181/transactions/create"
@@ -51,8 +47,32 @@ class ProductScreen(Screen):
 
             # add all tabs to the tabbar
             for cat in categories:
-                self.ids.android_tabs.add_widget(TabDisplay(text=cat['name']))
+                # Create tab display
+                tab = TabDisplay(text=cat['name'])
+                self.tabs.append(tab)
+                self.ids.android_tabs.add_widget(tab)
                 self.local_items[cat['name']] = []
+
+                # Request products from category tab_text
+                request = self.get_cat_api_url + cat['name']
+                response = requests.get(request)
+
+                # Evaluate server response
+                if response.ok:
+                    # convert response to json
+                    products_json = response.json()
+
+                    # Create a product object for all
+                    for product in products_json:
+                        # Only add the product to the list if the product must be shown
+                        if product['shown']:
+                            p = Product().create_from_json(product)
+                            self.local_items[cat['name']].append(p)
+                else:
+                    # Error in retrieving products from server
+                    print("Products could not be retried: " + response)
+                    exit(7)
+
         else:
             # Error
             print("Categories could not be retrieved: " + response)
@@ -64,6 +84,17 @@ class ProductScreen(Screen):
     #
     def on_enter(self, *args):
         self.timeout_event = Clock.schedule_once(self.on_timeout, self.timeout)
+
+        # For all items in the local_items list, add them to the container and display them
+        for tab in self.tabs:
+            for product in self.local_items[tab.text]:
+                tab.ids.container.add_widget(ItemListUX(text=product.get_name(),
+                                                        user_mail=self.manager.get_screen("DefaultScreen").user_mail,
+                                                        price="€" + product.get_price(),
+                                                        shoppingcart=self.shopping_cart,
+                                                        secondary_text="Fun fact about " + product.get_name(),
+                                                        secondary_theme_text_color="Custom",
+                                                        secondary_text_color=[0.509, 0.509, 0.509, 1]))
 
     #
     # upon leaving the screen, cancel the timeout event
@@ -102,34 +133,7 @@ class ProductScreen(Screen):
     # callback function for when tab is switched
     #
     def on_tab_switch(self, instance_tabs, instance_tab, instance_tab_label, tab_text):
-        # consult local_items first, if empty, request items from server
-        if not self.local_items[tab_text]:
-            # Request products from category tab_text
-            request = self.get_cat_api_url + tab_text
-            response = requests.get(request)
-
-            # Evaluate server response
-            if response.ok:
-                # convert response to json
-                products_json = response.json()
-
-                # Create a product object for all
-                for product in products_json:
-                    # Only add the product to the list if the product must be shown
-                    if product['shown']:
-                        p = Product().create_from_json(product)
-                        self.local_items[tab_text].append(p)
-
-            # For all items in the local_items list, add them to the container and display them
-            for product in self.local_items[tab_text]:
-                instance_tab.ids.container.add_widget(ItemListUX(text=product.get_name(),
-                                                                 user_mail=self.manager.get_screen("DefaultScreen")
-                                                                 .user_mail,
-                                                                 price="€" + product.get_price(),
-                                                                 shoppingcart=self.shopping_cart,
-                                                                 secondary_text="Fun fact about " + product.get_name(),
-                                                                 secondary_theme_text_color="Custom",
-                                                                 secondary_text_color=[0.509, 0.509, 0.509, 1]))
+        pass
 
     #
     # open confirmation dialog
@@ -157,28 +161,32 @@ class ProductScreen(Screen):
     # opens shoppingcart display
     #
     def show_shoppingcart(self):
-        if not self.shopping_cart_dialog:
-            shopping_cart_items = []
-            for purchase in self.shopping_cart.get_shopping_cart():
-                item = ShoppingCartItem(purchase=purchase, secondary_text=purchase.product_name)
-                shopping_cart_items.append(item)
+        # Create an empty list that will contain all purchases
+        shopping_cart_items = []
 
+        # Retrieve all items from shopping cart and store in local shopping cart list
+        for purchase in self.shopping_cart.get_shopping_cart():
+            item = ShoppingCartItem(purchase=purchase,
+                                    text=purchase.product_name,
+                                    tertiary_text="Fun fact about " + purchase.product_name,
+                                    tertiary_theme_text_color="Custom",
+                                    tertiary_text_color=[0.509, 0.509, 0.509, 1])
+            shopping_cart_items.append(item)
+
+        # If there are items in the shopping cart, display them
+        if shopping_cart_items:
             self.shopping_cart_dialog = MDDialog(
-                title="Winkelmandje",
                 type="confirmation",
                 items=shopping_cart_items,
                 buttons=[
                     MDFlatButton(
-                        text="CANCEL",
-                        on_release=self.on_return_shoppingcart
-                    ),
-                    MDFlatButton(
                         text="OK",
-                        on_release=self.on_return_direct_confirm
+                        on_release=self.on_return_shoppingcart
                     ),
                 ],
             )
-        self.shopping_cart_dialog.open()
+            # Open the dialog to display the shopping cart
+            self.shopping_cart_dialog.open()
 
     #
     # Close dialog when TERUG is pressed
@@ -190,6 +198,7 @@ class ProductScreen(Screen):
     # Close dialog when TERUG is pressed
     #
     def on_return_direct_confirm(self, dt):
+        self.shopping_cart_items.clear()
         self.direct_confirm.dismiss()
 
     #
