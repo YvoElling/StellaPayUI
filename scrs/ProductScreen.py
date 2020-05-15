@@ -13,14 +13,12 @@ from ux.ShoppingCartItem import ShoppingCartItem
 
 
 class ProductScreen(Screen):
-    # Store user_name
-    user_name = None
-
-    # Store items per category
+    # Store items per category, these are stored locally to reduce the amount of queries required
     local_items = {}
+    # Store tab objects, these are later used to add the products
     tabs = []
 
-    # api link
+    # API Links
     get_cat_api_url = "http://staartvin.com:8181/products/"
     get_all_cat_api = "http://staartvin.com:8181/categories"
     confirm_api = "http://staartvin.com:8181/transactions/create"
@@ -134,10 +132,7 @@ class ProductScreen(Screen):
     # callback function for when tab is switched
     #
     def on_tab_switch(self, instance_tabs, instance_tab, instance_tab_label, tab_text):
-        # consult local_items first, if empty, request items from server
-        if not self.local_items[tab_text]:
-            pass
-
+        pass
 
     #
     # open confirmation dialog
@@ -165,16 +160,18 @@ class ProductScreen(Screen):
     # opens shoppingcart display
     #
     def show_shoppingcart(self):
+        # Create an empty list that will contain all purchases
+        shopping_cart_items = []
 
-        if not self.shopping_cart_dialog:
+        # Retrieve all items from shopping cart and store in local shopping cart list
+        for purchase in self.shopping_cart.get_shopping_cart():
+            item = ShoppingCartItem(purchase=purchase, secondary_text=purchase.product_name)
+            shopping_cart_items.append(item)
 
-            shopping_cart_items = []
-            for purchase in self.shopping_cart.get_shopping_cart():
-                item = ShoppingCartItem(purchase=purchase, secondary_text=purchase.product_name)
-                shopping_cart_items.append(item)
-
+        # If there are items in the shopping cart, display them
+        if shopping_cart_items:
             self.shopping_cart_dialog = MDDialog(
-                title="Winkelmandje",
+                text="Winkelmandje",
                 type="confirmation",
                 items=shopping_cart_items,
                 buttons=[
@@ -188,13 +185,13 @@ class ProductScreen(Screen):
                     ),
                 ],
             )
-        self.shopping_cart_dialog.open()
+            # Open the dialog to display the shopping cart
+            self.shopping_cart_dialog.open()
 
     #
     # Close dialog when TERUG is pressed
     #
     def on_return_shoppingcart(self, dt):
-        self.shopping_cart_items.clear()
         self.shopping_cart_dialog.dismiss()
 
     #
