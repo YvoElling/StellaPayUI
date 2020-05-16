@@ -75,6 +75,7 @@ class ProductScreen(Screen):
             # Error
             print("Categories could not be retrieved: " + response)
             exit(6)
+        
 
     #
     # upon entering the screen, set the timeout
