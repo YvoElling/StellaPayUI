@@ -12,7 +12,7 @@ class WelcomeScreen(Screen):
 
         # Schedule a timeout in @timeout seconds upon start
         self.timeout = 25
-        self.timeout_event = Clock.schedule_once(self.on_timeout, self.timeout)
+        self.timeout_event = None
 
         # connect taptargetview
         self.tap_target_view = MDTapTargetView(
@@ -22,15 +22,22 @@ class WelcomeScreen(Screen):
             widget_position="right_bottom"
         )
 
+    def on_enter(self, *args):
+        Clock.schedule_once(self.on_timeout, self.timeout)
+
     #
-    # Called when the 'stop' button is pressed or timeout is induced
+    # Called when the timeout is induced
     #
     def on_timeout(self, dt):
         Clock.unschedule(self.timeout_event)
         self.manager.transition = SlideTransition(direction='right')
         self.manager.current = 'DefaultScreen'
 
+    #
+    # Called when the stop button is pressed
+    #
     def on_cancel(self):
+        Clock.unschedule(self.timeout_event)
         self.manager.transition = SlideTransition(direction='right')
         self.manager.current = 'DefaultScreen'
 
@@ -55,6 +62,7 @@ class WelcomeScreen(Screen):
     #
     #
     def tap_target_start(self):
+        Clock.unschedule(self.timeout_event)
         if self.tap_target_view.state == "close":
             self.tap_target_view.start()
         else:

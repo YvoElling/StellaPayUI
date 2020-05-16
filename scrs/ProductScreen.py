@@ -32,7 +32,7 @@ class ProductScreen(Screen):
         super(ProductScreen, self).__init__(**kwargs)
 
         # Class level variables
-        self.timeout = 120
+        self.timeout = 180
         self.timeout_event = None
         self.direct_confirm = None
         # Shopping_cart dialog screen object
@@ -101,17 +101,27 @@ class ProductScreen(Screen):
     #
     def on_leave(self, *args):
         Clock.unschedule(self.timeout_event)
+        for tab in self.tabs:
+            tab.ids.container.clear_widgets()
+
+    # Timeout behaviour
+    def __on_handle_touch(self):
+        Clock.unschedule(self.timeout_event)
+        self.timeout_event = Clock.schedule_once(self.on_timeout, self.timeout)
 
     #
     # Called when the 'stop' button is pressed
     #
     def on_timeout(self, dt):
+        self.__end_process()
         if self.direct_confirm:
             self.direct_confirm.dismiss()
         self.manager.transition = SlideTransition(direction='right')
         self.manager.current = 'DefaultScreen'
 
     def on_cancel(self):
+        Clock.unschedule(self.timeout_event)
+        self.__end_process()
         self.manager.transition = SlideTransition(direction='right')
         self.manager.current = 'DefaultScreen'
 
@@ -119,8 +129,7 @@ class ProductScreen(Screen):
     # reset timeout timer on screen pressed
     #
     def on_touch_up(self, touch):
-        Clock.unschedule(self.timeout_event)
-        self.timeout_event = Clock.schedule_once(self.on_timeout, self.timeout)
+        self.__on_handle_touch()
 
     #
     # move to profile screen
@@ -133,12 +142,13 @@ class ProductScreen(Screen):
     # callback function for when tab is switched
     #
     def on_tab_switch(self, instance_tabs, instance_tab, instance_tab_label, tab_text):
-        pass
+        self.__on_handle_touch()
 
     #
     # open confirmation dialog
     #
     def open_confirmation(self):
+        self.__on_handle_touch()
         if not self.direct_confirm:
             self.direct_confirm = MDDialog(
                 text="Voeg deze aankopen aan mijn account toe",
@@ -161,6 +171,7 @@ class ProductScreen(Screen):
     # opens shoppingcart display
     #
     def show_shoppingcart(self):
+        self.__on_handle_touch()
         # Create an empty list that will contain all purchases
         shopping_cart_items = []
 
@@ -192,12 +203,14 @@ class ProductScreen(Screen):
     # Close dialog when TERUG is pressed
     #
     def on_return_shoppingcart(self, dt):
+        self.__on_handle_touch()
         self.shopping_cart_dialog.dismiss()
 
     #
     # Close dialog when TERUG is pressed
     #
     def on_return_direct_confirm(self, dt):
+        self.__on_handle_touch()
         self.shopping_cart_items.clear()
         self.direct_confirm.dismiss()
 
@@ -212,12 +225,8 @@ class ProductScreen(Screen):
         response = requests.post(self.confirm_api, json=json_cart)
 
         if response.ok:
-            # Clear the offline storage of the items per category
-            for cat in self.local_items:
-                self.local_items[cat] = []
-
-            # Clear the shopping cart
-            self.shopping_cart.emtpy_cart()
+            # Reset instance variables
+            self.__end_process()
 
             # Close the dialgo
             self.direct_confirm.dismiss()
@@ -229,3 +238,7 @@ class ProductScreen(Screen):
         else:
             print("Payment could not be made: error: " + response.content)
             exit(7)
+
+    def __end_process(self):
+        self.shopping_cart.emtpy_cart()
+
