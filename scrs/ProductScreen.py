@@ -100,17 +100,21 @@ class ProductScreen(Screen):
     #
     def on_leave(self, *args):
         Clock.unschedule(self.timeout_event)
+        for tab in self.tabs:
+            tab.ids.container.clear_widgets()
 
     #
     # Called when the 'stop' button is pressed
     #
     def on_timeout(self, dt):
+        self.__end_process()
         if self.direct_confirm:
             self.direct_confirm.dismiss()
         self.manager.transition = SlideTransition(direction='right')
         self.manager.current = 'DefaultScreen'
 
     def on_cancel(self):
+        self.__end_process()
         self.manager.transition = SlideTransition(direction='right')
         self.manager.current = 'DefaultScreen'
 
@@ -211,12 +215,8 @@ class ProductScreen(Screen):
         response = requests.post(self.confirm_api, json=json_cart)
 
         if response.ok:
-            # Clear the offline storage of the items per category
-            for cat in self.local_items:
-                self.local_items[cat] = []
-
-            # Clear the shopping cart
-            self.shopping_cart.emtpy_cart()
+            # Reset instance variables
+            self.__end_process()
 
             # Close the dialgo
             self.direct_confirm.dismiss()
@@ -228,3 +228,10 @@ class ProductScreen(Screen):
         else:
             print("Payment could not be made: error: " + response.content)
             exit(7)
+
+    def __end_process(self):
+        # for cat in self.local_items:
+        #     self.local_items[cat] = []
+
+        self.shopping_cart.emtpy_cart()
+
