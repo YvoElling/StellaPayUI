@@ -22,7 +22,7 @@ class RegisterUIDScreen(Screen):
 
         # Initialize timeout call
         self.timeout = 60
-        self.timeout_event = Clock.schedule_once(self.on_timeout, self.timeout)
+        self.timeout_event = None
         self.mail_list = []
 
         # Get all users from the database
@@ -42,8 +42,13 @@ class RegisterUIDScreen(Screen):
 
         self.mail_list.sort()
 
+    # on_enter
+    def on_enter(self, *args):
+        Clock.schedule_once(self.on_timeout, self.timeout)
+
     # Return to default screen when cancelled
     def on_cancel(self):
+        Clock.unschedule(self.timeout_event)
         self.manager.transition = SlideTransition(direction='right')
         self.manager.current = 'DefaultScreen'
 
@@ -51,16 +56,19 @@ class RegisterUIDScreen(Screen):
     def on_timeout(self, dt):
         Clock.unschedule(self.timeout_event)
         self.manager.transition = SlideTransition(direction='right')
-        self.manager.current = 'DefaultScreen'
-        self.ids.user_spinner.is_open = False
 
     # Reset timeout timer when the screen is touched
     def on_touch_up(self, touch):
+        self.__handle_touch_event()
+
+    def __handle_touch_event(self):
         Clock.unschedule(self.timeout_event)
         self.timeout_event = Clock.schedule_once(self.on_timeout, self.timeout)
 
     # Saves user-card-mapping to the database
     def on_save_user(self):
+        self.__handle_touch_event()
+
         # Validate that a user is indeed selected
         if self.ids.selected_on_mail.text == "" or self.ids.selected_on_mail.text == "Selecteer een account":
             self.ids.selected_on_mail.text = "Selecteer een account"
@@ -78,6 +86,7 @@ class RegisterUIDScreen(Screen):
             self.manager.transition = SlideTransition(direction='left')
 
             # Set the name as the name of the user on the next page
+            Clock.unschedule(self.timeout_event)
             self.manager.get_screen('WelcomeScreen').label.text = self.request_name()
             self.manager.current = 'WelcomeScreen'
 
@@ -108,6 +117,7 @@ class RegisterUIDScreen(Screen):
     # Select email adress from server query
     #
     def on_select_mail(self):
+        self.__handle_touch_event()
         bottom_sheet_menu = MDListBottomSheet(height="200dp")
         for user in self.mail_list:
             # store all emails adressed in the sheet_menu
