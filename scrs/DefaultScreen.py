@@ -47,6 +47,11 @@ class DefaultScreen(Screen):
         # Wait for the @nfc_thread thread to finish
         nfc_thread.join()
         # get UID for presented NFC card
+
+        # A card could be read incorrectly, if so, restart this screen en listen for the card again
+        if self.nfc_r.get_uid is None:
+            self.__init__()
+
         self.nfc_uid = self.nfc_r.get_uid().replace(" ", "")
 
         # Send UID to Django database to validate person
