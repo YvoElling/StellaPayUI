@@ -11,9 +11,33 @@ class CreditsScreen(Screen):
         # call to user with arguments
         super(CreditsScreen, self).__init__(**kwargs)
 
+        # timeout variables
+        self.timeout_event = None
+        self.timeout_time = 45
+
     #
     # used to return to the welcome pages. Callback function from stop button
     #
     def on_stop(self):
+        self.timeout_event.cancel()
         self.manager.transition = CardTransition(direction="up", mode="push")
         self.manager.current = 'DefaultScreen'
+
+    #
+    # calls upon entry of this screen
+    #
+    def on_enter(self, *args):
+        self.timeout_event = Clock.schedule_once(self.on_timeout, self.timeout_time)
+
+    #
+    # Timeout callback function.
+    #
+    def on_timeout(self, dt):
+        self.on_stop()
+
+    #
+    # when the screen is touched, reset the timer
+    #
+    def on_touch_up(self, touch):
+        self.timeout_event.cancel()
+        self.on_enter()
