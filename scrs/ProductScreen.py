@@ -100,7 +100,6 @@ class ProductScreen(Screen):
             tab.ids.container.clear_widgets()
 
     def on_cancel(self):
-        Clock.unschedule(self.timeout_event)
         self.__end_process()
         self.manager.transition = SlideTransition(direction='right')
         self.manager.current = 'DefaultScreen'
