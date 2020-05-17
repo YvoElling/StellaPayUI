@@ -2,7 +2,7 @@ from kivy.clock import Clock
 from kivy.uix.screenmanager import Screen, SlideTransition
 from kivy.lang import Builder
 import requests
-import re
+import re  # regex
 from kivymd.uix.bottomsheet import MDListBottomSheet
 
 
@@ -20,7 +20,15 @@ class RegisterUIDScreen(Screen):
         # call to user with arguments
         super(RegisterUIDScreen, self).__init__(**kwargs)
 
+        # local list that stores all mailadresses currently retrieved from the database
         self.mail_list = []
+
+        # Timeout variables
+        self.timeout_event = None
+        self.timeout_time = 45
+
+        # Create the bottom menu
+        self.bottom_sheet_menu = None
 
         # Get all users from the database
         user_data = requests.get(self.get_users_api)
@@ -38,6 +46,28 @@ class RegisterUIDScreen(Screen):
             exit(4)
 
         self.mail_list.sort()
+
+    #
+    # Function is called when the product screen is entered
+    #
+    def on_enter(self, *args):
+        self.timeout_event = Clock.schedule_once(self.on_timeout, self.timeout_time)
+
+    #
+    # Timeout callback function
+    #
+    def on_timeout(self, dt):
+        if self.bottom_sheet_menu:
+            self.bottom_sheet_menu.dismiss()
+        self.timeout_event.cancel()
+        self.on_cancel()
+
+    #
+    # reset timing procedure when the screen is pressed
+    #
+    def on_touch_up(self, touch):
+        self.timeout_event.cancel()
+        self.on_enter()
 
     # Return to default screen when cancelled
     def on_cancel(self):
@@ -63,7 +93,7 @@ class RegisterUIDScreen(Screen):
             self.manager.transition = SlideTransition(direction='left')
 
             # Set the name as the name of the user on the next page
-            self.manager.get_screen('WelcomeScreen').label.text = self.request_name()
+            self.manager.get_screen('WelcomeScreen').label.text = self.__request_name()
             self.manager.current = 'WelcomeScreen'
 
         else:
@@ -73,7 +103,7 @@ class RegisterUIDScreen(Screen):
             exit("2")
 
     # Request name to go to WelcomeScreen
-    def request_name(self):
+    def __request_name(self):
         # Prepare API request
         name_request = self.get_name_uid_api + self.nfc_id
         # Make API request
@@ -93,12 +123,17 @@ class RegisterUIDScreen(Screen):
     # Select email adress from server query
     #
     def on_select_mail(self):
-        bottom_sheet_menu = MDListBottomSheet(height="200dp")
+        # Restart timeout procedure
+        self.timeout_event.cancel()
+        self.on_enter()
+
+        # Add items to the bottom list
+        self.bottom_sheet_menu = MDListBottomSheet(height="200dp")
         for user in self.mail_list:
-            # store all emails adressed in the sheet_menu
-            bottom_sheet_menu.add_item(user, self.on_set_mail)
+            # store all emails addresses in the sheet_menu
+            self.bottom_sheet_menu.add_item(user, self.on_set_mail)
         # open the bottom sheet menu
-        bottom_sheet_menu.open()
+        self.bottom_sheet_menu.open()
 
     def on_set_mail(self, item):
         self.ids.selected_on_mail.text = "[b]" + item.text + "[/b]"
