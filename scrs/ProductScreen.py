@@ -8,7 +8,6 @@ from ds.ShoppingCart import ShoppingCart
 from scrs.TabDisplay import TabDisplay
 from ux.ItemListUX import ItemListUX
 import requests
-
 from ux.ShoppingCartItem import ShoppingCartItem
 
 
@@ -35,6 +34,10 @@ class ProductScreen(Screen):
         self.direct_confirm = None
         # Shopping_cart dialog screen object
         self.shopping_cart_dialog = None
+
+        # Timeout variables
+        self.timeout_event = None
+        self.timeout_time = 10
 
         # Get all categories names
         response = requests.get(url=self.get_all_cat_api)
@@ -75,12 +78,25 @@ class ProductScreen(Screen):
             # Error
             print("Categories could not be retrieved: " + response)
             exit(6)
-        
+
+    # Start timeout counter
+    def on_start_timeout(self):
+        self.timeout_event = Clock.schedule_once(self.on_timeout, self.timeout_time)
+
+    #
+    # when the screen is touched, reset the timeout counter
+    #
+    def on_touch_up(self, touch):
+        self.timeout_event.cancel()
+        self.on_start_timeout()
 
     #
     # upon entering the screen, set the timeout
     #
     def on_enter(self, *args):
+        # Initialize timeouts
+        self.on_start_timeout()
+
         # For all items in the local_items list, add them to the container and display them
         for tab in self.tabs:
             for product in self.local_items[tab.text]:
@@ -93,6 +109,14 @@ class ProductScreen(Screen):
                                                         secondary_text_color=[0.509, 0.509, 0.509, 1]))
 
     #
+    # timeout callback function
+    #
+    def on_timeout(self, dt):
+        self.__end_process()
+        self.manager.transition = SlideTransition(direction='right')
+        self.manager.current = 'DefaultScreen'
+
+    #
     # upon leaving the screen, cancel the timeout event
     #
     def on_leave(self, *args):
@@ -100,6 +124,7 @@ class ProductScreen(Screen):
             tab.ids.container.clear_widgets()
 
     def on_cancel(self):
+        self.timeout_event.cancel()
         self.__end_process()
         self.manager.transition = SlideTransition(direction='right')
         self.manager.current = 'DefaultScreen'
@@ -108,19 +133,25 @@ class ProductScreen(Screen):
     # move to profile screen
     #
     def on_profile_screen(self):
-        Clock.unschedule(self.timeout_event)
+        self.timeout_event.cancel()
         self.manager.current = 'ProfileScreen'
 
     #
     # callback function for when tab is switched
     #
     def on_tab_switch(self, instance_tabs, instance_tab, instance_tab_label, tab_text):
-        pass
+        self.timeout_event.cancel()
+        self.on_start_timeout()
 
     #
     # open confirmation dialog
     #
     def open_confirmation(self):
+        # Restart timeout counter
+        self.timeout_event.cancel()
+        self.on_start_timeout()
+
+        # Create direct_confirm dialog
         if not self.direct_confirm:
             self.direct_confirm = MDDialog(
                 text="Voeg deze aankopen aan mijn account toe",
@@ -143,6 +174,10 @@ class ProductScreen(Screen):
     # opens shoppingcart display
     #
     def show_shoppingcart(self):
+        # Reset timeout counter
+        self.timeout_event.cancel()
+        self.on_start_timeout()
+
         # Create an empty list that will contain all purchases
         shopping_cart_items = []
 
@@ -174,13 +209,16 @@ class ProductScreen(Screen):
     # Close dialog when TERUG is pressed
     #
     def on_return_shoppingcart(self, dt):
+        self.timeout_event.cancel()
+        self.on_start_timeout()
         self.shopping_cart_dialog.dismiss()
 
     #
     # Close dialog when TERUG is pressed
     #
     def on_return_direct_confirm(self, dt):
-        self.shopping_cart_items.clear()
+        self.timeout_event.cancel()
+        self.on_start_timeout()
         self.direct_confirm.dismiss()
 
     #
@@ -197,7 +235,10 @@ class ProductScreen(Screen):
             # Reset instance variables
             self.__end_process()
 
-            # Close the dialgo
+            # Stop timer
+            self.timeout_event.cancel()
+
+            # Close the dialog
             self.direct_confirm.dismiss()
 
             # Return to the default screen for a new user to log in

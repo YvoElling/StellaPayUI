@@ -25,7 +25,7 @@ class RegisterUIDScreen(Screen):
 
         # Timeout variables
         self.timeout_event = None
-        self.timeout_time = 10
+        self.timeout_time = 45
 
         # Create the bottom menu
         self.bottom_sheet_menu = None
