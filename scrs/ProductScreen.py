@@ -37,7 +37,7 @@ class ProductScreen(Screen):
 
         # Timeout variables
         self.timeout_event = None
-        self.timeout_time = 10
+        self.timeout_time = 45
 
         # Get all categories names
         response = requests.get(url=self.get_all_cat_api)
