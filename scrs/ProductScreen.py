@@ -1,6 +1,7 @@
 from kivy.uix.screenmanager import Screen, SlideTransition
 from kivy.clock import Clock
 from kivy.lang import Builder
+from kivymd.uix.bottomsheet import MDListBottomSheet
 from kivymd.uix.button import MDFlatButton, MDRaisedButton
 from kivymd.uix.dialog import MDDialog
 from ds.Product import Product
@@ -247,7 +248,7 @@ class ProductScreen(Screen):
 
         else:
             print("Payment could not be made: error: " + response.content)
-            exit(7)
+            exit(8)
 
     def __end_process(self):
         self.shopping_cart.emtpy_cart()
