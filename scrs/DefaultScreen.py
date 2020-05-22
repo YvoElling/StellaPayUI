@@ -143,4 +143,5 @@ class DefaultScreen(Screen):
     def on_set_mail(self, item):
         # Set the name as the name of the user on the next page
         self.manager.get_screen('WelcomeScreen').label.text = self.mail_dict[item.text]
+        self.manager.transition = SlideTransition(direction='right')
         self.manager.current = 'WelcomeScreen'
