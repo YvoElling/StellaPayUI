@@ -1,9 +1,13 @@
 from kivy.lang import Builder
 from kivymd.uix.bottomsheet import MDListBottomSheet
+from kivymd.uix.button import MDFlatButton
+from kivymd.uix.dialog import MDDialog
+from kivymd.uix.expansionpanel import MDExpansionPanel
 from kivymd.uix.list import TwoLineAvatarIconListItem, IRightBodyTouch
 import requests
 
 from ds.Purchase import Purchase
+from ux.PurchaserItem import PurchaserItem
 
 Builder.load_file('kvs/ItemListUX.kv')
 
@@ -59,21 +63,39 @@ class ItemListUX(TwoLineAvatarIconListItem):
                 # append json to list and sort the list
                 for user in user_json:
                     # store all emails adressed in the sheet_menu
-                    self.mail_addresses.append(user["email"])
+                    user_mail = user['email']
+                    if user_mail != self.user_mail:
+                        self.mail_addresses.append(PurchaserItem(text=user_mail,
+                                                                 tertiary_text=" ",
+                                                                 tertiary_theme_text_color="Custom",
+                                                                 tertiary_text_color=[0.509, 0.509, 0.509, 1])
+                                                   )
             else:
                 print("Error: addresses could not be fetched from server")
                 exit(9)
 
-            self.mail_addresses.sort()
+            # self.mail_addresses.sort()
+
+        purchaser_dialog = MDDialog(
+            type="confirmation",
+            items=self.mail_addresses,
+            buttons=[
+                MDFlatButton(
+                    text="OK",
+                ),
+            ],
+        )
+        # Open the dialog to display the shopping cart
+        purchaser_dialog.open()
 
         # Add items to the bottom list
-        bottom_sheet_menu = MDListBottomSheet(height="200dp")
+        # bottom_sheet_menu = MDListBottomSheet(height="200dp")
 
-        for user in self.mail_addresses:
-            # store all emails addresses in the sheet_menu
-            bottom_sheet_menu.add_item(user, self.on_set_mail)
-        # open the bottom sheet menu
-        bottom_sheet_menu.open()
+        # for user in self.mail_addresses:
+        #     # store all emails addresses in the sheet_menu
+        #     bottom_sheet_menu.add_item(user, self.on_set_mail)
+        # # open the bottom sheet menu
+        # bottom_sheet_menu.open()
 
     # Store purchaser
     def on_set_mail(self, item):
