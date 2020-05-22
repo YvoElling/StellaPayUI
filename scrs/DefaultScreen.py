@@ -1,4 +1,6 @@
 from kivy.uix.screenmanager import Screen, SlideTransition, CardTransition
+from kivymd.uix.bottomsheet import MDListBottomSheet
+
 from PythonNFCReader import NFCReader as nfc
 import threading
 import requests
@@ -11,6 +13,7 @@ import requests
 class DefaultScreen(Screen):
     # URL for query
     api_url = "http://staartvin.com:8181/identification/request-user/"
+    get_users_api = "http://staartvin.com:8181/users"
 
     def __init__(self, **kwargs):
         # Call to super (Screen class)
@@ -22,6 +25,8 @@ class DefaultScreen(Screen):
         self.nfc_uid = None
         self.user_mail = None
         self.user_name = None
+        self.bottom_sheet_menu = None
+        self.mail_dict = {}
 
         # Create and start a thread to listen for NFC card presentation
         nfc_thread = threading.Thread(name="NFC_reader",
@@ -97,3 +102,45 @@ class DefaultScreen(Screen):
         self.manager.transition = CardTransition(direction="up", mode="pop")
         self.manager.get_screen('CreditsScreen').nfc_id = self.nfc_uid
         self.manager.current = 'CreditsScreen'
+
+    #
+    # gets called when the 'NFC kaart vergeten button is pressed'
+    # shows a bottom sheet menu with all users. The user can select himself.
+    #
+    def on_no_nfc(self):
+        # reset bottom_sheet_menu
+        self.bottom_sheet_menu = None
+
+        # Query user data
+        user_data = requests.get(self.get_users_api)
+        mail_list = []
+        self.mail_dict = {}
+
+        if user_data.ok:
+            # convert to json
+            user_json = user_data.json()
+
+            # append json to list and sort the list
+            for user in user_json:
+                # store all emails adressed in the sheet_menu
+                self.mail_dict[user["email"]] = user["name"]
+                mail_list.append(user["email"])
+        else:
+            print("Error: addresses could not be fetched from server")
+            exit(4)
+
+        if mail_list:
+            mail_list.sort()
+            # Add items to the bottom list
+            self.bottom_sheet_menu = MDListBottomSheet(height="200dp")
+            for user in mail_list:
+                # store all emails addresses in the sheet_menu
+                self.bottom_sheet_menu.add_item(user, self.on_set_mail)
+            # open the bottom sheet menu
+            self.bottom_sheet_menu.open()
+
+    # set_mail
+    def on_set_mail(self, item):
+        # Set the name as the name of the user on the next page
+        self.manager.get_screen('WelcomeScreen').label.text = self.mail_dict[item.text]
+        self.manager.current = 'WelcomeScreen'
