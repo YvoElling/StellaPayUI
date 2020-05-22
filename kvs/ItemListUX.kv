@@ -15,6 +15,18 @@
         pos_hint: {"center_x": 0.95,"center_y":0.5}
         on_release: root.on_remove_product()
 
+    MDFillRoundFlatIconButton:
+        id: plus
+        text: "[b]kies[/b]"
+        font_size: "20sp"
+        markup: True
+        height: dp(45)
+        md_bg_color: 0.062, 0.898, 0.105, 1
+        user_font_size: "45sp"
+        icon: "plus"
+        pos_hint: {"center_x": 0.77,"center_y":0.5}
+        on_release: root.on_select_purchaser()
+
     MDLabel:
         text: "0"
         id: count
@@ -27,7 +39,7 @@
         id: price
         text: "0.00"
         theme_text_color: "Custom"
-        pos_hint: {"center_x": 1.25,"center_y":0.5}
+        pos_hint: {"center_x": 1.1,"center_y":0.5}
         text_color: 1, 1, 1, 1
         font_size: '25sp'
 

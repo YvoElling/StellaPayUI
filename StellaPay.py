@@ -31,8 +31,8 @@ class StellaPay(MDApp):
         # Disable full screen (classic Python, doesn't do anything)
         Config.set('graphics', 'width', '800')
         Config.set('graphics', 'height', ' 480')
-        Window.show_cursor = False
-        Window.fullscreen = True
+        # Window.show_cursor = False
+        # Window.fullscreen = True
         Config.write()
 
         # Load .kv file

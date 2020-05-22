@@ -151,24 +151,27 @@ class ProductScreen(Screen):
         self.timeout_event.cancel()
         self.on_start_timeout()
 
-        # Create direct_confirm dialog
-        if not self.direct_confirm:
-            self.direct_confirm = MDDialog(
-                text="Voeg deze aankopen aan mijn account toe",
-                buttons=[
-                    MDFlatButton(
-                        text="TERUG",
-                        on_release=self.on_return_direct_confirm
+        shopping_cart_items = self.shopping_cart.get_shopping_cart()
 
-                    ),
-                    MDRaisedButton(
-                        text="BEVESTIG",
-                        on_release=self.on_confirm,
-                        md_bg_color=[0.933, 0.203, 0.125, 1]
-                    ),
-                ],
-            )
-        self.direct_confirm.open()
+        if shopping_cart_items:
+            # Create direct_confirm dialog
+            if not self.direct_confirm:
+                self.direct_confirm = MDDialog(
+                    text="Voeg deze aankopen aan mijn account toe",
+                    buttons=[
+                        MDFlatButton(
+                            text="TERUG",
+                            on_release=self.on_return_direct_confirm
+
+                        ),
+                        MDRaisedButton(
+                            text="BEVESTIG",
+                            on_release=self.on_confirm,
+                            md_bg_color=[0.933, 0.203, 0.125, 1]
+                        ),
+                    ],
+                )
+            self.direct_confirm.open()
 
     #
     # opens shoppingcart display
@@ -247,7 +250,7 @@ class ProductScreen(Screen):
 
         else:
             print("Payment could not be made: error: " + response.content)
-            exit(7)
+            exit(8)
 
     def __end_process(self):
         self.shopping_cart.emtpy_cart()
