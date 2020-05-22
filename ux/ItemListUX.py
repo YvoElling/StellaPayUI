@@ -1,9 +1,7 @@
 from kivy.lang import Builder
-from kivymd.uix.bottomsheet import MDListBottomSheet
 from kivymd.uix.button import MDFlatButton
 from kivymd.uix.dialog import MDDialog
-from kivymd.uix.expansionpanel import MDExpansionPanel
-from kivymd.uix.list import TwoLineAvatarIconListItem, IRightBodyTouch
+from kivymd.uix.list import TwoLineAvatarIconListItem
 import requests
 
 from ds.Purchase import Purchase
@@ -21,6 +19,9 @@ class ItemListUX(TwoLineAvatarIconListItem):
 
         # Mail addresses
         self.mail_addresses = []
+
+        # Purchaser list dialog
+        self.purchaser_list_dialog = None
 
     def on_add_product(self):
         # Update the count on the UI
@@ -66,6 +67,9 @@ class ItemListUX(TwoLineAvatarIconListItem):
                     user_mail = user['email']
                     if user_mail != self.user_mail:
                         self.mail_addresses.append(PurchaserItem(text=user_mail,
+                                                                 product_name=self.text,
+                                                                 user_mail=user_mail,
+                                                                 shoppingcart=self.shopping_cart,
                                                                  tertiary_text=" ",
                                                                  tertiary_theme_text_color="Custom",
                                                                  tertiary_text_color=[0.509, 0.509, 0.509, 1])
@@ -73,36 +77,23 @@ class ItemListUX(TwoLineAvatarIconListItem):
             else:
                 print("Error: addresses could not be fetched from server")
                 exit(9)
-
-            # self.mail_addresses.sort()
-
-        purchaser_dialog = MDDialog(
-            type="confirmation",
-            items=self.mail_addresses,
-            buttons=[
-                MDFlatButton(
-                    text="OK",
-                ),
-            ],
-        )
+        if not self.purchaser_list_dialog:
+            self.purchaser_list_dialog = MDDialog(
+                type="confirmation",
+                items=self.mail_addresses,
+                buttons=[
+                    MDFlatButton(
+                        text="OK",
+                    ),
+                ],
+            )
         # Open the dialog to display the shopping cart
-        purchaser_dialog.open()
-
-        # Add items to the bottom list
-        # bottom_sheet_menu = MDListBottomSheet(height="200dp")
-
-        # for user in self.mail_addresses:
-        #     # store all emails addresses in the sheet_menu
-        #     bottom_sheet_menu.add_item(user, self.on_set_mail)
-        # # open the bottom sheet menu
-        # bottom_sheet_menu.open()
+        self.purchaser_list_dialog.open()
 
     # Store purchaser
     def on_set_mail(self, item):
-        mail = item.text
-        product_name = self.text
-        count = 1
-        purchase = Purchase(mail, product_name, count)
+        # Create purchase object
+        purchase = Purchase(item.text, self.text, 1)
 
         # Add purchase to shopping cart
         self.shopping_cart.add_to_cart(purchase)
