@@ -13,12 +13,16 @@ class RegisterUIDScreen(Screen):
     get_name_uid_api = "http://staartvin.com:8181/identification/request-user/"
     nfc_id = None
 
-    def __init__(self, **kwargs):
+    def __init__(self, cookies, **kwargs):
         # Load KV file for this screen
         Builder.load_file('kvs/RegisterUIDScreen.kv')
 
         # call to user with arguments
         super(RegisterUIDScreen, self).__init__(**kwargs)
+
+        # Retrieve cookies session so no new authentication is required
+        self.requests_cookies = cookies
+        self.user_json = None
 
         # local list that stores all mailadresses currently retrieved from the database
         self.mail_list = []
@@ -31,7 +35,7 @@ class RegisterUIDScreen(Screen):
         self.bottom_sheet_menu = None
 
         # Get all users from the database
-        user_data = requests.get(self.get_users_api)
+        user_data = self.requests_cookies.get(self.get_users_api)
 
         if user_data.ok:
             # convert to json
@@ -85,7 +89,7 @@ class RegisterUIDScreen(Screen):
         # uid = self.manager.get_screen('DefaultScreen').nfc_uid
         pattern = '(\[b\])([a-zA-Z\.@]+)'
         filtered_mail = re.search(pattern, str(self.ids.selected_on_mail.text))
-        request = requests.post(self.add_user_api, json={'card_id': str(self.nfc_id),
+        request = self.requests_cookies.post(self.add_user_api, json={'card_id': str(self.nfc_id),
                                                          'email': str(filtered_mail.group(2))})
 
         # If the users was added successfully ( status_code : 200), proceed to WelcomeScreen
@@ -107,7 +111,7 @@ class RegisterUIDScreen(Screen):
         # Prepare API request
         name_request = self.get_name_uid_api + self.nfc_id
         # Make API request
-        response = requests.get(url=name_request)
+        response = self.requests_cookies.get(url=name_request)
 
         if response.ok:
             query_json = response.json()

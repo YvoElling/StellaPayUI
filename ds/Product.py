@@ -17,7 +17,6 @@ class Product:
         self.__shown = json['shown']
         return self
 
-
     #
     # Empty constructor for when the objects
     # member variables are filled directly from

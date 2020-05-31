@@ -7,7 +7,6 @@ from ds.Product import Product
 from ds.ShoppingCart import ShoppingCart
 from scrs.TabDisplay import TabDisplay
 from ux.ItemListUX import ItemListUX
-import requests
 from ux.ShoppingCartItem import ShoppingCartItem
 
 
@@ -25,7 +24,7 @@ class ProductScreen(Screen):
     # shopping cart
     shopping_cart = ShoppingCart()
 
-    def __init__(self, **kwargs):
+    def __init__(self, cookies, **kwargs):
         # Load screen
         Builder.load_file('kvs/ProductScreen.kv')
         super(ProductScreen, self).__init__(**kwargs)
@@ -34,13 +33,14 @@ class ProductScreen(Screen):
         self.direct_confirm = None
         # Shopping_cart dialog screen object
         self.shopping_cart_dialog = None
+        self.requests_cookies = cookies
 
         # Timeout variables
         self.timeout_event = None
         self.timeout_time = 45
 
         # Get all categories names
-        response = requests.get(url=self.get_all_cat_api)
+        response = self.requests_cookies.get(url=self.get_all_cat_api)
 
         # Check status response
         if response.ok:
@@ -56,7 +56,7 @@ class ProductScreen(Screen):
 
                 # Request products from category tab_text
                 request = self.get_cat_api_url + cat['name']
-                response = requests.get(request)
+                response = self.requests_cookies.get(request)
 
                 # Evaluate server response
                 if response.ok:
@@ -104,6 +104,7 @@ class ProductScreen(Screen):
                                                         user_mail=self.manager.get_screen("DefaultScreen").user_mail,
                                                         price="€" + product.get_price(),
                                                         shoppingcart=self.shopping_cart,
+                                                        cookies=self.requests_cookies,
                                                         secondary_text="Fun fact about " + product.get_name(),
                                                         secondary_theme_text_color="Custom",
                                                         secondary_text_color=[0.509, 0.509, 0.509, 1]))
@@ -151,24 +152,27 @@ class ProductScreen(Screen):
         self.timeout_event.cancel()
         self.on_start_timeout()
 
-        # Create direct_confirm dialog
-        if not self.direct_confirm:
-            self.direct_confirm = MDDialog(
-                text="Voeg deze aankopen aan mijn account toe",
-                buttons=[
-                    MDFlatButton(
-                        text="TERUG",
-                        on_release=self.on_return_direct_confirm
+        shopping_cart_items = self.shopping_cart.get_shopping_cart()
 
-                    ),
-                    MDRaisedButton(
-                        text="BEVESTIG",
-                        on_release=self.on_confirm,
-                        md_bg_color=[0.933, 0.203, 0.125, 1]
-                    ),
-                ],
-            )
-        self.direct_confirm.open()
+        if shopping_cart_items:
+            # Create direct_confirm dialog
+            if not self.direct_confirm:
+                self.direct_confirm = MDDialog(
+                    text="Voeg deze aankopen aan mijn account toe",
+                    buttons=[
+                        MDFlatButton(
+                            text="TERUG",
+                            on_release=self.on_return_direct_confirm
+
+                        ),
+                        MDRaisedButton(
+                            text="BEVESTIG",
+                            on_release=self.on_confirm,
+                            md_bg_color=[0.933, 0.203, 0.125, 1]
+                        ),
+                    ],
+                )
+            self.direct_confirm.open()
 
     #
     # opens shoppingcart display
@@ -185,7 +189,7 @@ class ProductScreen(Screen):
         for purchase in self.shopping_cart.get_shopping_cart():
             item = ShoppingCartItem(purchase=purchase,
                                     text=purchase.product_name,
-                                    tertiary_text="Fun fact about " + purchase.product_name,
+                                    tertiary_text=" ",
                                     tertiary_theme_text_color="Custom",
                                     tertiary_text_color=[0.509, 0.509, 0.509, 1])
             shopping_cart_items.append(item)
@@ -229,7 +233,7 @@ class ProductScreen(Screen):
         json_cart = self.shopping_cart.to_json()
 
         # use a POST-request to forward the shopping cart
-        response = requests.post(self.confirm_api, json=json_cart)
+        response = self.requests_cookies.post(self.confirm_api, json=json_cart)
 
         if response.ok:
             # Reset instance variables
@@ -247,7 +251,7 @@ class ProductScreen(Screen):
 
         else:
             print("Payment could not be made: error: " + response.content)
-            exit(7)
+            exit(8)
 
     def __end_process(self):
         self.shopping_cart.emtpy_cart()
