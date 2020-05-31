@@ -7,7 +7,6 @@ from ds.Product import Product
 from ds.ShoppingCart import ShoppingCart
 from scrs.TabDisplay import TabDisplay
 from ux.ItemListUX import ItemListUX
-import requests
 from ux.ShoppingCartItem import ShoppingCartItem
 
 
@@ -25,7 +24,7 @@ class ProductScreen(Screen):
     # shopping cart
     shopping_cart = ShoppingCart()
 
-    def __init__(self, **kwargs):
+    def __init__(self, cookies, **kwargs):
         # Load screen
         Builder.load_file('kvs/ProductScreen.kv')
         super(ProductScreen, self).__init__(**kwargs)
@@ -34,13 +33,14 @@ class ProductScreen(Screen):
         self.direct_confirm = None
         # Shopping_cart dialog screen object
         self.shopping_cart_dialog = None
+        self.requests_cookies = cookies
 
         # Timeout variables
         self.timeout_event = None
         self.timeout_time = 45
 
         # Get all categories names
-        response = requests.get(url=self.get_all_cat_api)
+        response = self.requests_cookies.get(url=self.get_all_cat_api)
 
         # Check status response
         if response.ok:
@@ -56,7 +56,7 @@ class ProductScreen(Screen):
 
                 # Request products from category tab_text
                 request = self.get_cat_api_url + cat['name']
-                response = requests.get(request)
+                response = self.requests_cookies.get(request)
 
                 # Evaluate server response
                 if response.ok:
@@ -232,7 +232,7 @@ class ProductScreen(Screen):
         json_cart = self.shopping_cart.to_json()
 
         # use a POST-request to forward the shopping cart
-        response = requests.post(self.confirm_api, json=json_cart)
+        response = self.requests_cookies.post(self.confirm_api, json=json_cart)
 
         if response.ok:
             # Reset instance variables
