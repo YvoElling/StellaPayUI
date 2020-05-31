@@ -63,7 +63,7 @@ class ItemListUX(TwoLineAvatarIconListItem):
                     if user_mail != self.user_mail:
                         self.mail_addresses.append(PurchaserItem(text=user_mail,
                                                                  product_name=self.text,
-                                                                 user_mail=user['name'],
+                                                                 user_mail=user['email'],
                                                                  shoppingcart=self.shopping_cart,
                                                                  tertiary_text=" ",
                                                                  tertiary_theme_text_color="Custom",
@@ -76,6 +76,7 @@ class ItemListUX(TwoLineAvatarIconListItem):
             self.purchaser_list_dialog = MDDialog(
                 type="confirmation",
                 height="440px",
+                width="700px",
                 items=self.mail_addresses,
                 buttons=[
                     MDFlatButton(
