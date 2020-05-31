@@ -1,10 +1,10 @@
 from kivy.lang import Builder
-from kivymd.uix.list import TwoLineAvatarIconListItem
+from kivymd.uix.list import TwoLineAvatarIconListItem, OneLineAvatarIconListItem
 
 Builder.load_file('kvs/ShoppingCartItem.kv')
 
 
-class ShoppingCartItem(TwoLineAvatarIconListItem):
+class ShoppingCartItem(OneLineAvatarIconListItem):
 
     def __init__(self, purchase, **kwargs):
         super(ShoppingCartItem, self).__init__(**kwargs)

@@ -104,6 +104,7 @@ class ProductScreen(Screen):
                                                         user_mail=self.manager.get_screen("DefaultScreen").user_mail,
                                                         price="€" + product.get_price(),
                                                         shoppingcart=self.shopping_cart,
+                                                        cookies=self.requests_cookies,
                                                         secondary_text="Fun fact about " + product.get_name(),
                                                         secondary_theme_text_color="Custom",
                                                         secondary_text_color=[0.509, 0.509, 0.509, 1]))
@@ -188,7 +189,7 @@ class ProductScreen(Screen):
         for purchase in self.shopping_cart.get_shopping_cart():
             item = ShoppingCartItem(purchase=purchase,
                                     text=purchase.product_name,
-                                    tertiary_text="Fun fact about " + purchase.product_name,
+                                    tertiary_text=" ",
                                     tertiary_theme_text_color="Custom",
                                     tertiary_text_color=[0.509, 0.509, 0.509, 1])
             shopping_cart_items.append(item)

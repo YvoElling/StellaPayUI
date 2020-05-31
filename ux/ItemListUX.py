@@ -11,11 +11,12 @@ Builder.load_file('kvs/ItemListUX.kv')
 
 
 class ItemListUX(TwoLineAvatarIconListItem):
-    def __init__(self, user_mail, price, shoppingcart, **kwargs):
+    def __init__(self, user_mail, price, shoppingcart, cookies, **kwargs):
         super(ItemListUX, self).__init__(**kwargs)
         self.ids.price.text = price
         self.user_mail = user_mail
         self.shopping_cart = shoppingcart
+        self.requests_cookies = cookies
 
         # Mail addresses
         self.mail_addresses = []
@@ -28,10 +29,7 @@ class ItemListUX(TwoLineAvatarIconListItem):
         self.ids.count.text = str(int(self.ids.count.text) + 1)
 
         # Create purchase object
-        mail = self.user_mail
-        product_name = self.text
-        count = 1
-        purchase = Purchase(mail, product_name, count)
+        purchase = Purchase(self.user_mail, self.text, 1)
 
         # Add purchase to shopping cart
         self.shopping_cart.add_to_cart(purchase)
@@ -41,10 +39,7 @@ class ItemListUX(TwoLineAvatarIconListItem):
             self.ids.count.text = str(int(self.ids.count.text) - 1)
 
             # Create purchase object
-            mail = self.user_mail
-            product_name = self.text
-            count = 1
-            purchase = Purchase(mail, product_name, count)
+            purchase = Purchase(self.user_mail, self.text, 1)
 
             # Remove product from the shopping cart
             self.shopping_cart.remove_from_cart(purchase)
@@ -55,7 +50,7 @@ class ItemListUX(TwoLineAvatarIconListItem):
     def on_select_purchaser(self):
         if not self.mail_addresses:
             # Query all
-            user_data = requests.get("http://staartvin.com:8181/users")
+            user_data = self.requests_cookies.get("http://staartvin.com:8181/users")
 
             if user_data.ok:
                 # convert to json
@@ -68,7 +63,7 @@ class ItemListUX(TwoLineAvatarIconListItem):
                     if user_mail != self.user_mail:
                         self.mail_addresses.append(PurchaserItem(text=user_mail,
                                                                  product_name=self.text,
-                                                                 user_mail=user_mail,
+                                                                 user_mail=user['name'],
                                                                  shoppingcart=self.shopping_cart,
                                                                  tertiary_text=" ",
                                                                  tertiary_theme_text_color="Custom",
@@ -80,15 +75,21 @@ class ItemListUX(TwoLineAvatarIconListItem):
         if not self.purchaser_list_dialog:
             self.purchaser_list_dialog = MDDialog(
                 type="confirmation",
+                height="440px",
                 items=self.mail_addresses,
                 buttons=[
                     MDFlatButton(
                         text="OK",
+                        on_release=self.on_ok
                     ),
                 ],
             )
         # Open the dialog to display the shopping cart
         self.purchaser_list_dialog.open()
+
+    def on_ok(self, dt):
+        if self.purchaser_list_dialog:
+            self.purchaser_list_dialog.dismiss()
 
     # Store purchaser
     def on_set_mail(self, item):

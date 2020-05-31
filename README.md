@@ -9,5 +9,5 @@ For support:
 Stella Pay application, NFC reader, touchscreen:  Yvo.elling@solarteameindhoven.nl  
 Stella Pay backend, administrator rights: Vincent.bolta@solarteameindhoven.nl
 
-NFC reader software and code:  
+NFC reader software and documentation  
 https://github.com/YvoElling/PythonNFCReader
