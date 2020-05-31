@@ -134,6 +134,10 @@ class ProductScreen(Screen):
     # move to profile screen
     #
     def on_profile_screen(self):
+        # Clear the shopping cart upon leaving this screen for consistency
+        self.shopping_cart.get_shopping_cart().clear()
+
+        # Cancel timeout event and switch to ProfileScreen
         self.timeout_event.cancel()
         self.manager.current = 'ProfileScreen'
 
