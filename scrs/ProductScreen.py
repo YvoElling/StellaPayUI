@@ -71,7 +71,7 @@ class ProductScreen(Screen):
                             self.local_items[cat['name']].append(p)
                 else:
                     # Error in retrieving products from server
-                    print("Products could not be retried: " + response)
+                    print("Products could not be retrieved: " + response)
                     exit(7)
 
         else:
@@ -97,7 +97,7 @@ class ProductScreen(Screen):
         # Initialize timeouts
         self.on_start_timeout()
 
-        # For all items in the local_items list, add them to the container and display them
+    def load_data(self):
         for tab in self.tabs:
             for product in self.local_items[tab.text]:
                 tab.ids.container.add_widget(ItemListUX(text=product.get_name(),
@@ -114,20 +114,24 @@ class ProductScreen(Screen):
     #
     def on_timeout(self, dt):
         self.__end_process()
-        self.manager.transition = SlideTransition(direction='right')
         self.manager.current = 'DefaultScreen'
 
     #
     # upon leaving the screen, cancel the timeout event
     #
     def on_leave(self, *args):
+        self.on_cleanup()
+
+    #
+    # Clean up display upon leaving
+    #
+    def on_cleanup(self):
         for tab in self.tabs:
             tab.ids.container.clear_widgets()
 
     def on_cancel(self):
         self.timeout_event.cancel()
         self.__end_process()
-        self.manager.transition = SlideTransition(direction='right')
         self.manager.current = 'DefaultScreen'
 
     #
@@ -250,7 +254,6 @@ class ProductScreen(Screen):
             self.direct_confirm.dismiss()
 
             # Return to the default screen for a new user to log in
-            self.manager.transition = SlideTransition(direction='right')
             self.manager.current = "DefaultScreen"
 
         else:

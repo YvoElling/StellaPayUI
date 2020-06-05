@@ -16,9 +16,9 @@ class ProfileScreen(Screen):
 
     # Return to the product page
     def on_back(self):
-        self.manager.transition = SlideTransition(direction='left')
         self.manager.current = 'ProductScreen'
 
     # Clear name on leave
     def on_leave(self, *args):
         self.ids.username.text = ""
+        self.manager.get_screen("ProductScreen").load_data()

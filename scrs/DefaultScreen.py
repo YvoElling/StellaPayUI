@@ -1,6 +1,6 @@
 import json
 
-from kivy.uix.screenmanager import Screen, SlideTransition, CardTransition
+from kivy.uix.screenmanager import Screen, SlideTransition, CardTransition, NoTransition
 from kivymd.uix.bottomsheet import MDListBottomSheet
 
 from PythonNFCReader import NFCReader as nfc
@@ -106,7 +106,6 @@ class DefaultScreen(Screen):
             self.manager.current = 'WelcomeScreen'
         else:
             # User was not found, proceed to registerUID file
-            self.manager.transition = SlideTransition(direction='left')
             self.manager.get_screen('RegisterUIDScreen').nfc_id = self.nfc_uid
             self.manager.current = 'RegisterUIDScreen'
 
@@ -116,11 +115,13 @@ class DefaultScreen(Screen):
     def on_enter(self, *args):
         self.__init__()
 
+        # Disable transitions to speed up process
+        self.manager.transition = NoTransition()
+
     #
     #
     #
     def to_credits(self):
-        self.manager.transition = CardTransition(direction="up", mode="pop")
         self.manager.get_screen('CreditsScreen').nfc_id = self.nfc_uid
         self.manager.current = 'CreditsScreen'
 
@@ -168,5 +169,7 @@ class DefaultScreen(Screen):
 
         # Set the name as the name of the user on the next page
         self.manager.get_screen('WelcomeScreen').label.text = self.mail_dict[item.text]
-        self.manager.transition = SlideTransition(direction='right')
         self.manager.current = 'WelcomeScreen'
+
+    def on_leave(self, *args):
+        self.manager.get_screen("ProductScreen").load_data()
