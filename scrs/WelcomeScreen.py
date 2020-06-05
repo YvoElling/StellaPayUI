@@ -29,6 +29,9 @@ class WelcomeScreen(Screen):
         # Set timer of duration @timeout_time
         self.timeout_event = Clock.schedule_once(self.on_timeout, self.timeout_time)
 
+        # Load productScreen
+        # self.manager.get_screen("ProductScreen").on_load_data()
+
     #
     # callback function on timeout
     #
@@ -46,17 +49,14 @@ class WelcomeScreen(Screen):
     # Called when the stop button is pressed
     #
     def on_cancel(self):
-        self.manager.transition = SlideTransition(direction='right')
         self.manager.current = 'DefaultScreen'
 
     #
     # Called when buy is pressed
     #
-    #
     def on_buy(self):
         self.timeout_event.cancel()
         self.manager.get_screen('ProductScreen').user_name = self.ids.label.text
-        self.manager.transition = SlideTransition(direction='left')
         self.manager.current = 'ProductScreen'
 
     #

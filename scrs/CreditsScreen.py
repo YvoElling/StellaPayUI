@@ -20,7 +20,6 @@ class CreditsScreen(Screen):
     #
     def on_stop(self):
         self.timeout_event.cancel()
-        self.manager.transition = CardTransition(direction="up", mode="push")
         self.manager.current = 'DefaultScreen'
 
     #
@@ -28,6 +27,7 @@ class CreditsScreen(Screen):
     #
     def on_enter(self, *args):
         self.timeout_event = Clock.schedule_once(self.on_timeout, self.timeout_time)
+        self.manager.get_screen("ProductScreen").on_cleanup()
 
     #
     # Timeout callback function.

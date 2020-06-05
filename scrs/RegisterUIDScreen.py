@@ -75,7 +75,6 @@ class RegisterUIDScreen(Screen):
 
     # Return to default screen when cancelled
     def on_cancel(self):
-        self.manager.transition = SlideTransition(direction='right')
         self.manager.current = 'DefaultScreen'
 
     # Saves user-card-mapping to the database
@@ -94,7 +93,6 @@ class RegisterUIDScreen(Screen):
 
         # If the users was added successfully ( status_code : 200), proceed to WelcomeScreen
         if request.ok:
-            self.manager.transition = SlideTransition(direction='left')
 
             # Set the name as the name of the user on the next page
             self.manager.get_screen('WelcomeScreen').label.text = self.__request_name()
