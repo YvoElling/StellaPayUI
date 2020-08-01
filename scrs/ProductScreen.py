@@ -9,6 +9,8 @@ from scrs.TabDisplay import TabDisplay
 from ux.ItemListUX import ItemListUX
 from ux.ShoppingCartItem import ShoppingCartItem
 
+import random
+
 
 class ProductScreen(Screen):
     # Store items per category, these are stored locally to reduce the amount of queries required
@@ -37,7 +39,7 @@ class ProductScreen(Screen):
 
         # Timeout variables
         self.timeout_event = None
-        self.timeout_time = 10
+        self.timeout_time = 30
 
         # Get all categories names
         response = self.requests_cookies.get(url=self.get_all_cat_api)
@@ -97,15 +99,33 @@ class ProductScreen(Screen):
         # Initialize timeouts
         self.on_start_timeout()
 
-    def load_data(self):
+    def load_data(self, database):
+        database_conn = database.cursor()
+
         for tab in self.tabs:
             for product in self.local_items[tab.text]:
+                # Should update this to PREPARED STATEMENT instead of this, but it's fun facts, so what the heck
+                # Get all fun facts for this product
+                database_conn.execute(
+                    "SELECT fun_fact FROM static_fun_facts WHERE product='" + product.get_name() + "'")
+
+                # store all fun facts that were found for this product in a list.
+                fun_facts = database_conn.fetchall()
+
+                # Select a random fun fact from the list
+                pff = random.choice(fun_facts)
+
+                # Clean the fun fact by removing unnecessary tokens
+                cff = str(pff).replace('(', '').replace(')', '').replace('\'', '').replace('\"', '')
+                cff = cff[:-1]
+
+                # Add item to the tab
                 tab.ids.container.add_widget(ItemListUX(text=product.get_name(),
                                                         user_mail=self.manager.get_screen("DefaultScreen").user_mail,
                                                         price="€" + product.get_price(),
                                                         shoppingcart=self.shopping_cart,
                                                         cookies=self.requests_cookies,
-                                                        secondary_text="Fun fact about " + product.get_name(),
+                                                        secondary_text=cff,
                                                         secondary_theme_text_color="Custom",
                                                         secondary_text_color=[0.509, 0.509, 0.509, 1]))
 
@@ -269,4 +289,3 @@ class ProductScreen(Screen):
 
     def __end_process(self):
         self.shopping_cart.emtpy_cart()
-
