@@ -4,6 +4,7 @@
 while ! timeout 0.2 ping -c 1 -n 8.8.8.8 &> /dev/null
 do
     printf "Connecting..."
+    sleep 1
 done
 printf "Connected!"
 

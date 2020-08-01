@@ -60,7 +60,6 @@ class DefaultScreen(Screen):
     def get_cookies(self):
         return self.requests_cookies
 
-    # Converts credentials stored in .json file into credentials that are being used in server requests
     @staticmethod
     def __parse_to_json(file):
         with open(file) as credentials:
@@ -172,4 +171,4 @@ class DefaultScreen(Screen):
         self.manager.current = 'WelcomeScreen'
 
     def on_leave(self, *args):
-        self.manager.get_screen("ProductScreen").load_data()
+        self.manager.get_screen("ProductScreen").load_data(self.static_database)
