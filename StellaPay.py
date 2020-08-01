@@ -32,8 +32,8 @@ class StellaPay(MDApp):
         # Disable full screen (classic Python, doesn't do anything)
         Config.set('graphics', 'width', '800')
         Config.set('graphics', 'height', ' 480')
-        Window.show_cursor = False
-        Window.fullscreen = True
+        # Window.show_cursor = False
+        # Window.fullscreen = True
         Config.write()
 
         # Load .kv file
@@ -50,7 +50,7 @@ class StellaPay(MDApp):
         screen_manager.add_widget(ConfirmedScreen(name='ConfirmedScreen'))
         screen_manager.add_widget(CreditsScreen(name='CreditsScreen'))
         screen_manager.add_widget(ProductScreen(name='ProductScreen', cookies=cookies))
-        screen_manager.add_widget(ProfileScreen(name='ProfileScreen'))
+        screen_manager.add_widget(ProfileScreen(name='ProfileScreen', cookies=cookies))
 
         return screen_manager
 
