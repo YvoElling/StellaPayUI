@@ -1,6 +1,6 @@
 import json
 
-from kivy.uix.screenmanager import Screen, SlideTransition, CardTransition, NoTransition
+from kivy.uix.screenmanager import Screen, SlideTransition, NoTransition
 from kivymd.uix.bottomsheet import MDListBottomSheet
 
 from PythonNFCReader import NFCReader as nfc
@@ -30,7 +30,7 @@ class DefaultScreen(Screen):
         self.bottom_sheet_menu = None
         self.mail_dict = {}
 
-        # Create a session to maintiain cookie data for this instance
+        # Create a session to maintain cookie data for this instance
         self.requests_cookies = requests.Session()
 
         # Convert authentication.json to json dict
@@ -60,13 +60,14 @@ class DefaultScreen(Screen):
     def get_cookies(self):
         return self.requests_cookies
 
+    # Converts credentials stored in .json file into credentials that are being used in server requests
     @staticmethod
     def __parse_to_json(file):
         with open(file) as credentials:
             return json.load(credentials)
 
+    # Create NFCReader() Object that waits until a card is presented
     def create_nfc_reader(self):
-        # Create NFCReader() Object that waits until a card is presented
         self.nfc_r = nfc.NFCReader()
 
     #

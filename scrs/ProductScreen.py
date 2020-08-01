@@ -37,7 +37,7 @@ class ProductScreen(Screen):
 
         # Timeout variables
         self.timeout_event = None
-        self.timeout_time = 45
+        self.timeout_time = 10
 
         # Get all categories names
         response = self.requests_cookies.get(url=self.get_all_cat_api)
@@ -114,6 +114,13 @@ class ProductScreen(Screen):
     #
     def on_timeout(self, dt):
         self.__end_process()
+
+        # If the dialogs are instantiated, dismiss them before timeouts
+        if self.direct_confirm:
+            self.direct_confirm.dismiss()
+        if self.shopping_cart_dialog:
+            self.shopping_cart_dialog.dismiss()
+
         self.manager.current = 'DefaultScreen'
 
     #
