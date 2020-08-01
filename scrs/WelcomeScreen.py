@@ -12,13 +12,13 @@ class WelcomeScreen(Screen):
 
         # timeout variables
         self.timeout_event = None
-        self.timeout_time = 30
+        self.timeout_time = 30  # Seconds
 
         # connect tap-target-view
         self.tap_target_view = MDTapTargetView(
             widget=self.ids.info,
-            title_text="Information",
-            description_text="Version 0.6\n",
+            title_text="Version Information",
+            description_text="Release 01-08-20: Version 0.7\n",
             widget_position="right_bottom"
         )
 
@@ -28,9 +28,6 @@ class WelcomeScreen(Screen):
     def on_enter(self, *args):
         # Set timer of duration @timeout_time
         self.timeout_event = Clock.schedule_once(self.on_timeout, self.timeout_time)
-
-        # Load productScreen
-        # self.manager.get_screen("ProductScreen").on_load_data()
 
     #
     # callback function on timeout
@@ -49,6 +46,13 @@ class WelcomeScreen(Screen):
     # Called when the stop button is pressed
     #
     def on_cancel(self):
+        # If tap target view is open, close it
+        if self.tap_target_view.state == "open":
+            self.tap_target_view.stop()
+
+        # Clean up the loaded products that are stored in the tabs
+        self.manager.get_screen("ProductScreen").on_cleanup()
+        # Switch back to the default screen to welcome a new user
         self.manager.current = 'DefaultScreen'
 
     #
