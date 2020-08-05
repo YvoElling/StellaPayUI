@@ -57,7 +57,7 @@ class ItemListUX(TwoLineAvatarIconListItem):
                 user_json = user_data.json()
 
                 # append json to list and sort the list
-                for user in user_json:
+                for user in sorted(user_json, key=lambda x: x['name']):
                     # store all emails adressed in the sheet_menu
                     user_mail = user['email']
                     if user_mail != self.user_mail:
