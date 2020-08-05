@@ -11,7 +11,7 @@ printf "Connected!"
 cd /home/pi/StellaPayUI || cd /home/yvoelling/Repositories/Python/StellaPayUI || exit
 
 # Launch git pull to update the running StellaPay version to the latest available on the master
-git pull
+sudo git pull
 
 # Start the StellaPay program
 python3 StellaPay.py
