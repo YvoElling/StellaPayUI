@@ -37,7 +37,7 @@ class ProductScreen(Screen):
 
         # Timeout variables
         self.timeout_event = None
-        self.timeout_time = 10
+        self.timeout_time = 75
 
         # Get all categories names
         response = self.requests_cookies.get(url=self.get_all_cat_api)
@@ -98,6 +98,10 @@ class ProductScreen(Screen):
         self.on_start_timeout()
 
     def load_data(self):
+        # Clean the tabs before reloading them
+        self.on_cleanup()
+
+        # Add the cleaned tabs with data again
         for tab in self.tabs:
             for product in self.local_items[tab.text]:
                 tab.ids.container.add_widget(ItemListUX(text=product.get_name(),

@@ -119,9 +119,6 @@ class DefaultScreen(Screen):
         # Disable transitions to speed up process
         self.manager.transition = NoTransition()
 
-    #
-    #
-    #
     def to_credits(self):
         self.manager.get_screen('CreditsScreen').nfc_id = self.nfc_uid
         self.manager.current = 'CreditsScreen'

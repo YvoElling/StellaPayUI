@@ -29,7 +29,7 @@ class RegisterUIDScreen(Screen):
 
         # Timeout variables
         self.timeout_event = None
-        self.timeout_time = 45
+        self.timeout_time = 15
 
         # Create the bottom menu
         self.bottom_sheet_menu = None
@@ -139,3 +139,7 @@ class RegisterUIDScreen(Screen):
 
     def on_set_mail(self, item):
         self.ids.selected_on_mail.text = "[b]" + item.text + "[/b]"
+
+    def on_leave(self, *args):
+        self.ids.selected_on_mail.text = ""
+        self.timeout_event.cancel()
