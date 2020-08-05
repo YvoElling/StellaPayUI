@@ -61,9 +61,10 @@ class ItemListUX(TwoLineAvatarIconListItem):
                     # store all emails adressed in the sheet_menu
                     user_mail = user['email']
                     if user_mail != self.user_mail:
-                        self.mail_addresses.append(PurchaserItem(text=user_mail,
+                        self.mail_addresses.append(PurchaserItem(text=user['name'],
                                                                  product_name=self.text,
-                                                                 user_mail=user['email'],
+                                                                 user_mail=user_mail,
+                                                                 user_name=user['name'],
                                                                  shoppingcart=self.shopping_cart,
                                                                  tertiary_text=" ",
                                                                  tertiary_theme_text_color="Custom",

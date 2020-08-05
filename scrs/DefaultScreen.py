@@ -143,8 +143,10 @@ class DefaultScreen(Screen):
             # append json to list and sort the list
             for user in user_json:
                 # store all emails adressed in the sheet_menu
-                self.mail_dict[user["email"]] = user["name"]
-                mail_list.append(user["email"])
+                self.mail_dict[user["name"]] = user["email"]
+                # self.user_dict[user["name"]] = user["name"]
+                mail_list.append(user["name"])
+                # name_list.append(user["name"])
         else:
             print("Error: addresses could not be fetched from server in DefaultScreen.py:on_no_nfc()")
             exit(4)
@@ -162,11 +164,11 @@ class DefaultScreen(Screen):
     # set_mail
     def on_set_mail(self, item):
         # Set member variables, these are required for making a purchase later
-        self.user_mail = item.text
-        self.user_name = self.mail_dict[item.text]
+        self.user_mail = self.mail_dict[item.text]
+        self.user_name = item.text
 
         # Set the name as the name of the user on the next page
-        self.manager.get_screen('WelcomeScreen').label.text = self.mail_dict[item.text]
+        self.manager.get_screen('WelcomeScreen').label.text = item.text
         self.manager.current = 'WelcomeScreen'
 
     def on_leave(self, *args):

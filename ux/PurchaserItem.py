@@ -8,10 +8,11 @@ Builder.load_file('kvs/PurchaserItem.kv')
 class PurchaserItem(TwoLineAvatarIconListItem):
 
     # Set local member variables and forwards **kwargs to super class
-    def __init__(self, product_name, user_mail, shoppingcart, **kwargs):
+    def __init__(self, product_name, user_mail, user_name, shoppingcart, **kwargs):
         super(PurchaserItem, self).__init__(**kwargs)
         self.product = product_name
         self.user_mail = user_mail
+        self.user_name = user_name
         self.shopping_cart = shoppingcart
 
     # Adds product to the shopping cart.
