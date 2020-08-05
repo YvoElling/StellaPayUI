@@ -99,7 +99,7 @@ class ProductScreen(Screen):
         # Initialize timeouts
         self.on_start_timeout()
 
-    def load_data(self):
+    def load_data(self, database):
         # Clean the tabs before reloading them
         self.on_cleanup()
 
@@ -115,12 +115,14 @@ class ProductScreen(Screen):
                 # store all fun facts that were found for this product in a list.
                 fun_facts = database_conn.fetchall()
 
-                # Select a random fun fact from the list
-                pff = random.choice(fun_facts)
+                cff = "Zoveel facts gevonden als Stella's in 2012"
+                if fun_facts:
+                    # Select a random fun fact from the list
+                    pff = random.choice(fun_facts)
 
-                # Clean the fun fact by removing unnecessary tokens
-                cff = str(pff).replace('(', '').replace(')', '').replace('\'', '').replace('\"', '')
-                cff = cff[:-1]
+                    # Clean the fun fact by removing unnecessary tokens
+                    cff = str(pff).replace('(', '').replace(')', '').replace('\'', '').replace('\"', '')
+                    cff = cff[:-1]
 
                 # Add item to the tab
                 tab.ids.container.add_widget(ItemListUX(text=product.get_name(),
