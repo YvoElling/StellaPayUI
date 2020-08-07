@@ -100,7 +100,7 @@ class StellaPay(MDApp):
         screen_manager.add_widget(ProductScreen(name='ProductScreen', cookies=cookies))
         screen_manager.add_widget(ProfileScreen(name='ProfileScreen'))
 
-        screen_manager.get_screen('DefaultScreen').static_database = self.database;
+        screen_manager.get_screen('DefaultScreen').static_database = self.database
 
         return screen_manager
 

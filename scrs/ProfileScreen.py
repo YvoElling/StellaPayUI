@@ -4,7 +4,6 @@ from kivy.uix.screenmanager import Screen
 
 
 class ProfileScreen(Screen):
-
     Builder.load_file('kvs/ProfileScreen.kv')
 
     def __init__(self, **kwargs):
@@ -37,4 +36,5 @@ class ProfileScreen(Screen):
     # Clear name on leave
     def on_leave(self, *args):
         self.ids.username.text = ""
-        self.manager.get_screen("ProductScreen").load_data()
+        self.manager.get_screen("ProductScreen") \
+            .load_data(self.manager.get_screen('DefaultScreen').static_database)
