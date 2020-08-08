@@ -1,20 +1,24 @@
+import asyncio
 import sqlite3
+import threading
+from asyncio.events import AbstractEventLoop
 
+import kivy
+import requests
+from kivy.config import Config
+from kivy.core.window import Window
 from kivy.lang import Builder
 from kivy.uix.screenmanager import ScreenManager
 from kivymd.app import MDApp
 
-from scrs.DefaultScreen import DefaultScreen
-from scrs.WelcomeScreen import WelcomeScreen
+from ScreenEnum import Screen
 from scrs.ConfirmedScreen import ConfirmedScreen
 from scrs.CreditsScreen import CreditsScreen
+from scrs.DefaultScreen import DefaultScreen
 from scrs.ProductScreen import ProductScreen
 from scrs.ProfileScreen import ProfileScreen
 from scrs.RegisterUIDScreen import RegisterUIDScreen
-from kivy.core.window import Window
-from kivy.config import Config
-
-import kivy
+from scrs.WelcomeScreen import WelcomeScreen
 
 kivy.require('1.11.1')
 
@@ -87,22 +91,35 @@ class StellaPay(MDApp):
         # Load .kv file
         Builder.load_file('kvs/DefaultScreen.kv')
 
+        print("Starting event loop")
+        self.loop = asyncio.new_event_loop()
+        threading.Thread(target=self.run_event_loop, args=(self.loop,)).start()
+        print("Started event loop")
+
+        print(type(self.loop))
+
         # Initialize defaultScreen (to create session cookies for API calls)
-        ds_screen = DefaultScreen(name='DefaultScreen')
+        ds_screen = DefaultScreen(name=Screen.DEFAULT_SCREEN.name)
         cookies = ds_screen.get_cookies()
 
         # Load screenloader and add screens
         screen_manager.add_widget(ds_screen)
-        screen_manager.add_widget(WelcomeScreen(name='WelcomeScreen'))
-        screen_manager.add_widget(RegisterUIDScreen(name='RegisterUIDScreen', cookies=cookies))
-        screen_manager.add_widget(ConfirmedScreen(name='ConfirmedScreen'))
-        screen_manager.add_widget(CreditsScreen(name='CreditsScreen'))
-        screen_manager.add_widget(ProductScreen(name='ProductScreen', cookies=cookies))
-        screen_manager.add_widget(ProfileScreen(name='ProfileScreen'))
+        screen_manager.add_widget(WelcomeScreen(name=Screen.WELCOME_SCREEN.name))
+        screen_manager.add_widget(RegisterUIDScreen(name=Screen.REGISTER_UID_SCREEN.name, cookies=cookies))
+        screen_manager.add_widget(ConfirmedScreen(name=Screen.CONFIRMED_SCREEN.name))
+        screen_manager.add_widget(CreditsScreen(name=Screen.CREDITS_SCREEN.name))
+        screen_manager.add_widget(ProductScreen(name=Screen.PRODUCT_SCREEN.name, cookies=cookies))
+        screen_manager.add_widget(ProfileScreen(name=Screen.PROFILE_SCREEN.name))
 
-        screen_manager.get_screen('DefaultScreen').static_database = self.database
+        screen_manager.get_screen(Screen.DEFAULT_SCREEN.name).static_database = self.database
+        screen_manager.get_screen(Screen.DEFAULT_SCREEN.name).event_loop : AbstractEventLoop = self.loop
+
 
         return screen_manager
+
+    def run_event_loop(self, loop):
+        asyncio.set_event_loop(loop)
+        loop.run_forever()
 
 
 if __name__ == '__main__':

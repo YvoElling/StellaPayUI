@@ -146,7 +146,7 @@ class ProductScreen(Screen):
         if self.shopping_cart_dialog:
             self.shopping_cart_dialog.dismiss()
 
-        self.manager.current = 'DefaultScreen'
+        self.manager.current = Screen.DEFAULT_SCREEN.name
 
     #
     # upon leaving the screen, cancel the timeout event
@@ -164,7 +164,7 @@ class ProductScreen(Screen):
     def on_cancel(self):
         self.timeout_event.cancel()
         self.__end_process()
-        self.manager.current = 'DefaultScreen'
+        self.manager.current = Screen.DEFAULT_SCREEN.name
 
     #
     # move to profile screen
@@ -175,7 +175,7 @@ class ProductScreen(Screen):
 
         # Cancel timeout event and switch to ProfileScreen
         self.timeout_event.cancel()
-        self.manager.current = 'ProfileScreen'
+        self.manager.current = Screen.PROFILE_SCREEN.name
 
     #
     # callback function for when tab is switched

@@ -1,11 +1,12 @@
 import json
+import threading
 
+import requests
+from kivy.network.urlrequest import UrlRequest
 from kivy.uix.screenmanager import Screen, SlideTransition, NoTransition
 from kivymd.uix.bottomsheet import MDListBottomSheet
 
 from PythonNFCReader import NFCReader as nfc
-import threading
-import requests
 
 
 # defaultScreen class
@@ -33,15 +34,7 @@ class DefaultScreen(Screen):
         # Create a session to maintain cookie data for this instance
         self.requests_cookies = requests.Session()
 
-        # Convert authentication.json to json dict
-        json_credentials = self.__parse_to_json('authenticate.json')
-
-        # Attempt to log in
-        response = self.requests_cookies.post(url=self.authenticate, json=json_credentials)
-        # Break control flow if the user cannot identify himself
-        if not response.ok:
-            print("Could not correctly authenticate, error code 8. Check your username and password")
-            exit(8)
+        print("Calling init on", threading.get_ident())
 
         # Create and start a thread to listen for NFC card presentation
         nfc_thread = threading.Thread(name="NFC_reader",
@@ -53,7 +46,7 @@ class DefaultScreen(Screen):
         # thread as the main UI thread
         listener_thread = threading.Thread(name="NFC_reader_monitor",
                                            target=self.launch_nfc_reader_monitor,
-                                           args=(nfc_thread, ))
+                                           args=(nfc_thread,))
         listener_thread.start()
 
     # Get cookies object for other classes
@@ -79,7 +72,7 @@ class DefaultScreen(Screen):
         # get UID for presented NFC card
 
         # A card could be read incorrectly, if so, restart this screen en listen for the card again
-        if self.nfc_r.get_uid is None:
+        if self.nfc_r.get_uid() is None:
             self.__init__()
 
         self.nfc_uid = self.nfc_r.get_uid().replace(" ", "")
@@ -102,8 +95,8 @@ class DefaultScreen(Screen):
             self.user_name = query_json["owner"]["name"]
 
             # Set the retrieved name as the name of the user on the next page
-            self.manager.get_screen('WelcomeScreen').label.text = query_json["owner"]["name"]
-            self.manager.current = 'WelcomeScreen'
+            self.manager.get_screen('Screen.WELCOME_SCREEN.name').label.text = query_json["owner"]["name"]
+            self.manager.current = 'Screen.WELCOME_SCREEN.name'
         else:
             # User was not found, proceed to registerUID file
             self.manager.get_screen('RegisterUIDScreen').nfc_id = self.nfc_uid
@@ -113,14 +106,15 @@ class DefaultScreen(Screen):
     # restarts the card listener upon reentry of the screen
     #
     def on_enter(self, *args):
-        self.__init__()
+        # self.__init__()
+        self.loop.call_soon_threadsafe(self.test_authentication)
 
         # Disable transitions to speed up process
         self.manager.transition = NoTransition()
 
     def to_credits(self):
-        self.manager.get_screen('CreditsScreen').nfc_id = self.nfc_uid
-        self.manager.current = 'CreditsScreen'
+        self.manager.get_screen(Screen.CREDITS_SCREEN.name).nfc_id = self.nfc_uid
+        self.manager.current = Screen.CREDITS_SCREEN.name
 
     #
     # gets called when the 'NFC kaart vergeten button is pressed'
@@ -167,8 +161,23 @@ class DefaultScreen(Screen):
         self.user_name = item.text
 
         # Set the name as the name of the user on the next page
-        self.manager.get_screen('WelcomeScreen').label.text = item.text
-        self.manager.current = 'WelcomeScreen'
+        self.manager.get_screen(Screen.WELCOME_SCREEN.name).label.text = item.text
+        self.manager.current = Screen.WELCOME_SCREEN.name
 
     def on_leave(self, *args):
-        self.manager.get_screen("ProductScreen").load_data(self.static_database)
+        self.manager.get_screen(Screen.PRODUCT_SCREEN.name).load_data(self.static_database)
+
+    def test_authentication(self):
+
+        print("Testing authentication on", threading.get_ident())
+
+        # Convert authentication.json to json dict
+        json_credentials = self.__parse_to_json('authenticate.json')
+
+        # Attempt to log in
+        response = self.requests_cookies.post(url=self.authenticate, json=json_credentials)
+
+        # Break control flow if the user cannot identify himself
+        if not response.ok:
+            print("Could not correctly authenticate, error code 8. Check your username and password")
+            exit(8)

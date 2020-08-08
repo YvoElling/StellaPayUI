@@ -75,7 +75,7 @@ class RegisterUIDScreen(Screen):
 
     # Return to default screen when cancelled
     def on_cancel(self):
-        self.manager.current = 'DefaultScreen'
+        self.manager.current = Screen.DEFAULT_SCREEN.name
 
     # Saves user-card-mapping to the database
     def on_save_user(self):
@@ -85,7 +85,7 @@ class RegisterUIDScreen(Screen):
             return
 
         # Use a POST command to add connect this UID to the user
-        # uid = self.manager.get_screen('DefaultScreen').nfc_uid
+        # uid = self.manager.get_screen(Screen.DEFAULT_SCREEN.name).nfc_uid
         pattern = '(\[b\])([a-zA-Z\.@]+)'
         filtered_mail = re.search(pattern, str(self.ids.selected_on_mail.text))
         request = self.requests_cookies.post(self.add_user_api, json={'card_id': str(self.nfc_id),
@@ -95,8 +95,8 @@ class RegisterUIDScreen(Screen):
         if request.ok:
 
             # Set the name as the name of the user on the next page
-            self.manager.get_screen('WelcomeScreen').label.text = self.__request_name()
-            self.manager.current = 'WelcomeScreen'
+            self.manager.get_screen(Screen.WELCOME_SCREEN.name).label.text = self.__request_name()
+            self.manager.current = Screen.WELCOME_SCREEN.name
 
         else:
             # User could not be added succesfully, give error 2.

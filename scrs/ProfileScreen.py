@@ -16,17 +16,17 @@ class ProfileScreen(Screen):
     # Called when the screen is loaded:
     # - for retrieving user name
     def on_enter(self, *args):
-        self.ids.username.text = self.manager.get_screen("DefaultScreen").user_name
+        self.ids.username.text = self.manager.get_screen(Screen.DEFAULT_SCREEN.name).user_name
         self.timeout_event = Clock.schedule_once(self.on_timeout, self.timeout_time)
 
     # Return to the product page
     def on_back(self):
-        self.manager.current = 'ProductScreen'
+        self.manager.current = Screen.PRODUCT_SCREEN.name
         self.timeout_event.cancel()
 
     # Return to defaultScreen upon timeout
     def on_timeout(self, dt):
-        self.manager.current = 'DefaultScreen'
+        self.manager.current = Screen.DEFAULT_SCREEN.name
 
     # Reset timer when the screen is touched
     def on_touch_up(self, touch):
@@ -37,4 +37,4 @@ class ProfileScreen(Screen):
     def on_leave(self, *args):
         self.ids.username.text = ""
         self.manager.get_screen("ProductScreen") \
-            .load_data(self.manager.get_screen('DefaultScreen').static_database)
+            .load_data(self.manager.get_screen(Screen.DEFAULT_SCREEN.name).static_database)

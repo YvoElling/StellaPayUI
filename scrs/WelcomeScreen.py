@@ -53,15 +53,15 @@ class WelcomeScreen(Screen):
         # Clean up the loaded products that are stored in the tabs
         self.manager.get_screen("ProductScreen").on_cleanup()
         # Switch back to the default screen to welcome a new user
-        self.manager.current = 'DefaultScreen'
+        self.manager.current = Screen.DEFAULT_SCREEN.name
 
     #
     # Called when buy is pressed
     #
     def on_buy(self):
         self.timeout_event.cancel()
-        self.manager.get_screen('ProductScreen').user_name = self.ids.label.text
-        self.manager.current = 'ProductScreen'
+        self.manager.get_screen(Screen.PRODUCT_SCREEN.name).user_name = self.ids.label.text
+        self.manager.current = Screen.PRODUCT_SCREEN.name
 
     #
     # Opens the little information screen at the right bottom
