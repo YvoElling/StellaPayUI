@@ -1,3 +1,4 @@
+import os
 import random
 from asyncio import AbstractEventLoop
 
@@ -96,12 +97,12 @@ class ProductScreen(Screen):
                 else:
                     # Error in retrieving products from server
                     print("Products could not be retrieved: " + response.text)
-                    exit(7)
+                    os._exit(os.EX_UNAVAILABLE)
 
         else:
             # Error
             print("Categories could not be retrieved: " + response.text)
-            exit(6)
+            os._exit(os.EX_UNAVAILABLE)
 
     def load_data(self, database):
         # Clean the tabs before reloading them
@@ -294,7 +295,7 @@ class ProductScreen(Screen):
 
         else:
             print("Payment could not be made: error: " + response.content)
-            exit(8)
+            os._exit(os.EX_UNAVAILABLE)
 
     def __end_process(self):
         self.shopping_cart.emtpy_cart()

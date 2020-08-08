@@ -1,3 +1,4 @@
+import os
 from asyncio import AbstractEventLoop
 
 from kivy.uix.screenmanager import Screen, SlideTransition
@@ -89,7 +90,7 @@ class DefaultScreen(Screen):
                 # name_list.append(user["name"])
         else:
             print("Error: addresses could not be fetched from server in DefaultScreen.py:on_no_nfc()")
-            exit(4)
+            os._exit(os.EX_UNAVAILABLE)
 
         if mail_list:
             mail_list.sort()

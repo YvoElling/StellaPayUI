@@ -1,3 +1,5 @@
+import os
+
 from kivy.lang import Builder
 from kivymd.uix.button import MDFlatButton
 from kivymd.uix.dialog import MDDialog
@@ -72,7 +74,7 @@ class ItemListUX(TwoLineAvatarIconListItem):
                                                    )
             else:
                 print("Error: addresses could not be fetched from server")
-                exit(9)
+                os._exit(os.EX_UNAVAILABLE)
         if not self.purchaser_list_dialog:
             self.purchaser_list_dialog = MDDialog(
                 type="confirmation",

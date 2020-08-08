@@ -1,3 +1,4 @@
+import os
 import re  # regex
 from asyncio import AbstractEventLoop
 
@@ -57,7 +58,7 @@ class RegisterUIDScreen(Screen):
                 self.mail_list.append(user["email"])
         else:
             print("Error: addresses could not be fetched from server")
-            exit(4)
+            os._exit(os.EX_UNAVAILABLE)
 
         self.mail_list.sort()
 
@@ -108,7 +109,7 @@ class RegisterUIDScreen(Screen):
             # User could not be added succesfully, give error 2.
             print("Error " + str(request.status_code) + " occurred when trying to add the user: error message: " +
                   request.text)
-            exit("2")
+            os._exit(os.EX_UNAVAILABLE)
 
     # Request name to go to WelcomeScreen
     def __request_name(self):
@@ -125,7 +126,7 @@ class RegisterUIDScreen(Screen):
         else:
             # Print errorcode 3 when the user mapped to that e-mailadress does not exist, SHOULD NOT HAPPEN
             print("An error " + str(response) + ": occured when trying to access the name of the newly added account")
-            exit(3)
+            os._exit(os.EX_UNAVAILABLE)
 
     #
     # Select email adress from server query

@@ -1,5 +1,6 @@
 import asyncio
 import json
+import os
 import sqlite3
 import threading
 
@@ -66,7 +67,7 @@ def create_static_database():
 
     except sqlite3.Error as e:
         print(e)
-        exit(9)
+        os._exit(os.EX_SOFTWARE)
 
     return conn
 
@@ -86,10 +87,21 @@ class StellaPay(MDApp):
 
         # Disable full screen (classic Python, doesn't do anything)
         Config.set('kivy', 'window_icon', 'img/StellaPayLogo.ico')
-        Config.set('graphics', 'width', '800')
-        Config.set('graphics', 'height', ' 480')
-        # Window.show_cursor = False
-        # Window.fullscreen = True
+        Config.set('graphics', 'width', self.config.get('device', 'width'))
+        Config.set('graphics', 'height', self.config.get('device', 'height'))
+
+
+
+        if self.config.get('device', 'fullscreen') == 'True':
+            Window.fullscreen = True
+        else:
+            Window.fullscreen = False
+
+        if self.config.get('device', 'show_cursor') == 'True':
+            Window.show_cursor = True
+        else:
+            Window.fullscreen = False
+
         Config.write()
 
         # Load .kv file
@@ -138,7 +150,14 @@ class StellaPay(MDApp):
 
     def setup_authentication(self):
         # Convert authentication.json to json dict
-        json_credentials = self.__parse_to_json('authenticate.json')
+
+        json_credentials = None
+
+        try:
+            json_credentials = self.__parse_to_json('authenticate.json')
+        except Exception:
+            print("You need to provide an 'authenticate.json' file for your backend credentials.")
+            os._exit(os.EX_CONFIG)
 
         # Attempt to log in
         response = self.session.post(url=BackendURLs.AUTHENTICATE.value, json=json_credentials)
@@ -146,9 +165,17 @@ class StellaPay(MDApp):
         # Break control flow if the user cannot identify himself
         if not response.ok:
             print("Could not correctly authenticate, error code 8. Check your username and password")
-            exit(8)
+            os._exit(os.EX_CONFIG)
         else:
             print("Authenticated correctly to backend.")
+
+    def build_config(self, config):
+        config.setdefaults('device', {
+            'width': '800',
+            'height': '480',
+            'show_cursor': 'True',
+            'fullscreen': 'True'
+        })
 
 
 if __name__ == '__main__':
