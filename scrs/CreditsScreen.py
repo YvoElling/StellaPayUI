@@ -22,7 +22,7 @@ class CreditsScreen(Screen):
     #
     def on_stop(self):
         self.timeout_event.cancel()
-        self.manager.current = 'DefaultScreen'
+        self.manager.current = Screen.DEFAULT_SCREEN.name
 
     #
     # calls upon entry of this screen
