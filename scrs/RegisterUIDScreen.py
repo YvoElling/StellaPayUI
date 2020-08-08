@@ -2,6 +2,8 @@ import os
 import re  # regex
 from asyncio import AbstractEventLoop
 
+from kivy import Logger
+from kivy.app import App
 from kivy.clock import Clock
 from kivy.lang import Builder
 from kivy.uix.screenmanager import Screen
@@ -17,7 +19,7 @@ class RegisterUIDScreen(Screen):
     get_name_uid_api = "http://staartvin.com:8181/identification/request-user/"
     nfc_id = None
 
-    def __init__(self, session, event_loop, **kwargs):
+    def __init__(self, **kwargs):
         # Load KV file for this screen
         Builder.load_file('kvs/RegisterUIDScreen.kv')
 
@@ -25,7 +27,7 @@ class RegisterUIDScreen(Screen):
         super(RegisterUIDScreen, self).__init__(**kwargs)
 
         # Retrieve cookies session so no new authentication is required
-        self.session = session
+        self.session = App.get_running_app().session
         self.user_json = None
 
         # local list that stores all mailadresses currently retrieved from the database
@@ -38,7 +40,7 @@ class RegisterUIDScreen(Screen):
         # Create the bottom menu
         self.bottom_sheet_menu = None
 
-        self.event_loop: AbstractEventLoop = event_loop
+        self.event_loop: AbstractEventLoop = App.get_running_app().loop
 
     #
     # Function is called when the product screen is entered
@@ -57,8 +59,8 @@ class RegisterUIDScreen(Screen):
                 # store all emails adressed in the sheet_menu
                 self.mail_list.append(user["email"])
         else:
-            print("Error: addresses could not be fetched from server")
-            os._exit(os.EX_UNAVAILABLE)
+            Logger.critical("Error: addresses could not be fetched from server")
+            os._exit(1)
 
         self.mail_list.sort()
 
@@ -107,9 +109,10 @@ class RegisterUIDScreen(Screen):
 
         else:
             # User could not be added succesfully, give error 2.
-            print("Error " + str(request.status_code) + " occurred when trying to add the user: error message: " +
-                  request.text)
-            os._exit(os.EX_UNAVAILABLE)
+            Logger.critical(
+                "Error " + str(request.status_code) + " occurred when trying to add the user: error message: " +
+                request.text)
+            os._exit(1)
 
     # Request name to go to WelcomeScreen
     def __request_name(self):
@@ -125,8 +128,9 @@ class RegisterUIDScreen(Screen):
 
         else:
             # Print errorcode 3 when the user mapped to that e-mailadress does not exist, SHOULD NOT HAPPEN
-            print("An error " + str(response) + ": occured when trying to access the name of the newly added account")
-            os._exit(os.EX_UNAVAILABLE)
+            Logger.critical("An error " + str(
+                response.text) + ": occured when trying to access the name of the newly added account")
+            os._exit(1)
 
     #
     # Select email adress from server query

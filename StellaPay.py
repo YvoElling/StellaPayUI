@@ -6,6 +6,7 @@ import threading
 
 import kivy
 import requests
+from kivy import Logger
 from kivy.config import Config
 from kivy.core.window import Window
 from kivy.lang import Builder
@@ -66,8 +67,8 @@ def create_static_database():
         # db_conn.execute(one_month_fun_fact_table)
 
     except sqlite3.Error as e:
-        print(e)
-        os._exit(os.EX_SOFTWARE)
+        Logger.critical(e)
+        os._exit(1)
 
     return conn
 
@@ -105,35 +106,35 @@ class StellaPay(MDApp):
         # Load .kv file
         Builder.load_file('kvs/DefaultScreen.kv')
 
-        print("Starting event loop")
+        Logger.debug("Starting event loop")
         self.loop = asyncio.new_event_loop()
         self.event_loop_thread = threading.Thread(target=self.run_event_loop, args=(self.loop,), daemon=True)
         self.event_loop_thread.start()
-        print("Started event loop")
+        Logger.debug("Started event loop")
 
-        print("Start authentication to backend")
+        Logger.debug("Start authentication to backend")
         self.loop.call_soon_threadsafe(self.setup_authentication)
 
         # Initialize defaultScreen (to create session cookies for API calls)
-        ds_screen = DefaultScreen(name=Screens.DEFAULT_SCREEN.value, event_loop=self.loop, session=self.session)
+        ds_screen = DefaultScreen(name=Screens.DEFAULT_SCREEN.value)
 
         # Load screenloader and add screens
         screen_manager.add_widget(ds_screen)
         screen_manager.add_widget(WelcomeScreen(name=Screens.WELCOME_SCREEN.value))
         screen_manager.add_widget(
-            RegisterUIDScreen(name=Screens.REGISTER_UID_SCREEN.value, session=self.session, event_loop=self.loop))
+            RegisterUIDScreen(name=Screens.REGISTER_UID_SCREEN.value))
         screen_manager.add_widget(ConfirmedScreen(name=Screens.CONFIRMED_SCREEN.value))
         screen_manager.add_widget(CreditsScreen(name=Screens.CREDITS_SCREEN.value))
         screen_manager.add_widget(
-            ProductScreen(name=Screens.PRODUCT_SCREEN.value, session=self.session, event_loop=self.loop))
+            ProductScreen(name=Screens.PRODUCT_SCREEN.value))
         screen_manager.add_widget(ProfileScreen(name=Screens.PROFILE_SCREEN.value))
 
         screen_manager.get_screen(Screens.DEFAULT_SCREEN.value).static_database = self.database
 
-        print("Registering default screen as card listener")
+        Logger.debug("Registering default screen as card listener")
         ds_screen.register_card_listener(self.card_connection_manager)
 
-        print("Starting NFC reader")
+        Logger.debug("Starting NFC reader")
         self.card_connection_manager.start_nfc_reader()
 
         return screen_manager
@@ -155,18 +156,18 @@ class StellaPay(MDApp):
         try:
             json_credentials = self.__parse_to_json('authenticate.json')
         except Exception:
-            print("You need to provide an 'authenticate.json' file for your backend credentials.")
-            os._exit(os.EX_CONFIG)
+            Logger.critical("You need to provide an 'authenticate.json' file for your backend credentials.")
+            os._exit(1)
 
         # Attempt to log in
         response = self.session.post(url=BackendURLs.AUTHENTICATE.value, json=json_credentials)
 
         # Break control flow if the user cannot identify himself
         if not response.ok:
-            print("Could not correctly authenticate, error code 8. Check your username and password")
-            os._exit(os.EX_CONFIG)
+            Logger.critical("Could not correctly authenticate, error code 8. Check your username and password")
+            os._exit(1)
         else:
-            print("Authenticated correctly to backend.")
+            Logger.debug("Authenticated correctly to backend.")
 
     def build_config(self, config):
         config.setdefaults('device', {
@@ -176,9 +177,13 @@ class StellaPay(MDApp):
             'fullscreen': 'True'
         })
 
+    def on_start(self):
+        Logger.debug("Starting StellaPay!")
+
     def on_stop(self):
-        print("Stopping!")
+        Logger.debug("Stopping!")
         self.loop.stop()  # Stop event loop
+
 
 if __name__ == '__main__':
     StellaPay().run()

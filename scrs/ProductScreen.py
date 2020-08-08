@@ -2,6 +2,8 @@ import os
 import random
 from asyncio import AbstractEventLoop
 
+from kivy import Logger
+from kivy.app import App
 from kivy.clock import Clock
 from kivy.lang import Builder
 from kivy.uix.screenmanager import Screen
@@ -30,7 +32,7 @@ class ProductScreen(Screen):
     # shopping cart
     shopping_cart = ShoppingCart()
 
-    def __init__(self, session, event_loop, **kwargs):
+    def __init__(self, **kwargs):
         # Load screen
         Builder.load_file('kvs/ProductScreen.kv')
         super(ProductScreen, self).__init__(**kwargs)
@@ -39,13 +41,13 @@ class ProductScreen(Screen):
         self.direct_confirm = None
         # Shopping_cart dialog screen object
         self.shopping_cart_dialog = None
-        self.session = session
+        self.session = App.get_running_app().session
 
         # Timeout variables
         self.timeout_event = None
         self.timeout_time = 75
 
-        self.event_loop: AbstractEventLoop = event_loop
+        self.event_loop: AbstractEventLoop = App.get_running_app().loop
 
     # Start timeout counter
     def on_start_timeout(self):
@@ -97,13 +99,13 @@ class ProductScreen(Screen):
                             self.local_items[cat['name']].append(p)
                 else:
                     # Error in retrieving products from server
-                    print("Products could not be retrieved: " + response.text)
-                    os._exit(os.EX_UNAVAILABLE)
+                    Logger.critical("Products could not be retrieved: " + response.text)
+                    os._exit(1)
 
         else:
             # Error
-            print("Categories could not be retrieved: " + response.text)
-            os._exit(os.EX_UNAVAILABLE)
+            Logger.critical("Categories could not be retrieved: " + response.text)
+            os._exit(1)
 
     def load_data(self, database):
         # Clean the tabs before reloading them
@@ -295,8 +297,8 @@ class ProductScreen(Screen):
             self.manager.current = "DefaultScreen"
 
         else:
-            print("Payment could not be made: error: " + response.content)
-            os._exit(os.EX_UNAVAILABLE)
+            Logger.critical("Payment could not be made: error: " + response.content)
+            os._exit(1)
 
     def __end_process(self):
         self.shopping_cart.emtpy_cart()

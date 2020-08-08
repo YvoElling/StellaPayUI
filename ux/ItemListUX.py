@@ -1,10 +1,10 @@
 import os
 
+from kivy import Logger
 from kivy.lang import Builder
 from kivymd.uix.button import MDFlatButton
 from kivymd.uix.dialog import MDDialog
 from kivymd.uix.list import TwoLineAvatarIconListItem
-import requests
 
 from ds.Purchase import Purchase
 from ux.PurchaserItem import PurchaserItem
@@ -73,8 +73,8 @@ class ItemListUX(TwoLineAvatarIconListItem):
                                                                  tertiary_text_color=[0.509, 0.509, 0.509, 1])
                                                    )
             else:
-                print("Error: addresses could not be fetched from server")
-                os._exit(os.EX_UNAVAILABLE)
+                Logger.critical("Error: addresses could not be fetched from server")
+                os._exit(1)
         if not self.purchaser_list_dialog:
             self.purchaser_list_dialog = MDDialog(
                 type="confirmation",
