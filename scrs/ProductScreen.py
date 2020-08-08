@@ -11,6 +11,7 @@ from kivymd.uix.dialog import MDDialog
 from ds.Product import Product
 from ds.ShoppingCart import ShoppingCart
 from scrs.TabDisplay import TabDisplay
+from utils.Screens import Screens
 from ux.ItemListUX import ItemListUX
 from ux.ShoppingCartItem import ShoppingCartItem
 

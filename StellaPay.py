@@ -90,8 +90,6 @@ class StellaPay(MDApp):
         Config.set('graphics', 'width', self.config.get('device', 'width'))
         Config.set('graphics', 'height', self.config.get('device', 'height'))
 
-
-
         if self.config.get('device', 'fullscreen') == 'True':
             Window.fullscreen = True
         else:
@@ -109,7 +107,8 @@ class StellaPay(MDApp):
 
         print("Starting event loop")
         self.loop = asyncio.new_event_loop()
-        threading.Thread(target=self.run_event_loop, args=(self.loop,)).start()
+        self.event_loop_thread = threading.Thread(target=self.run_event_loop, args=(self.loop,), daemon=True)
+        self.event_loop_thread.start()
         print("Started event loop")
 
         print("Start authentication to backend")
@@ -177,6 +176,9 @@ class StellaPay(MDApp):
             'fullscreen': 'True'
         })
 
+    def on_stop(self):
+        print("Stopping!")
+        self.loop.stop()  # Stop event loop
 
 if __name__ == '__main__':
     StellaPay().run()
