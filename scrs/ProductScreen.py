@@ -1,15 +1,17 @@
-from kivy.uix.screenmanager import Screen, SlideTransition
+import random
+from asyncio import AbstractEventLoop
+
 from kivy.clock import Clock
 from kivy.lang import Builder
+from kivy.uix.screenmanager import Screen
 from kivymd.uix.button import MDFlatButton, MDRaisedButton
 from kivymd.uix.dialog import MDDialog
+
 from ds.Product import Product
 from ds.ShoppingCart import ShoppingCart
 from scrs.TabDisplay import TabDisplay
 from ux.ItemListUX import ItemListUX
 from ux.ShoppingCartItem import ShoppingCartItem
-
-import random
 
 
 class ProductScreen(Screen):
@@ -26,7 +28,7 @@ class ProductScreen(Screen):
     # shopping cart
     shopping_cart = ShoppingCart()
 
-    def __init__(self, cookies, **kwargs):
+    def __init__(self, session, event_loop, **kwargs):
         # Load screen
         Builder.load_file('kvs/ProductScreen.kv')
         super(ProductScreen, self).__init__(**kwargs)
@@ -35,51 +37,13 @@ class ProductScreen(Screen):
         self.direct_confirm = None
         # Shopping_cart dialog screen object
         self.shopping_cart_dialog = None
-        self.requests_cookies = cookies
+        self.session = session
 
         # Timeout variables
         self.timeout_event = None
         self.timeout_time = 75
 
-        # Get all categories names
-        response = self.requests_cookies.get(url=self.get_all_cat_api)
-
-        # Check status response
-        if response.ok:
-            categories = response.json()
-
-            # add all tabs to the tabbar
-            for cat in categories:
-                # Create tab display
-                tab = TabDisplay(text=cat['name'])
-                self.tabs.append(tab)
-                self.ids.android_tabs.add_widget(tab)
-                self.local_items[cat['name']] = []
-
-                # Request products from category tab_text
-                request = self.get_cat_api_url + cat['name']
-                response = self.requests_cookies.get(request)
-
-                # Evaluate server response
-                if response.ok:
-                    # convert response to json
-                    products_json = response.json()
-
-                    # Create a product object for all
-                    for product in products_json:
-                        # Only add the product to the list if the product must be shown
-                        if product['shown']:
-                            p = Product().create_from_json(product)
-                            self.local_items[cat['name']].append(p)
-                else:
-                    # Error in retrieving products from server
-                    print("Products could not be retrieved: " + response)
-                    exit(7)
-
-        else:
-            # Error
-            print("Categories could not be retrieved: " + response)
-            exit(6)
+        self.event_loop: AbstractEventLoop = event_loop
 
     # Start timeout counter
     def on_start_timeout(self):
@@ -98,6 +62,46 @@ class ProductScreen(Screen):
     def on_enter(self, *args):
         # Initialize timeouts
         self.on_start_timeout()
+
+        # Get all categories names
+        response = self.session.get(url=self.get_all_cat_api)
+
+        # Check status response
+        if response.ok:
+            categories = response.json()
+
+            # add all tabs to the tabbar
+            for cat in categories:
+                # Create tab display
+                tab = TabDisplay(text=cat['name'])
+                self.tabs.append(tab)
+                self.ids.android_tabs.add_widget(tab)
+                self.local_items[cat['name']] = []
+
+                # Request products from category tab_text
+                request = self.get_cat_api_url + cat['name']
+                response = self.session.get(request)
+
+                # Evaluate server response
+                if response.ok:
+                    # convert response to json
+                    products_json = response.json()
+
+                    # Create a product object for all
+                    for product in products_json:
+                        # Only add the product to the list if the product must be shown
+                        if product['shown']:
+                            p = Product().create_from_json(product)
+                            self.local_items[cat['name']].append(p)
+                else:
+                    # Error in retrieving products from server
+                    print("Products could not be retrieved: " + response.text)
+                    exit(7)
+
+        else:
+            # Error
+            print("Categories could not be retrieved: " + response.text)
+            exit(6)
 
     def load_data(self, database):
         # Clean the tabs before reloading them
@@ -129,7 +133,7 @@ class ProductScreen(Screen):
                                                         user_mail=self.manager.get_screen("DefaultScreen").user_mail,
                                                         price="€" + product.get_price(),
                                                         shoppingcart=self.shopping_cart,
-                                                        cookies=self.requests_cookies,
+                                                        cookies=self.session,
                                                         secondary_text=cff,
                                                         secondary_theme_text_color="Custom",
                                                         secondary_text_color=[0.509, 0.509, 0.509, 1]))
@@ -146,7 +150,7 @@ class ProductScreen(Screen):
         if self.shopping_cart_dialog:
             self.shopping_cart_dialog.dismiss()
 
-        self.manager.current = Screen.DEFAULT_SCREEN.name
+        self.manager.current = Screens.DEFAULT_SCREEN.value
 
     #
     # upon leaving the screen, cancel the timeout event
@@ -164,7 +168,7 @@ class ProductScreen(Screen):
     def on_cancel(self):
         self.timeout_event.cancel()
         self.__end_process()
-        self.manager.current = Screen.DEFAULT_SCREEN.name
+        self.manager.current = Screens.DEFAULT_SCREEN.value
 
     #
     # move to profile screen
@@ -175,7 +179,7 @@ class ProductScreen(Screen):
 
         # Cancel timeout event and switch to ProfileScreen
         self.timeout_event.cancel()
-        self.manager.current = Screen.PROFILE_SCREEN.name
+        self.manager.current = Screens.PROFILE_SCREEN.value
 
     #
     # callback function for when tab is switched
@@ -273,7 +277,7 @@ class ProductScreen(Screen):
         json_cart = self.shopping_cart.to_json()
 
         # use a POST-request to forward the shopping cart
-        response = self.requests_cookies.post(self.confirm_api, json=json_cart)
+        response = self.session.post(self.confirm_api, json=json_cart)
 
         if response.ok:
             # Reset instance variables

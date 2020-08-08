@@ -1,7 +1,7 @@
 from enum import Enum
 
 
-class Screen(Enum):
+class Screens(Enum):
     DEFAULT_SCREEN = "DefaultScreen"
     WELCOME_SCREEN = "WelcomeScreen"
     CREDITS_SCREEN = "CreditsScreen"

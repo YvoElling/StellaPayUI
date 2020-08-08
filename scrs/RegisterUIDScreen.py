@@ -1,9 +1,12 @@
-from kivy.clock import Clock
-from kivy.uix.screenmanager import Screen, SlideTransition
-from kivy.lang import Builder
-import requests
 import re  # regex
+from asyncio import AbstractEventLoop
+
+from kivy.clock import Clock
+from kivy.lang import Builder
+from kivy.uix.screenmanager import Screen
 from kivymd.uix.bottomsheet import MDListBottomSheet
+
+from utils.Screens import Screens
 
 
 class RegisterUIDScreen(Screen):
@@ -13,7 +16,7 @@ class RegisterUIDScreen(Screen):
     get_name_uid_api = "http://staartvin.com:8181/identification/request-user/"
     nfc_id = None
 
-    def __init__(self, cookies, **kwargs):
+    def __init__(self, session, event_loop, **kwargs):
         # Load KV file for this screen
         Builder.load_file('kvs/RegisterUIDScreen.kv')
 
@@ -21,7 +24,7 @@ class RegisterUIDScreen(Screen):
         super(RegisterUIDScreen, self).__init__(**kwargs)
 
         # Retrieve cookies session so no new authentication is required
-        self.requests_cookies = cookies
+        self.session = session
         self.user_json = None
 
         # local list that stores all mailadresses currently retrieved from the database
@@ -34,8 +37,15 @@ class RegisterUIDScreen(Screen):
         # Create the bottom menu
         self.bottom_sheet_menu = None
 
+        self.event_loop: AbstractEventLoop = event_loop
+
+    #
+    # Function is called when the product screen is entered
+    #
+    def on_enter(self, *args):
+
         # Get all users from the database
-        user_data = self.requests_cookies.get(self.get_users_api)
+        user_data = self.session.get(self.get_users_api)
 
         if user_data.ok:
             # convert to json
@@ -51,10 +61,6 @@ class RegisterUIDScreen(Screen):
 
         self.mail_list.sort()
 
-    #
-    # Function is called when the product screen is entered
-    #
-    def on_enter(self, *args):
         self.timeout_event = Clock.schedule_once(self.on_timeout, self.timeout_time)
 
     #
@@ -75,7 +81,7 @@ class RegisterUIDScreen(Screen):
 
     # Return to default screen when cancelled
     def on_cancel(self):
-        self.manager.current = Screen.DEFAULT_SCREEN.name
+        self.manager.current = Screens.DEFAULT_SCREEN.value
 
     # Saves user-card-mapping to the database
     def on_save_user(self):
@@ -85,18 +91,18 @@ class RegisterUIDScreen(Screen):
             return
 
         # Use a POST command to add connect this UID to the user
-        # uid = self.manager.get_screen(Screen.DEFAULT_SCREEN.name).nfc_uid
+        # uid = self.manager.get_screen(Screen.DEFAULT_SCREEN.value).nfc_uid
         pattern = '(\[b\])([a-zA-Z\.@]+)'
         filtered_mail = re.search(pattern, str(self.ids.selected_on_mail.text))
-        request = self.requests_cookies.post(self.add_user_api, json={'card_id': str(self.nfc_id),
-                                                         'email': str(filtered_mail.group(2))})
+        request = self.session.post(self.add_user_api, json={'card_id': str(self.nfc_id),
+                                                             'email': str(filtered_mail.group(2))})
 
         # If the users was added successfully ( status_code : 200), proceed to WelcomeScreen
         if request.ok:
 
             # Set the name as the name of the user on the next page
-            self.manager.get_screen(Screen.WELCOME_SCREEN.name).label.text = self.__request_name()
-            self.manager.current = Screen.WELCOME_SCREEN.name
+            self.manager.get_screen(Screens.WELCOME_SCREEN.value).label.text = self.__request_name()
+            self.manager.current = Screens.WELCOME_SCREEN.value
 
         else:
             # User could not be added succesfully, give error 2.
@@ -109,7 +115,7 @@ class RegisterUIDScreen(Screen):
         # Prepare API request
         name_request = self.get_name_uid_api + self.nfc_id
         # Make API request
-        response = self.requests_cookies.get(url=name_request)
+        response = self.session.get(url=name_request)
 
         if response.ok:
             query_json = response.json()

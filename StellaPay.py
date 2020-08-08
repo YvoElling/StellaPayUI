@@ -1,7 +1,7 @@
 import asyncio
+import json
 import sqlite3
 import threading
-from asyncio.events import AbstractEventLoop
 
 import kivy
 import requests
@@ -11,7 +11,7 @@ from kivy.lang import Builder
 from kivy.uix.screenmanager import ScreenManager
 from kivymd.app import MDApp
 
-from ScreenEnum import Screen
+from PythonNFCReader.NFCReader import CardConnectionManager
 from scrs.ConfirmedScreen import ConfirmedScreen
 from scrs.CreditsScreen import CreditsScreen
 from scrs.DefaultScreen import DefaultScreen
@@ -19,6 +19,8 @@ from scrs.ProductScreen import ProductScreen
 from scrs.ProfileScreen import ProfileScreen
 from scrs.RegisterUIDScreen import RegisterUIDScreen
 from scrs.WelcomeScreen import WelcomeScreen
+from utils.Connections import BackendURLs
+from utils.Screens import Screens
 
 kivy.require('1.11.1')
 
@@ -73,6 +75,8 @@ class StellaPay(MDApp):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.database = create_static_database()
+        self.card_connection_manager = CardConnectionManager()
+        self.session = requests.Session()
 
     def build(self):
         self.theme_cls.theme_style = "Dark"
@@ -96,30 +100,55 @@ class StellaPay(MDApp):
         threading.Thread(target=self.run_event_loop, args=(self.loop,)).start()
         print("Started event loop")
 
-        print(type(self.loop))
+        print("Start authentication to backend")
+        self.loop.call_soon_threadsafe(self.setup_authentication)
 
         # Initialize defaultScreen (to create session cookies for API calls)
-        ds_screen = DefaultScreen(name=Screen.DEFAULT_SCREEN.name)
-        cookies = ds_screen.get_cookies()
+        ds_screen = DefaultScreen(name=Screens.DEFAULT_SCREEN.value, event_loop=self.loop, session=self.session)
 
         # Load screenloader and add screens
         screen_manager.add_widget(ds_screen)
-        screen_manager.add_widget(WelcomeScreen(name=Screen.WELCOME_SCREEN.name))
-        screen_manager.add_widget(RegisterUIDScreen(name=Screen.REGISTER_UID_SCREEN.name, cookies=cookies))
-        screen_manager.add_widget(ConfirmedScreen(name=Screen.CONFIRMED_SCREEN.name))
-        screen_manager.add_widget(CreditsScreen(name=Screen.CREDITS_SCREEN.name))
-        screen_manager.add_widget(ProductScreen(name=Screen.PRODUCT_SCREEN.name, cookies=cookies))
-        screen_manager.add_widget(ProfileScreen(name=Screen.PROFILE_SCREEN.name))
+        screen_manager.add_widget(WelcomeScreen(name=Screens.WELCOME_SCREEN.value))
+        screen_manager.add_widget(
+            RegisterUIDScreen(name=Screens.REGISTER_UID_SCREEN.value, session=self.session, event_loop=self.loop))
+        screen_manager.add_widget(ConfirmedScreen(name=Screens.CONFIRMED_SCREEN.value))
+        screen_manager.add_widget(CreditsScreen(name=Screens.CREDITS_SCREEN.value))
+        screen_manager.add_widget(
+            ProductScreen(name=Screens.PRODUCT_SCREEN.value, session=self.session, event_loop=self.loop))
+        screen_manager.add_widget(ProfileScreen(name=Screens.PROFILE_SCREEN.value))
 
-        screen_manager.get_screen(Screen.DEFAULT_SCREEN.name).static_database = self.database
-        screen_manager.get_screen(Screen.DEFAULT_SCREEN.name).event_loop : AbstractEventLoop = self.loop
+        screen_manager.get_screen(Screens.DEFAULT_SCREEN.value).static_database = self.database
 
+        print("Registering default screen as card listener")
+        ds_screen.register_card_listener(self.card_connection_manager)
+
+        print("Starting NFC reader")
+        self.card_connection_manager.start_nfc_reader()
 
         return screen_manager
 
     def run_event_loop(self, loop):
         asyncio.set_event_loop(loop)
         loop.run_forever()
+
+    @staticmethod
+    def __parse_to_json(file):
+        with open(file) as credentials:
+            return json.load(credentials)
+
+    def setup_authentication(self):
+        # Convert authentication.json to json dict
+        json_credentials = self.__parse_to_json('authenticate.json')
+
+        # Attempt to log in
+        response = self.session.post(url=BackendURLs.AUTHENTICATE.value, json=json_credentials)
+
+        # Break control flow if the user cannot identify himself
+        if not response.ok:
+            print("Could not correctly authenticate, error code 8. Check your username and password")
+            exit(8)
+        else:
+            print("Authenticated correctly to backend.")
 
 
 if __name__ == '__main__':

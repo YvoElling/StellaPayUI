@@ -2,6 +2,8 @@ from kivy.clock import Clock
 from kivy.lang import Builder
 from kivy.uix.screenmanager import Screen
 
+from utils.Screens import Screens
+
 
 class CreditsScreen(Screen):
     def __init__(self, **kwargs):
@@ -27,7 +29,7 @@ class CreditsScreen(Screen):
     #
     def on_enter(self, *args):
         self.timeout_event = Clock.schedule_once(self.on_timeout, self.timeout_time)
-        self.manager.get_screen("ProductScreen").on_cleanup()
+        self.manager.get_screen(Screens.PRODUCT_SCREEN.value).on_cleanup()
 
     #
     # Timeout callback function.

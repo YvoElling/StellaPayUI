@@ -1,7 +1,9 @@
 from kivy.clock import Clock
-from kivy.uix.screenmanager import Screen, SlideTransition
 from kivy.lang import Builder
+from kivy.uix.screenmanager import Screen
 from kivymd.uix.taptargetview import MDTapTargetView
+
+from utils.Screens import Screens
 
 
 class WelcomeScreen(Screen):
@@ -51,17 +53,17 @@ class WelcomeScreen(Screen):
             self.tap_target_view.stop()
 
         # Clean up the loaded products that are stored in the tabs
-        self.manager.get_screen("ProductScreen").on_cleanup()
+        self.manager.get_screen(Screens.PRODUCT_SCREEN.value).on_cleanup()
         # Switch back to the default screen to welcome a new user
-        self.manager.current = Screen.DEFAULT_SCREEN.name
+        self.manager.current = Screens.DEFAULT_SCREEN.value
 
     #
     # Called when buy is pressed
     #
     def on_buy(self):
         self.timeout_event.cancel()
-        self.manager.get_screen(Screen.PRODUCT_SCREEN.name).user_name = self.ids.label.text
-        self.manager.current = Screen.PRODUCT_SCREEN.name
+        self.manager.get_screen(Screens.PRODUCT_SCREEN.value).user_name = self.ids.label.text
+        self.manager.current = Screens.PRODUCT_SCREEN.value
 
     #
     # Opens the little information screen at the right bottom

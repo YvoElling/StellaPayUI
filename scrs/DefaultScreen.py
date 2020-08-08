@@ -1,18 +1,17 @@
-import json
-import threading
+from asyncio import AbstractEventLoop
 
-import requests
-from kivy.network.urlrequest import UrlRequest
-from kivy.uix.screenmanager import Screen, SlideTransition, NoTransition
+from kivy.uix.screenmanager import Screen, SlideTransition
 from kivymd.uix.bottomsheet import MDListBottomSheet
-
-from PythonNFCReader import NFCReader as nfc
-
 
 # defaultScreen class
 # creates the default screen when the program waits for a card to be presented
 # changes when a card is presented
 #
+from PythonNFCReader.CardListener import CardListener
+from PythonNFCReader.NFCReader import CardConnectionManager
+from utils.Screens import Screens
+
+
 class DefaultScreen(Screen):
     # Authenticate query, use local file for password/username
     authenticate = "http://staartvin.com:8181/authenticate"
@@ -20,7 +19,15 @@ class DefaultScreen(Screen):
     api_url = "http://staartvin.com:8181/identification/request-user/"
     get_users_api = "http://staartvin.com:8181/users"
 
-    def __init__(self, **kwargs):
+    class NFCListener(CardListener):
+
+        def __init__(self, default_screen: "DefaultScreen"):
+            self.default_screen = default_screen
+
+        def card_is_presented(self, uid=None) -> None:
+            self.default_screen.nfc_card_presented(uid)
+
+    def __init__(self, session, event_loop, **kwargs):
         # Call to super (Screen class)
         super(DefaultScreen, self).__init__(**kwargs)
 
@@ -31,90 +38,30 @@ class DefaultScreen(Screen):
         self.bottom_sheet_menu = None
         self.mail_dict = {}
 
+        self.nfc_listener = DefaultScreen.NFCListener(self)
+
+        self.session = session
+
+        # Keep track of whether the user is still making a transaction. If so, we ignore NFC input.
+        self.making_transaction = False
+
         # Create a session to maintain cookie data for this instance
-        self.requests_cookies = requests.Session()
+        self.event_loop: AbstractEventLoop = event_loop
 
-        print("Calling init on", threading.get_ident())
-
-        # Create and start a thread to listen for NFC card presentation
-        nfc_thread = threading.Thread(name="NFC_reader",
-                                      target=self.create_nfc_reader)
-        nfc_thread.start()
-
-        # Create and start a thread that monitors whether the nfc_thread
-        # has finished. This method is chosen to avoid having a blocking
-        # thread as the main UI thread
-        listener_thread = threading.Thread(name="NFC_reader_monitor",
-                                           target=self.launch_nfc_reader_monitor,
-                                           args=(nfc_thread,))
-        listener_thread.start()
-
-    # Get cookies object for other classes
-    def get_cookies(self):
-        return self.requests_cookies
-
-    @staticmethod
-    def __parse_to_json(file):
-        with open(file) as credentials:
-            return json.load(credentials)
-
-    # Create NFCReader() Object that waits until a card is presented
-    def create_nfc_reader(self):
-        self.nfc_r = nfc.NFCReader()
-
-    #
-    # waits for the thread @nfc_thread to finish
-    # .join() is called from a seperate to avoiding a blocking main UI thread
-    #
-    def launch_nfc_reader_monitor(self, nfc_thread):
-        # Wait for the @nfc_thread thread to finish
-        nfc_thread.join()
-        # get UID for presented NFC card
-
-        # A card could be read incorrectly, if so, restart this screen en listen for the card again
-        if self.nfc_r.get_uid() is None:
-            self.__init__()
-
-        self.nfc_uid = self.nfc_r.get_uid().replace(" ", "")
-
-        # Send UID to Django database to validate person
-        name_request = self.api_url + self.nfc_uid
-        response = self.requests_cookies.get(url=name_request)
-
-        # Check response code to validate whether this user existed already. If so, proceed
-        # to the productScreen, else proceed to the registerUID screen
-        if response.ok:
-            # store result in JSON
-            query_json = response.json()
-
-            # Move to WelcomeScreen
-            self.manager.transition = SlideTransition(direction='left')
-
-            # store user-mail for payment confirmation later
-            self.user_mail = query_json["owner"]["email"]
-            self.user_name = query_json["owner"]["name"]
-
-            # Set the retrieved name as the name of the user on the next page
-            self.manager.get_screen('Screen.WELCOME_SCREEN.name').label.text = query_json["owner"]["name"]
-            self.manager.current = 'Screen.WELCOME_SCREEN.name'
-        else:
-            # User was not found, proceed to registerUID file
-            self.manager.get_screen('RegisterUIDScreen').nfc_id = self.nfc_uid
-            self.manager.current = 'RegisterUIDScreen'
+    def register_card_listener(self, card_connection_manager: "CardConnectionManager"):
+        card_connection_manager.register_listener(self.nfc_listener)
 
     #
     # restarts the card listener upon reentry of the screen
     #
     def on_enter(self, *args):
-        # self.__init__()
-        self.loop.call_soon_threadsafe(self.test_authentication)
-
         # Disable transitions to speed up process
-        self.manager.transition = NoTransition()
+        # self.manager.transition = NoTransition()
+        self.making_transaction = False
 
     def to_credits(self):
-        self.manager.get_screen(Screen.CREDITS_SCREEN.name).nfc_id = self.nfc_uid
-        self.manager.current = Screen.CREDITS_SCREEN.name
+        self.manager.get_screen(Screens.CREDITS_SCREEN.value).nfc_id = self.nfc_uid
+        self.manager.current = Screens.CREDITS_SCREEN.value
 
     #
     # gets called when the 'NFC kaart vergeten button is pressed'
@@ -125,7 +72,7 @@ class DefaultScreen(Screen):
         self.bottom_sheet_menu = None
 
         # Query user data
-        user_data = self.requests_cookies.get(self.get_users_api)
+        user_data = self.session.get(self.get_users_api)
         mail_list = []
         self.mail_dict = {}
 
@@ -161,23 +108,42 @@ class DefaultScreen(Screen):
         self.user_name = item.text
 
         # Set the name as the name of the user on the next page
-        self.manager.get_screen(Screen.WELCOME_SCREEN.name).label.text = item.text
-        self.manager.current = Screen.WELCOME_SCREEN.name
+        self.manager.get_screen(Screens.WELCOME_SCREEN.value).label.text = item.text
+        self.manager.current = Screens.WELCOME_SCREEN.value
 
     def on_leave(self, *args):
-        self.manager.get_screen(Screen.PRODUCT_SCREEN.name).load_data(self.static_database)
+        self.manager.get_screen(Screens.PRODUCT_SCREEN.value).load_data(self.static_database)
+        self.making_transaction = True
 
-    def test_authentication(self):
+    def nfc_card_presented(self, uid: str):
+        print("Read NFC card with uid", uid)
 
-        print("Testing authentication on", threading.get_ident())
+        # If we are currently making a transaction, ignore the card reading.
+        if self.making_transaction:
+            print("Ignoring NFC card as we are currently making a transaction.")
+            return
 
-        # Convert authentication.json to json dict
-        json_credentials = self.__parse_to_json('authenticate.json')
+        # Send UID to Django database to validate person
+        name_request = self.api_url + uid
+        response = self.session.get(url=name_request)
 
-        # Attempt to log in
-        response = self.requests_cookies.post(url=self.authenticate, json=json_credentials)
+        # Check response code to validate whether this user existed already. If so, proceed
+        # to the productScreen, else proceed to the registerUID screen
+        if response.ok:
+            # store result in JSON
+            query_json = response.json()
 
-        # Break control flow if the user cannot identify himself
-        if not response.ok:
-            print("Could not correctly authenticate, error code 8. Check your username and password")
-            exit(8)
+            # Move to WelcomeScreen
+            self.manager.transition = SlideTransition(direction='left')
+
+            # store user-mail for payment confirmation later
+            self.user_mail = query_json["owner"]["email"]
+            self.user_name = query_json["owner"]["name"]
+
+            # Set the retrieved name as the name of the user on the next page
+            self.manager.get_screen(Screens.WELCOME_SCREEN.value).label.text = query_json["owner"]["name"]
+            self.manager.current = Screens.WELCOME_SCREEN.value
+        else:
+            # User was not found, proceed to registerUID file
+            self.manager.get_screen(Screens.REGISTER_UID_SCREEN.value).nfc_id = uid
+            self.manager.current = Screens.REGISTER_UID_SCREEN.value
