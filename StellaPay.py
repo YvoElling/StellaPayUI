@@ -3,6 +3,7 @@ import json
 import os
 import sqlite3
 import threading
+from asyncio import AbstractEventLoop
 from typing import Optional, Dict
 
 import kivy
@@ -121,7 +122,7 @@ class StellaPay(MDApp):
         Builder.load_file('kvs/DefaultScreen.kv')
 
         Logger.debug("Starting event loop")
-        self.loop = asyncio.new_event_loop()
+        self.loop: AbstractEventLoop = asyncio.new_event_loop()
         self.event_loop_thread = threading.Thread(target=self.run_event_loop, args=(self.loop,), daemon=True)
         self.event_loop_thread.start()
         Logger.debug("Started event loop")

@@ -16,18 +16,10 @@
 
     Label:
         id: coupled
-        text: "Is deze al gekopped?"
+        text: "Is deze al gekoppeld?"
         size_hint: None, None
         pos_hint: {"center_x":0.5,"center_y":0.65}
         font_size: '20sp'
-
-
-#    Spinner:
-#        id: user_spinner
-#        size_hint: 0.45, 0.14
-#        pos_hint: {'center_x': 0.33, 'center_y': 0.45}
-#        text: 'Selecteer'
-#        values: ''
 
     MDFillRoundFlatIconButton:
         icon: "plus"
@@ -35,21 +27,20 @@
         height: dp(55)
         id: user_spinner
         markup: True
-        text: '[b]KIES[/b]'
+        text: 'Selecteer kaarthouder'
         font_size: '25sp'
         size_hint: None, None
-        pos_hint: {'center_x': 0.36, 'center_y': 0.45}
+        pos_hint: {'center_x': 0.5, 'center_y': 0.5}
         pos_hint_x: root.center_x
         pos_hint_y: root.center_y
-        on_release: root.on_select_mail()
+        on_release: root.on_click_user_list_button()
 
     Label:
-        id: selected_on_mail
+        id: chosen_user
         text: ""
         font_size: '20sp'
         markup: True
         pos_hint: {'center_x': 0.51, 'center_y': 0.35}
-
 
     MDFillRoundFlatButton:
         width: dp(110)
@@ -57,9 +48,9 @@
         id: vmk
         markup: True
         text: '[b]Voeg toe[/b]'
-#        md_bg_color: 0.062, 0.898, 0.105, 1
+        md_bg_color: app.theme_cls.green_button
         font_size: '25sp'
-        pos_hint: {"center_x": 0.53,"center_y":0.45}
+        pos_hint: {"center_x": 0.42,"center_y":0.2}
         pos_hint_x: root.center_x
         pos_hint_y: root.center_y
         on_release: root.on_save_user()
@@ -70,10 +61,10 @@
         id: stop
         markup: True
         text: '[b]STOP[/b]'
-#        md_bg_color: 0.933, 0.203, 0.125, 1
+        md_bg_color: app.theme_cls.red_button
         font_size: '25sp'
         size_hint: None, None
-        pos_hint: {"center_x": 0.68,"center_y":0.45}
+        pos_hint: {"center_x": 0.6,"center_y":0.2}
         pos_hint_x: root.center_x
         pos_hint_y: root.center_y
         on_release: root.on_cancel()
@@ -81,7 +72,7 @@
 
     Label:
         id: warning
-        text: "De NFC-chips in smartphones veranderen vaak van UID; wij raden daarom af om je telefoon te gebruiken"
+        text: "De NFC-chips in smartphones veranderen vaak van id, gebruik dus niet je telefoon"
         size_hint: None, None
         pos_hint: {"center_x":0.5,"center_y":0.05}
         font_size: '16sp'
