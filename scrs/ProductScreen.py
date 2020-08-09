@@ -24,6 +24,8 @@ class ProductScreen(Screen):
     # Store tab objects, these are later used to add the products
     tabs = []
 
+    product_items_per_category: Dict[str, List[ItemListUX]] = {}
+
     # API Links
     get_cat_api_url = "http://staartvin.com:8181/products/"
     get_all_cat_api = "http://staartvin.com:8181/categories"
@@ -68,6 +70,9 @@ class ProductScreen(Screen):
 
         if len(self.tabs) > 0:
             Logger.debug("Don't load tabs as we already have that information.")
+
+            # Load product items (because we still need to reload them)
+            self.load_products()
             return
 
         # Get all categories names
@@ -110,13 +115,13 @@ class ProductScreen(Screen):
                     Logger.critical("Products could not be retrieved: " + response.text)
                     os._exit(1)
 
-            # Load product items
-            self.event_loop.call_soon_threadsafe(self.load_products)
-
         else:
             # Error
             Logger.critical("Categories could not be retrieved: " + response.text)
             os._exit(1)
+
+        # Load product items
+        self.load_products()
 
     #
     # upon entering the screen, set the timeout
@@ -148,14 +153,13 @@ class ProductScreen(Screen):
                 #     cff = cff[:-1]
 
                 # Add item to the tab
-                tab.ids.container.add_widget(ItemListUX(text=product.get_name(),
-                                                        secondary_text=product_description,
+                tab.ids.container.add_widget(ItemListUX(text=product.get_name(), secondary_text=product_description,
                                                         secondary_theme_text_color="Custom",
                                                         secondary_text_color=[0.509, 0.509, 0.509, 1],
                                                         price="€" + product.get_price(),
                                                         shopping_cart=self.shopping_cart))
 
-            # Add item to the tab
+            # Add last item to the products (for each category) that is empty. This improves readability.
             tab.ids.container.add_widget(ItemListUX(text="",
                                                     secondary_text="",
                                                     secondary_theme_text_color="Custom",
@@ -225,8 +229,7 @@ class ProductScreen(Screen):
                         ),
                         MDRaisedButton(
                             text="Ja",
-                            on_release=self.on_confirm_payment,
-                            #                            md_bg_color=[0.933, 0.203, 0.125, 1]
+                            on_release=self.on_confirm_payment
                         ),
                     ]
                 )
@@ -313,3 +316,7 @@ class ProductScreen(Screen):
 
     def __end_process(self):
         self.shopping_cart.clear_cart()
+
+        # Make sure to clear all products from each tab, as we need to reload them if we come back.
+        for tab in self.tabs:
+            tab.ids.container.clear_widgets()

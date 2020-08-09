@@ -71,23 +71,22 @@ class ItemListUX(TwoLineAvatarIconListItem):
         self.alternative_purchaser_list.clear()
 
         for user_name, user_email in sorted(App.get_running_app().user_mapping.items()):
-            self.alternative_purchaser_list.append(PurchaserItem(text=user_name,
-                                                                 product_name=self.text,
-                                                                 shoppingcart=self.shopping_cart,
-                                                                 secondary_text=" ",
-                                                                 secondary_theme_text_color="Custom",
-                                                                 secondary_text_color=[0.509, 0.509, 0.509, 1])
-                                                   )
 
-        # Make sure to only show persons that are not yourself.
-        person_list = filter(lambda person: person.text != App.get_running_app().active_user,
-                             self.alternative_purchaser_list)
+            # Don't show the currently active user, as that would be silly.
+            if user_name == App.get_running_app().active_user:
+                continue
+
+            self.alternative_purchaser_list.append(
+                PurchaserItem(text=user_name, product_name=self.text, shoppingcart=self.shopping_cart,
+                              secondary_text=" ", secondary_theme_text_color="Custom",
+                              secondary_text_color=[0.509, 0.509, 0.509, 1])
+            )
 
         self.purchaser_list_dialog = MDDialog(
             type="confirmation",
             height="440px",
             width="700px",
-            items=person_list,
+            items=self.alternative_purchaser_list,
             buttons=[
                 MDFlatButton(
                     text="OK",
@@ -109,3 +108,6 @@ class ItemListUX(TwoLineAvatarIconListItem):
 
         # Add purchase to shopping cart
         self.shopping_cart.add_to_cart(purchase)
+
+    def clear_item(self):
+        self.ids.count = 0
