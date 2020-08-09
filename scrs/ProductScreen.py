@@ -1,6 +1,6 @@
 import os
-import random
 from asyncio import AbstractEventLoop
+from typing import Dict, List
 
 from kivy import Logger
 from kivy.app import App
@@ -20,7 +20,7 @@ from ux.ShoppingCartItem import ShoppingCartItem
 
 class ProductScreen(Screen):
     # Store items per category, these are stored locally to reduce the amount of queries required
-    local_items = {}
+    products_per_category: Dict[str, List[Product]] = {}
     # Store tab objects, these are later used to add the products
     tabs = []
 
@@ -60,27 +60,35 @@ class ProductScreen(Screen):
         self.timeout_event.cancel()
         self.on_start_timeout()
 
-    #
-    # upon entering the screen, set the timeout
-    #
-    def on_enter(self, *args):
-        # Initialize timeouts
-        self.on_start_timeout()
+    def on_pre_enter(self, *args):
+        # Load category information and tabs
+        self.event_loop.call_soon_threadsafe(self.load_category_data)
+
+    def load_category_data(self):
+
+        if len(self.tabs) > 0:
+            Logger.debug("Don't load tabs as we already have that information.")
+            return
 
         # Get all categories names
         response = self.session.get(url=self.get_all_cat_api)
 
+        Logger.debug("Loading product categories")
+
         # Check status response
         if response.ok:
+
             categories = response.json()
 
-            # add all tabs to the tabbar
+            Logger.debug(f"Retrieved {len(categories)} categories")
+
+            # Load tab for each category
             for cat in categories:
                 # Create tab display
                 tab = TabDisplay(text=cat['name'])
                 self.tabs.append(tab)
                 self.ids.android_tabs.add_widget(tab)
-                self.local_items[cat['name']] = []
+                self.products_per_category[cat['name']] = []
 
                 # Request products from category tab_text
                 request = self.get_cat_api_url + cat['name']
@@ -96,51 +104,56 @@ class ProductScreen(Screen):
                         # Only add the product to the list if the product must be shown
                         if product['shown']:
                             p = Product().create_from_json(product)
-                            self.local_items[cat['name']].append(p)
+                            self.products_per_category[cat['name']].append(p)
                 else:
                     # Error in retrieving products from server
                     Logger.critical("Products could not be retrieved: " + response.text)
                     os._exit(1)
+
+            # Load product items
+            self.event_loop.call_soon_threadsafe(self.load_products)
 
         else:
             # Error
             Logger.critical("Categories could not be retrieved: " + response.text)
             os._exit(1)
 
-    def load_data(self, database):
-        # Clean the tabs before reloading them
-        self.on_cleanup()
+    #
+    # upon entering the screen, set the timeout
+    #
+    def on_enter(self, *args):
+        # Initialize timeouts
+        self.on_start_timeout()
 
-        database_conn = database.cursor()
+    def load_products(self):
+        Logger.debug(f"Setting up product view")
 
         for tab in self.tabs:
-            for product in self.local_items[tab.text]:
+            for product in self.products_per_category[tab.text]:
                 # Should update this to PREPARED STATEMENT instead of this, but it's fun facts, so what the heck
                 # Get all fun facts for this product
-                database_conn.execute(
-                    "SELECT fun_fact FROM static_fun_facts WHERE product='" + product.get_name() + "'")
+                # database_conn.execute(
+                #     "SELECT fun_fact FROM static_fun_facts WHERE product='" + product.get_name() + "'")
+                #
+                # # store all fun facts that were found for this product in a list.
+                # fun_facts = database_conn.fetchall()
 
-                # store all fun facts that were found for this product in a list.
-                fun_facts = database_conn.fetchall()
-
-                cff = "Zoveel facts gevonden als Stella's in 2012"
-                if fun_facts:
-                    # Select a random fun fact from the list
-                    pff = random.choice(fun_facts)
-
-                    # Clean the fun fact by removing unnecessary tokens
-                    cff = str(pff).replace('(', '').replace(')', '').replace('\'', '').replace('\"', '')
-                    cff = cff[:-1]
+                product_description = "Zoveel facts gevonden als Stella's in 2012"
+                # if fun_facts:
+                #     # Select a random fun fact from the list
+                #     pff = random.choice(fun_facts)
+                #
+                #     # Clean the fun fact by removing unnecessary tokens
+                #     cff = str(pff).replace('(', '').replace(')', '').replace('\'', '').replace('\"', '')
+                #     cff = cff[:-1]
 
                 # Add item to the tab
                 tab.ids.container.add_widget(ItemListUX(text=product.get_name(),
-                                                        user_mail=self.manager.get_screen("DefaultScreen").user_mail,
-                                                        price="€" + product.get_price(),
-                                                        shoppingcart=self.shopping_cart,
-                                                        cookies=self.session,
-                                                        secondary_text=cff,
+                                                        secondary_text=product_description,
                                                         secondary_theme_text_color="Custom",
-                                                        secondary_text_color=[0.509, 0.509, 0.509, 1]))
+                                                        secondary_text_color=[0.509, 0.509, 0.509, 1],
+                                                        price="€" + product.get_price(),
+                                                        shopping_cart=self.shopping_cart))
 
     #
     # timeout callback function
@@ -160,14 +173,7 @@ class ProductScreen(Screen):
     # upon leaving the screen, cancel the timeout event
     #
     def on_leave(self, *args):
-        self.on_cleanup()
-
-    #
-    # Clean up display upon leaving
-    #
-    def on_cleanup(self):
-        for tab in self.tabs:
-            tab.ids.container.clear_widgets()
+        self.timeout_event.cancel()
 
     def on_cancel(self):
         self.timeout_event.cancel()
@@ -181,16 +187,14 @@ class ProductScreen(Screen):
         # Clear the shopping cart upon leaving this screen for consistency
         self.shopping_cart.get_shopping_cart().clear()
 
-        # Cancel timeout event and switch to ProfileScreen
-        self.timeout_event.cancel()
+        # Switch to profile screen
         self.manager.current = Screens.PROFILE_SCREEN.value
 
     #
     # callback function for when tab is switched
     #
     def on_tab_switch(self, instance_tabs, instance_tab, instance_tab_label, tab_text):
-        self.timeout_event.cancel()
-        self.on_start_timeout()
+        pass
 
     #
     # open confirmation dialog
@@ -206,26 +210,27 @@ class ProductScreen(Screen):
             # Create direct_confirm dialog
             if not self.direct_confirm:
                 self.direct_confirm = MDDialog(
-                    text="Voeg deze aankopen aan mijn account toe",
+                    title="",
+                    text="Wil je deze artikelen kopen?",
                     buttons=[
                         MDFlatButton(
-                            text="TERUG",
-                            on_release=self.on_return_direct_confirm
+                            text="Nee",
+                            on_release=self.on_cancel_payment
 
                         ),
                         MDRaisedButton(
-                            text="BEVESTIG",
-                            on_release=self.on_confirm,
+                            text="Ja",
+                            on_release=self.on_confirm_payment,
                             md_bg_color=[0.933, 0.203, 0.125, 1]
                         ),
-                    ],
+                    ]
                 )
             self.direct_confirm.open()
 
     #
     # opens shoppingcart display
     #
-    def show_shoppingcart(self):
+    def show_shopping_cart(self):
         # Reset timeout counter
         self.timeout_event.cancel()
         self.on_start_timeout()
@@ -237,9 +242,9 @@ class ProductScreen(Screen):
         for purchase in self.shopping_cart.get_shopping_cart():
             item = ShoppingCartItem(purchase=purchase,
                                     text=purchase.product_name,
-                                    tertiary_text=" ",
-                                    tertiary_theme_text_color="Custom",
-                                    tertiary_text_color=[0.509, 0.509, 0.509, 1])
+                                    secondary_text="",
+                                    secondary_theme_text_color="Custom",
+                                    secondary_text_color=[0.509, 0.509, 0.509, 1])
             shopping_cart_items.append(item)
 
         # If there are items in the shopping cart, display them
@@ -250,7 +255,7 @@ class ProductScreen(Screen):
                 buttons=[
                     MDFlatButton(
                         text="OK",
-                        on_release=self.on_return_shoppingcart
+                        on_release=self.on_close_shoppingcart
                     ),
                 ],
             )
@@ -260,7 +265,7 @@ class ProductScreen(Screen):
     #
     # Close dialog when TERUG is pressed
     #
-    def on_return_shoppingcart(self, dt):
+    def on_close_shoppingcart(self, dt):
         self.timeout_event.cancel()
         self.on_start_timeout()
         self.shopping_cart_dialog.dismiss()
@@ -268,7 +273,7 @@ class ProductScreen(Screen):
     #
     # Close dialog when TERUG is pressed
     #
-    def on_return_direct_confirm(self, dt):
+    def on_cancel_payment(self, dt):
         self.timeout_event.cancel()
         self.on_start_timeout()
         self.direct_confirm.dismiss()
@@ -276,7 +281,7 @@ class ProductScreen(Screen):
     #
     # Confirms a payment
     #
-    def on_confirm(self, dt):
+    def on_confirm_payment(self, dt):
         # Serialize the shopping cart
         json_cart = self.shopping_cart.to_json()
 
@@ -301,4 +306,4 @@ class ProductScreen(Screen):
             os._exit(1)
 
     def __end_process(self):
-        self.shopping_cart.emtpy_cart()
+        self.shopping_cart.clear_cart()

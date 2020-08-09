@@ -3,6 +3,7 @@ import json
 import os
 import sqlite3
 import threading
+from typing import Optional, Dict
 
 import kivy
 import requests
@@ -79,6 +80,11 @@ class StellaPay(MDApp):
         self.database = create_static_database()
         self.card_connection_manager = CardConnectionManager()
         self.session = requests.Session()
+        # Store user that is logged in (can be none)
+        self.active_user: Optional[str] = None
+
+        # Store a mapping from user name to user email
+        self.user_mapping: Dict[str, str] = {}
 
     def build(self):
         self.theme_cls.theme_style = "Dark"
@@ -128,8 +134,6 @@ class StellaPay(MDApp):
         screen_manager.add_widget(
             ProductScreen(name=Screens.PRODUCT_SCREEN.value))
         screen_manager.add_widget(ProfileScreen(name=Screens.PROFILE_SCREEN.value))
-
-        screen_manager.get_screen(Screens.DEFAULT_SCREEN.value).static_database = self.database
 
         Logger.debug("Registering default screen as card listener")
         ds_screen.register_card_listener(self.card_connection_manager)

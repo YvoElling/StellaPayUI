@@ -1,3 +1,4 @@
+from kivy.app import App
 from kivy.clock import Clock
 from kivy.lang import Builder
 from kivy.uix.screenmanager import Screen
@@ -18,13 +19,12 @@ class ProfileScreen(Screen):
     # Called when the screen is loaded:
     # - for retrieving user name
     def on_enter(self, *args):
-        self.ids.username.text = self.manager.get_screen(Screens.DEFAULT_SCREEN.value).user_name
+        self.ids.username.text = App.get_running_app().active_user
         self.timeout_event = Clock.schedule_once(self.on_timeout, self.timeout_time)
 
     # Return to the product page
     def on_back(self):
         self.manager.current = Screens.PRODUCT_SCREEN.value
-        self.timeout_event.cancel()
 
     # Return to defaultScreen upon timeout
     def on_timeout(self, dt):
@@ -37,6 +37,4 @@ class ProfileScreen(Screen):
 
     # Clear name on leave
     def on_leave(self, *args):
-        self.ids.username.text = ""
-        self.manager.get_screen("ProductScreen") \
-            .load_data(self.manager.get_screen(Screens.DEFAULT_SCREEN.value).static_database)
+        self.timeout_event.cancel()

@@ -34,16 +34,9 @@ class DefaultScreen(Screen):
         # Call to super (Screen class)
         super(DefaultScreen, self).__init__(**kwargs)
 
-        self.nfc_r = None
-        self.nfc_uid = None
-        self.user_mapping = {}
-
         self.nfc_listener = DefaultScreen.NFCListener(self)
 
         self.session = App.get_running_app().session
-
-        # Keep track of whether the user is still making a transaction. If so, we ignore NFC input.
-        self.making_transaction = False
 
         # Create a session to maintain cookie data for this instance
         self.event_loop: AbstractEventLoop = App.get_running_app().loop
@@ -55,14 +48,13 @@ class DefaultScreen(Screen):
     # restarts the card listener upon reentry of the screen
     #
     def on_enter(self, *args):
-        # We are not making a transaction anymore, as we are back on this screen.
-        self.making_transaction = False
+        # Reset active user, because we are back at this screen.
+        App.get_running_app().active_user = None
 
         # Start loading user data.
         self.event_loop.call_soon_threadsafe(self.load_user_data)
 
     def to_credits(self):
-        self.manager.get_screen(Screens.CREDITS_SCREEN.value).nfc_id = self.nfc_uid
         self.manager.current = Screens.CREDITS_SCREEN.value
 
     #
@@ -81,14 +73,15 @@ class DefaultScreen(Screen):
 
     def load_user_data(self):
 
-        if len(self.user_mapping) > 0:
+        if len(App.get_running_app().user_mapping) > 0:
             Logger.debug("Not loading user data again")
             return
 
         user_data = self.session.get(self.get_users_api)
 
         Logger.debug("Loaded user data")
-        self.user_mapping = {}
+
+        App.get_running_app().user_mapping = {}
 
         if user_data.ok:
             # convert to json
@@ -97,34 +90,34 @@ class DefaultScreen(Screen):
             # append json to list and sort the list
             for user in user_json:
                 # store all emails adressed in the sheet_menu
-                self.user_mapping[user["name"]] = user["email"]
+                App.get_running_app().user_mapping[user["name"]] = user["email"]
         else:
             Logger.critical("Error: addresses could not be fetched from server in DefaultScreen.py:on_no_nfc()")
             os._exit(1)
 
     def fill_bottom_sheet(self):
-        for user_name, user_email in sorted(self.user_mapping.items()):
+        for user_name, user_email in sorted(App.get_running_app().user_mapping.items()):
             # store all emails addresses in the sheet_menu
-            self.bottom_sheet_menu.add_item(user_name, self.on_set_mail)
+            self.bottom_sheet_menu.add_item(user_name, self.selected_active_user)
 
     # set_mail
-    def on_set_mail(self, item):
+    def selected_active_user(self, item):
         # Set member variables, these are required for making a purchase later
         user_name = item.text
-        user_mail = self.user_mapping[user_name]
+
+        App.get_running_app().active_user = user_name
 
         # Set the name as the name of the user on the next page
-        self.manager.get_screen(Screens.WELCOME_SCREEN.value).label.text = user_name
         self.manager.current = Screens.WELCOME_SCREEN.value
 
     def on_leave(self, *args):
-        self.making_transaction = True
+        pass
 
     def nfc_card_presented(self, uid: str):
         Logger.debug("Read NFC card with uid" + uid)
 
         # If we are currently making a transaction, ignore the card reading.
-        if self.making_transaction:
+        if App.get_running_app().active_user is not None:
             Logger.debug("Ignoring NFC card as we are currently making a transaction.")
             return
 
@@ -142,11 +135,12 @@ class DefaultScreen(Screen):
             self.manager.transition = SlideTransition(direction='left')
 
             # store user-mail for payment confirmation later
-            self.user_mail = query_json["owner"]["email"]
-            self.user_name = query_json["owner"]["name"]
+            user_mail = query_json["owner"]["email"]
+            user_name = query_json["owner"]["name"]
 
-            # Set the retrieved name as the name of the user on the next page
-            self.manager.get_screen(Screens.WELCOME_SCREEN.value).label.text = query_json["owner"]["name"]
+            App.get_running_app().active_user = user_name
+
+            # Go to the welcome screen
             self.manager.current = Screens.WELCOME_SCREEN.value
         else:
             # User was not found, proceed to registerUID file

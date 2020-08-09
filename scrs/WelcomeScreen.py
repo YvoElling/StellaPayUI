@@ -1,3 +1,4 @@
+from kivy.app import App
 from kivy.clock import Clock
 from kivy.lang import Builder
 from kivy.uix.screenmanager import Screen
@@ -24,6 +25,9 @@ class WelcomeScreen(Screen):
             widget_position="right_bottom"
         )
 
+    def on_pre_enter(self, *args):
+        self.ids.label.text = App.get_running_app().active_user
+
     #
     # performed upon each screen entry
     #
@@ -48,8 +52,6 @@ class WelcomeScreen(Screen):
     # Called when the stop button is pressed
     #
     def on_cancel(self):
-        # Clean up the loaded products that are stored in the tabs
-        self.manager.get_screen(Screens.PRODUCT_SCREEN.value).on_cleanup()
         # Switch back to the default screen to welcome a new user
         self.manager.current = Screens.DEFAULT_SCREEN.value
 

@@ -1,6 +1,8 @@
 from kivy.lang import Builder
 from kivymd.uix.list import TwoLineAvatarIconListItem
+
 from ds.Purchase import Purchase
+from ds.ShoppingCart import ShoppingCart
 
 Builder.load_file('kvs/PurchaserItem.kv')
 
@@ -8,12 +10,13 @@ Builder.load_file('kvs/PurchaserItem.kv')
 class PurchaserItem(TwoLineAvatarIconListItem):
 
     # Set local member variables and forwards **kwargs to super class
-    def __init__(self, product_name, user_mail, user_name, shoppingcart, **kwargs):
+    def __init__(self, product_name: str, shoppingcart: ShoppingCart, **kwargs):
         super(PurchaserItem, self).__init__(**kwargs)
         self.product = product_name
-        self.user_mail = user_mail
-        self.user_name = user_name
         self.shopping_cart = shoppingcart
+
+        # Disable ripple effect
+        self.ripple_scale = 0
 
     # Adds product to the shopping cart.
     def on_add_product(self):
@@ -21,7 +24,7 @@ class PurchaserItem(TwoLineAvatarIconListItem):
         self.ids.count.text = str(int(self.ids.count.text) + 1)
 
         # Create purchase object
-        purchase = Purchase(self.user_mail, self.product, 1)
+        purchase = Purchase(self.text, self.product, 1)
 
         # Add purchase to shopping cart
         self.shopping_cart.add_to_cart(purchase)
@@ -33,7 +36,7 @@ class PurchaserItem(TwoLineAvatarIconListItem):
             self.ids.count.text = str(int(self.ids.count.text) - 1)
 
             # Create purchase object (Default count = 1, due to plus button)
-            purchase = Purchase(self.user_mail, self.product, 1)
+            purchase = Purchase(self.text, self.product, 1)
 
             # Remove product from the shopping cart
             self.shopping_cart.remove_from_cart(purchase)
