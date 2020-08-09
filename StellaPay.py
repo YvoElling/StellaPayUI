@@ -88,6 +88,14 @@ class StellaPay(MDApp):
 
     def build(self):
         self.theme_cls.theme_style = "Dark"
+        self.theme_cls.primary_palette = "Amber"
+        self.theme_cls.primary_hue = "600"
+        self.theme_cls.accent_pallet = "Teal"
+        self.theme_cls.accent_hue = "300"
+        self.theme_cls.green_button = (0.262, 0.627, 0.278, 1)
+        self.theme_cls.red_button = (0.898, 0.450, 0.450, 1)
+        self.theme_cls.complementary_color_1 = (0.623, 0.858, 0.180, 1)
+        self.theme_cls.complementary_color_2 = (0, 0.525, 0.490, 1)
 
         # Set background image to match color of STE logo
         Window.clearcolor = (0.12549, 0.12549, 0.12549, 0)

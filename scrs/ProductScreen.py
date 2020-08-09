@@ -155,6 +155,14 @@ class ProductScreen(Screen):
                                                         price="€" + product.get_price(),
                                                         shopping_cart=self.shopping_cart))
 
+            # Add item to the tab
+            tab.ids.container.add_widget(ItemListUX(text="",
+                                                    secondary_text="",
+                                                    secondary_theme_text_color="Custom",
+                                                    secondary_text_color=[0.509, 0.509, 0.509, 1],
+                                                    price=None,
+                                                    shopping_cart=None))
+
     #
     # timeout callback function
     #
@@ -175,8 +183,8 @@ class ProductScreen(Screen):
     def on_leave(self, *args):
         self.timeout_event.cancel()
 
-    def on_cancel(self):
-        self.timeout_event.cancel()
+    # Called when the user wants to leave this active session.
+    def on_leave_product_screen_button(self):
         self.__end_process()
         self.manager.current = Screens.DEFAULT_SCREEN.value
 
@@ -184,9 +192,6 @@ class ProductScreen(Screen):
     # move to profile screen
     #
     def on_profile_screen(self):
-        # Clear the shopping cart upon leaving this screen for consistency
-        self.shopping_cart.get_shopping_cart().clear()
-
         # Switch to profile screen
         self.manager.current = Screens.PROFILE_SCREEN.value
 
@@ -197,9 +202,9 @@ class ProductScreen(Screen):
         pass
 
     #
-    # open confirmation dialog
+    # Open payment confirmation dialog
     #
-    def open_confirmation(self):
+    def open_payment_confirmation(self):
         # Restart timeout counter
         self.timeout_event.cancel()
         self.on_start_timeout()
@@ -221,14 +226,14 @@ class ProductScreen(Screen):
                         MDRaisedButton(
                             text="Ja",
                             on_release=self.on_confirm_payment,
-                            md_bg_color=[0.933, 0.203, 0.125, 1]
+                            #                            md_bg_color=[0.933, 0.203, 0.125, 1]
                         ),
                     ]
                 )
             self.direct_confirm.open()
 
     #
-    # opens shoppingcart display
+    # Open shopping cart dialog
     #
     def show_shopping_cart(self):
         # Reset timeout counter
@@ -259,11 +264,12 @@ class ProductScreen(Screen):
                     ),
                 ],
             )
+
             # Open the dialog to display the shopping cart
             self.shopping_cart_dialog.open()
 
     #
-    # Close dialog when TERUG is pressed
+    # When shopping cart needs to be closed
     #
     def on_close_shoppingcart(self, dt):
         self.timeout_event.cancel()
@@ -271,7 +277,7 @@ class ProductScreen(Screen):
         self.shopping_cart_dialog.dismiss()
 
     #
-    # Close dialog when TERUG is pressed
+    # When payment is not confirmed by user
     #
     def on_cancel_payment(self, dt):
         self.timeout_event.cancel()

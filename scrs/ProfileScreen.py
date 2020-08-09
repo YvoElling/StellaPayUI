@@ -26,7 +26,7 @@ class ProfileScreen(Screen):
     def on_back(self):
         self.manager.current = Screens.PRODUCT_SCREEN.value
 
-    # Return to defaultScreen upon timeout
+    # Called when timer is timed out
     def on_timeout(self, dt):
         self.manager.current = Screens.DEFAULT_SCREEN.value
 
@@ -35,6 +35,6 @@ class ProfileScreen(Screen):
         self.timeout_event.cancel()
         self.timeout_event = Clock.schedule_once(self.on_timeout, self.timeout_time)
 
-    # Clear name on leave
+    # Clear time on leave
     def on_leave(self, *args):
         self.timeout_event.cancel()
