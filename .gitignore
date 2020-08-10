@@ -130,4 +130,8 @@ dmypy.json
 
 .idea/
 
+# Ignore authentication file
 authenticate.json
+
+# Ignore configuration file
+stellapay.ini
