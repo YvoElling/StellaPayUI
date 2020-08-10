@@ -66,6 +66,7 @@ class ProductScreen(Screen):
         # Load category information and tabs
         self.event_loop.call_soon_threadsafe(self.load_category_data)
 
+    # Load tabs (if they are not loaded yet) and load product information afterwards
     def load_category_data(self):
 
         if len(self.tabs) > 0:
@@ -130,6 +131,7 @@ class ProductScreen(Screen):
         # Initialize timeouts
         self.on_start_timeout()
 
+    # Load product information and set up product view
     def load_products(self):
         Logger.debug(f"Setting up product view")
 
@@ -220,7 +222,7 @@ class ProductScreen(Screen):
             if not self.direct_confirm:
                 self.direct_confirm = MDDialog(
                     title="",
-                    text="Wil je deze artikelen kopen?",
+                    text="Wil je deze artikelen afrekenen?",
                     buttons=[
                         MDFlatButton(
                             text="Nee",
@@ -301,14 +303,11 @@ class ProductScreen(Screen):
             # Reset instance variables
             self.__end_process()
 
-            # Stop timer
-            self.timeout_event.cancel()
-
             # Close the dialog
             self.direct_confirm.dismiss()
 
             # Return to the default screen for a new user to log in
-            self.manager.current = "DefaultScreen"
+            self.manager.current = Screens.DEFAULT_SCREEN.value
 
         else:
             Logger.critical("Payment could not be made: error: " + response.content)

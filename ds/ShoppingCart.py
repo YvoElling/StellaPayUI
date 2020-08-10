@@ -1,7 +1,7 @@
 from typing import List, Optional
 
-import jsons as jsons
 from kivy import Logger
+from kivy.app import App
 
 from ds.Purchase import Purchase
 
@@ -69,4 +69,13 @@ class ShoppingCart:
     # implement json serializer
     #
     def to_json(self):
-        return jsons.dump(self, default=lambda o: o.__dict__)
+        json_output = {"products": []}
+
+        for purchase in self.basket:
+            json_output["products"].append({
+                "email": App.get_running_app().user_mapping[purchase.purchaser_name],
+                "product_name": purchase.product_name,
+                "amount": purchase.amount
+            })
+
+        return json_output
