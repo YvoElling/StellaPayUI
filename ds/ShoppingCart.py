@@ -69,10 +69,13 @@ class ShoppingCart:
     # implement json serializer
     #
     def to_json(self):
+        # Create JSON output variable as initial dictionary
         json_output = {"products": []}
 
+        # Load all products into the dictionary.
         for purchase in self.basket:
             json_output["products"].append({
+                # Look up the email address of the user that made the purchase
                 "email": App.get_running_app().user_mapping[purchase.purchaser_name],
                 "product_name": purchase.product_name,
                 "amount": purchase.amount
