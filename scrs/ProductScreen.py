@@ -13,6 +13,7 @@ from kivymd.uix.dialog import MDDialog
 from ds.Product import Product
 from ds.ShoppingCart import ShoppingCart
 from scrs.TabDisplay import TabDisplay
+from utils.Connections import BackendURLs
 from utils.Screens import Screens
 from ux.ItemListUX import ItemListUX
 from ux.ShoppingCartItem import ShoppingCartItem
@@ -25,11 +26,6 @@ class ProductScreen(Screen):
     tabs = []
 
     product_items_per_category: Dict[str, List[ItemListUX]] = {}
-
-    # API Links
-    get_cat_api_url = "http://staartvin.com:8181/products/"
-    get_all_cat_api = "http://staartvin.com:8181/categories"
-    confirm_api = "http://staartvin.com:8181/transactions/create"
 
     # shopping cart
     shopping_cart = ShoppingCart()
@@ -77,7 +73,7 @@ class ProductScreen(Screen):
             return
 
         # Get all categories names
-        response = self.session.get(url=self.get_all_cat_api)
+        response = self.session.get(url=BackendURLs.GET_CATEGORIES.value)
 
         Logger.debug("Loading product categories")
 
@@ -97,7 +93,7 @@ class ProductScreen(Screen):
                 self.products_per_category[cat['name']] = []
 
                 # Request products from category tab_text
-                request = self.get_cat_api_url + cat['name']
+                request = BackendURLs.GET_PRODUCTS.value + cat['name']
                 response = self.session.get(request)
 
                 # Evaluate server response
@@ -297,7 +293,7 @@ class ProductScreen(Screen):
         json_cart = self.shopping_cart.to_json()
 
         # use a POST-request to forward the shopping cart
-        response = self.session.post(self.confirm_api, json=json_cart)
+        response = self.session.post(BackendURLs.CREATE_TRANSACTION.value, json=json_cart)
 
         if response.ok:
             # Reset instance variables

@@ -12,16 +12,11 @@ from kivymd.uix.bottomsheet import MDListBottomSheet
 #
 from PythonNFCReader.CardListener import CardListener
 from PythonNFCReader.NFCReader import CardConnectionManager
+from utils.Connections import BackendURLs
 from utils.Screens import Screens
 
 
 class DefaultScreen(Screen):
-    # Authenticate query, use local file for password/username
-    authenticate = "http://staartvin.com:8181/authenticate"
-    # URL for querying users and user-uid mappings
-    api_url = "http://staartvin.com:8181/identification/request-user/"
-    get_users_api = "http://staartvin.com:8181/users"
-
     class NFCListener(CardListener):
 
         def __init__(self, default_screen: "DefaultScreen"):
@@ -77,7 +72,7 @@ class DefaultScreen(Screen):
             Logger.debug("Not loading user data again")
             return
 
-        user_data = self.session.get(self.get_users_api)
+        user_data = self.session.get(BackendURLs.GET_USERS.value)
 
         Logger.debug("Loaded user data")
 
@@ -121,9 +116,8 @@ class DefaultScreen(Screen):
             Logger.debug("Ignoring NFC card as we are currently making a transaction.")
             return
 
-        # Send UID to Django database to validate person
-        name_request = self.api_url + uid
-        response = self.session.get(url=name_request)
+        # Request user info for the specific UID to validate person
+        response = self.session.get(url=BackendURLs.REQUEST_USER_INFO.value + uid)
 
         # Check response code to validate whether this user existed already. If so, proceed
         # to the productScreen, else proceed to the registerUID screen

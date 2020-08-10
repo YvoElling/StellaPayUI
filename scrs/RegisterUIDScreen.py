@@ -8,14 +8,12 @@ from kivy.lang import Builder
 from kivy.uix.screenmanager import Screen
 from kivymd.uix.bottomsheet import MDListBottomSheet
 
+from utils.Connections import BackendURLs
 from utils.Screens import Screens
 
 
 class RegisterUIDScreen(Screen):
     # APIs
-    get_users_api = "http://staartvin.com:8181/users"
-    add_user_api = "http://staartvin.com:8181/identification/add-card-mapping"
-    get_name_uid_api = "http://staartvin.com:8181/identification/request-user/"
     nfc_id = None
 
     def __init__(self, **kwargs):
@@ -77,12 +75,12 @@ class RegisterUIDScreen(Screen):
         selected_user_email = App.get_running_app().user_mapping[selected_user_name]
 
         App.get_running_app().loop.call_soon_threadsafe(
-            self.register_card_mapping(selected_user_name=selected_user_name, selected_user_email=selected_user_email))
+            self.register_card_mapping, selected_user_name, selected_user_email)
 
     def register_card_mapping(self, selected_user_name, selected_user_email: str):
         # Use a POST command to add connect this UID to the user
-        request = self.session.post(self.add_user_api, json={'card_id': str(self.nfc_id),
-                                                             'email': selected_user_email})
+        request = self.session.post(BackendURLs.ADD_USER_MAPPING.value, json={'card_id': str(self.nfc_id),
+                                                                              'email': selected_user_email})
 
         # If the users was added successfully ( status_code : 200), proceed to WelcomeScreen
         if request.ok:
