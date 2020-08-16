@@ -58,10 +58,6 @@ class ProductScreen(Screen):
         self.timeout_event.cancel()
         self.on_start_timeout()
 
-    def on_pre_enter(self, *args):
-        # Load category information and tabs
-        self.event_loop.call_soon_threadsafe(self.load_category_data)
-
     # Load tabs (if they are not loaded yet) and load product information afterwards
     def load_category_data(self):
 
@@ -70,6 +66,7 @@ class ProductScreen(Screen):
 
             # Load product items (because we still need to reload them)
             self.load_products()
+
             return
 
         # Get all categories names
@@ -120,16 +117,24 @@ class ProductScreen(Screen):
         # Load product items
         self.load_products()
 
+
     #
     # upon entering the screen, set the timeout
     #
     def on_enter(self, *args):
+        # Load category information and tabs
+        self.event_loop.call_soon_threadsafe(self.load_category_data)
+
         # Initialize timeouts
         self.on_start_timeout()
 
     # Load product information and set up product view
     def load_products(self):
         Logger.debug(f"Setting up product view")
+
+        if len(self.tabs[0].ids.container.children) > 0:
+            Logger.debug("Don't load products view again as it's already there..")
+            return
 
         for tab in self.tabs:
             for product in self.products_per_category[tab.text]:
@@ -314,4 +319,5 @@ class ProductScreen(Screen):
 
         # Make sure to clear all products from each tab, as we need to reload them if we come back.
         for tab in self.tabs:
-            tab.ids.container.clear_widgets()
+            for product_item in tab.ids.container.children:
+                product_item.clear_item()
