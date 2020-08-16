@@ -147,7 +147,7 @@ class ProductScreen(Screen):
                 # # store all fun facts that were found for this product in a list.
                 # fun_facts = database_conn.fetchall()
 
-                product_description = "Zoveel facts gevonden als Stella's in 2012"
+                product_description = "Ik kon hier geen goede grap over vinden.."
                 # if fun_facts:
                 #     # Select a random fun fact from the list
                 #     pff = random.choice(fun_facts)
@@ -175,7 +175,7 @@ class ProductScreen(Screen):
     # timeout callback function
     #
     def on_timeout(self, dt):
-        self.__end_process()
+        self.end_user_session()
 
         # If the dialogs are instantiated, dismiss them before timeouts
         if self.direct_confirm:
@@ -193,7 +193,7 @@ class ProductScreen(Screen):
 
     # Called when the user wants to leave this active session.
     def on_leave_product_screen_button(self):
-        self.__end_process()
+        self.end_user_session()
         self.manager.current = Screens.DEFAULT_SCREEN.value
 
     #
@@ -303,7 +303,7 @@ class ProductScreen(Screen):
 
         if response.ok:
             # Reset instance variables
-            self.__end_process()
+            self.end_user_session()
 
             # Close the dialog
             self.direct_confirm.dismiss()
@@ -315,7 +315,9 @@ class ProductScreen(Screen):
             Logger.critical("Payment could not be made: error: " + response.content)
             os._exit(1)
 
-    def __end_process(self):
+    # This method ought to be called when the user session is finished
+    def end_user_session(self):
+        # Clear shopping car
         self.shopping_cart.clear_cart()
 
         # Make sure to clear all products from each tab, as we need to reload them if we come back.

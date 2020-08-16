@@ -28,6 +28,9 @@ class ProfileScreen(Screen):
 
     # Called when timer is timed out
     def on_timeout(self, dt):
+        # Make sure to clean up product screen after going to profile screen
+        self.manager.get_screen(Screens.PRODUCT_SCREEN.value).end_user_session()
+
         self.manager.current = Screens.DEFAULT_SCREEN.value
 
     # Reset timer when the screen is touched
