@@ -40,8 +40,29 @@ class ItemListUX(TwoLineAvatarIconListItem):
         # Mail addresses
         self.alternative_purchaser_list: List[PurchaserItem] = []
 
-        # Purchaser list dialog
         self.purchaser_list_dialog = None
+
+        # Create dialog if it wasn't created before.
+        if price is not None and shopping_cart is not None:
+            for user_name, user_email in sorted(App.get_running_app().user_mapping.items()):
+                self.alternative_purchaser_list.append(
+                    PurchaserItem(text=user_name, product_name=self.text, shoppingcart=self.shopping_cart,
+                                  secondary_text=" ", secondary_theme_text_color="Custom",
+                                  secondary_text_color=[0.509, 0.509, 0.509, 1])
+                )
+
+            self.purchaser_list_dialog = MDDialog(
+                type="confirmation",
+                height="440px",
+                width="700px",
+                items=self.alternative_purchaser_list,
+                buttons=[
+                    MDFlatButton(
+                        text="OK",
+                        on_release=self.on_ok
+                    ),
+                ],
+            )
 
     def on_add_product(self):
         # Update the count on the UI
@@ -67,33 +88,6 @@ class ItemListUX(TwoLineAvatarIconListItem):
     # open when trying to add a purchase for someone else
     #
     def on_select_purchaser(self):
-
-        self.alternative_purchaser_list.clear()
-
-        for user_name, user_email in sorted(App.get_running_app().user_mapping.items()):
-
-            # Don't show the currently active user, as that would be silly.
-            if user_name == App.get_running_app().active_user:
-                continue
-
-            self.alternative_purchaser_list.append(
-                PurchaserItem(text=user_name, product_name=self.text, shoppingcart=self.shopping_cart,
-                              secondary_text=" ", secondary_theme_text_color="Custom",
-                              secondary_text_color=[0.509, 0.509, 0.509, 1])
-            )
-
-        self.purchaser_list_dialog = MDDialog(
-            type="confirmation",
-            height="440px",
-            width="700px",
-            items=self.alternative_purchaser_list,
-            buttons=[
-                MDFlatButton(
-                    text="OK",
-                    on_release=self.on_ok
-                ),
-            ],
-        )
         # Open the dialog to display the shopping cart
         self.purchaser_list_dialog.open()
 
@@ -110,4 +104,10 @@ class ItemListUX(TwoLineAvatarIconListItem):
         self.shopping_cart.add_to_cart(purchase)
 
     def clear_item(self):
-        self.ids.count = 0
+        # Clear the count of the item
+        self.ids.count.text = "0"
+
+        # Clear the count of the items for other users (if the dialog was opened).
+        if self.purchaser_list_dialog is not None:
+            for purchaser_item in self.purchaser_list_dialog.items:
+                purchaser_item.ids.count.text = "0"
