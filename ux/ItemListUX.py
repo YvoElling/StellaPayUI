@@ -44,25 +44,7 @@ class ItemListUX(TwoLineAvatarIconListItem):
 
         # Create dialog if it wasn't created before.
         if price is not None and shopping_cart is not None:
-            for user_name, user_email in sorted(App.get_running_app().user_mapping.items()):
-                self.alternative_purchaser_list.append(
-                    PurchaserItem(text=user_name, product_name=self.text, shoppingcart=self.shopping_cart,
-                                  secondary_text=" ", secondary_theme_text_color="Custom",
-                                  secondary_text_color=[0.509, 0.509, 0.509, 1])
-                )
-
-            self.purchaser_list_dialog = MDDialog(
-                type="confirmation",
-                height="440px",
-                width="700px",
-                items=self.alternative_purchaser_list,
-                buttons=[
-                    MDFlatButton(
-                        text="OK",
-                        on_release=self.on_ok
-                    ),
-                ],
-            )
+           App.get_running_app().loop.call_soon_threadsafe(self.load_dialog_screen)
 
     def on_add_product(self):
         # Update the count on the UI
@@ -95,14 +77,6 @@ class ItemListUX(TwoLineAvatarIconListItem):
         if self.purchaser_list_dialog:
             self.purchaser_list_dialog.dismiss()
 
-    # Store purchaser
-    def on_set_mail(self, item):
-        # Create purchase object
-        purchase = Purchase(item.text, self.text, 1)
-
-        # Add purchase to shopping cart
-        self.shopping_cart.add_to_cart(purchase)
-
     def clear_item(self):
         # Clear the count of the item
         self.ids.count.text = "0"
@@ -111,3 +85,24 @@ class ItemListUX(TwoLineAvatarIconListItem):
         if self.purchaser_list_dialog is not None:
             for purchaser_item in self.purchaser_list_dialog.items:
                 purchaser_item.ids.count.text = "0"
+
+    def load_dialog_screen(self):
+        for user_name, user_email in sorted(App.get_running_app().user_mapping.items()):
+            self.alternative_purchaser_list.append(
+                PurchaserItem(text=user_name, product_name=self.text, shoppingcart=self.shopping_cart,
+                              secondary_text=" ", secondary_theme_text_color="Custom",
+                              secondary_text_color=[0.509, 0.509, 0.509, 1])
+            )
+
+        self.purchaser_list_dialog = MDDialog(
+            type="confirmation",
+            height="440px",
+            width="700px",
+            items=self.alternative_purchaser_list,
+            buttons=[
+                MDFlatButton(
+                    text="OK",
+                    on_release=self.on_ok
+                ),
+            ],
+        )

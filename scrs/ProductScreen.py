@@ -130,11 +130,12 @@ class ProductScreen(Screen):
 
     # Load product information and set up product view
     def load_products(self):
-        Logger.debug(f"Setting up product view")
 
         if len(self.tabs[0].ids.container.children) > 0:
             Logger.debug("Don't load products view again as it's already there..")
             return
+
+        Logger.debug(f"Setting up product view")
 
         for tab in self.tabs:
             for product in self.products_per_category[tab.text]:
