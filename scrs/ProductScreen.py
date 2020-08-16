@@ -10,7 +10,6 @@ from kivy.uix.screenmanager import Screen
 from kivymd.uix.button import MDFlatButton, MDRaisedButton
 from kivymd.uix.dialog import MDDialog
 
-from ds.Product import Product
 from ds.ShoppingCart import ShoppingCart
 from scrs.TabDisplay import TabDisplay
 from utils.Connections import BackendURLs
@@ -20,12 +19,9 @@ from ux.ShoppingCartItem import ShoppingCartItem
 
 
 class ProductScreen(Screen):
-    # Store items per category, these are stored locally to reduce the amount of queries required
-    products_per_category: Dict[str, List[Product]] = {}
-    # Store tab objects, these are later used to add the products
-    tabs = []
-
     product_items_per_category: Dict[str, List[ItemListUX]] = {}
+
+    tabs = []
 
     # shopping cart
     shopping_cart = ShoppingCart()
@@ -69,50 +65,13 @@ class ProductScreen(Screen):
 
             return
 
-        # Get all categories names
-        response = self.session.get(url=BackendURLs.GET_CATEGORIES.value)
+        Logger.debug("Loading category view")
 
-        Logger.debug("Loading product categories")
-
-        # Check status response
-        if response.ok:
-
-            categories = response.json()
-
-            Logger.debug(f"Retrieved {len(categories)} categories")
-
-            # Load tab for each category
-            for cat in categories:
-                # Create tab display
-                tab = TabDisplay(text=cat['name'])
-                self.tabs.append(tab)
-                self.ids.android_tabs.add_widget(tab)
-                self.products_per_category[cat['name']] = []
-
-                # Request products from category tab_text
-                request = BackendURLs.GET_PRODUCTS.value + cat['name']
-                response = self.session.get(request)
-
-                # Evaluate server response
-                if response.ok:
-                    # convert response to json
-                    products_json = response.json()
-
-                    # Create a product object for all
-                    for product in products_json:
-                        # Only add the product to the list if the product must be shown
-                        if product['shown']:
-                            p = Product().create_from_json(product)
-                            self.products_per_category[cat['name']].append(p)
-                else:
-                    # Error in retrieving products from server
-                    Logger.critical("Products could not be retrieved: " + response.text)
-                    os._exit(1)
-
-        else:
-            # Error
-            Logger.critical("Categories could not be retrieved: " + response.text)
-            os._exit(1)
+        for category in App.get_running_app().products_per_category.keys():
+            # Create tab display
+            tab = TabDisplay(text=category)
+            self.ids.android_tabs.add_widget(tab)
+            self.tabs.append(tab)
 
         # Load product items
         self.load_products()
@@ -138,23 +97,9 @@ class ProductScreen(Screen):
         Logger.debug(f"Setting up product view")
 
         for tab in self.tabs:
-            for product in self.products_per_category[tab.text]:
-                # Should update this to PREPARED STATEMENT instead of this, but it's fun facts, so what the heck
-                # Get all fun facts for this product
-                # database_conn.execute(
-                #     "SELECT fun_fact FROM static_fun_facts WHERE product='" + product.get_name() + "'")
-                #
-                # # store all fun facts that were found for this product in a list.
-                # fun_facts = database_conn.fetchall()
-
-                product_description = "Ik kon hier geen goede grap over vinden.."
-                # if fun_facts:
-                #     # Select a random fun fact from the list
-                #     pff = random.choice(fun_facts)
-                #
-                #     # Clean the fun fact by removing unnecessary tokens
-                #     cff = str(pff).replace('(', '').replace(')', '').replace('\'', '').replace('\"', '')
-                #     cff = cff[:-1]
+            for product in App.get_running_app().products_per_category[tab.text]:
+                # Get fun fact description of database
+                product_description = App.get_running_app().database_manager.get_random_fun_fact(product.get_name())
 
                 # Add item to the tab
                 tab.ids.container.add_widget(ItemListUX(text=product.get_name(), secondary_text=product_description,

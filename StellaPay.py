@@ -1,10 +1,9 @@
 import asyncio
 import json
 import os
-import sqlite3
 import threading
 from asyncio import AbstractEventLoop
-from typing import Optional, Dict
+from typing import Optional, Dict, List
 
 import kivy
 import requests
@@ -16,6 +15,8 @@ from kivy.uix.screenmanager import ScreenManager
 from kivymd.app import MDApp
 
 from PythonNFCReader.NFCReader import CardConnectionManager
+from db.DatabaseManager import DatabaseManager
+from ds.Product import Product
 from scrs.ConfirmedScreen import ConfirmedScreen
 from scrs.CreditsScreen import CreditsScreen
 from scrs.DefaultScreen import DefaultScreen
@@ -30,59 +31,23 @@ kivy.require('1.11.1')
 
 screen_manager = ScreenManager()
 
-
-def create_static_database():
-    # Connect to the database and return database connection object
-    conn = None
-    # Create all tables and add the the database file
-    try:
-        conn = sqlite3.connect('db/static_fun_fact_database.db')
-        print(sqlite3.version)
-
-        # # SQLite command to create table with two fields, namely product and fun_fact
-        static_fun_facts_table = "CREATE TABLE IF NOT EXISTS static_fun_facts(" \
-                                 "product text NOT NULL, " \
-                                 "fun_fact text PRIMARY KEY " \
-                                 ");"
-        #
-        # one_day_fun_fact_table = "CREATE TABLE IF NOT EXISTS one_day_fun_fact(" \
-        #                          "product text PRIMARY KEY " \
-        #                          "fun_fact text PRIMARY KEY " \
-        #                          ");"
-        #
-        # one_week_fun_fact_table = "CREATE TABLE IF NOT EXISTS one_week_fun_fact(" \
-        #                           "product text PRIMARY KEY " \
-        #                           "fun_fact text PRIMARY KEY " \
-        #                           ");"
-        #
-        # one_month_fun_fact_table = "CREATE TABLE IF NOT EXISTS one_month_fun_fact(" \
-        #                            "product text PRIMARY KEY " \
-        #                            "fun_fact text PRIMARY KEY " \
-        #                            ");"
-        #
-
-        # Create connection to the database and add the tables
-        db_conn = conn.cursor()
-        db_conn.execute(static_fun_facts_table)
-        # db_conn.execute(one_day_fun_fact_table)
-        # db_conn.execute(one_week_fun_fact_table)
-        # db_conn.execute(one_month_fun_fact_table)
-
-    except sqlite3.Error as e:
-        Logger.critical(e)
-        os._exit(1)
-
-    return conn
-
-
 class StellaPay(MDApp):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.database = create_static_database()
+
+        self.database_manager: DatabaseManager = DatabaseManager()
+
+        # Create database and load database manager
+        self.database_manager.create_static_database()
+        self.database_manager.load_facts_database()
+
         self.card_connection_manager = CardConnectionManager()
         self.session = requests.Session()
         # Store user that is logged in (can be none)
         self.active_user: Optional[str] = None
+
+        # Store products for each category
+        self.products_per_category: Dict[str, List[Product]] = {}
 
         # Store a mapping from user name to user email
         self.user_mapping: Dict[str, str] = {}
@@ -181,6 +146,55 @@ class StellaPay(MDApp):
             os._exit(1)
         else:
             Logger.debug("Authenticated correctly to backend.")
+
+        # Load categories and products
+        self.load_categories_and_products()
+
+    def load_categories_and_products(self):
+        # Get all categories names
+        response = self.session.get(url=BackendURLs.GET_CATEGORIES.value)
+
+        Logger.debug("Loading product categories")
+
+        # Check status response
+        if response.ok:
+
+            categories = response.json()
+
+            Logger.debug(f"Retrieved {len(categories)} categories")
+
+            # Load tab for each category
+            for cat in categories:
+                # Request products from category tab_text
+                request = BackendURLs.GET_PRODUCTS.value + cat['name']
+                response = self.session.get(request)
+
+                Logger.debug(f"Loading products for category '{cat['name']}'")
+
+                # Evaluate server response
+                if response.ok:
+                    # convert response to json
+                    products_json = response.json()
+
+                    self.products_per_category[cat['name']] = []
+
+                    Logger.debug(f"Retrieved {len(products_json)} products for category '{cat['name']}'")
+
+                    # Create a product object for all
+                    for product in products_json:
+                        # Only add the product to the list if the product must be shown
+                        if product['shown']:
+                            p = Product().create_from_json(product)
+                            self.products_per_category[cat['name']].append(p)
+                else:
+                    # Error in retrieving products from server
+                    Logger.critical("Products could not be retrieved: " + response.text)
+                    os._exit(1)
+
+        else:
+            # Error
+            Logger.critical("Categories could not be retrieved: " + response.text)
+            os._exit(1)
 
     def build_config(self, config):
         config.setdefaults('device', {
