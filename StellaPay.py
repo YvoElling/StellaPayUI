@@ -1,6 +1,7 @@
 import asyncio
 import json
 import os
+import subprocess
 import threading
 from asyncio import AbstractEventLoop
 from typing import Optional, Dict, List
@@ -31,7 +32,10 @@ kivy.require('1.11.1')
 
 screen_manager = ScreenManager()
 
+
 class StellaPay(MDApp):
+    build_version = None
+
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
@@ -51,6 +55,11 @@ class StellaPay(MDApp):
 
         # Store a mapping from user name to user email
         self.user_mapping: Dict[str, str] = {}
+
+        print()
+
+        StellaPay.build_version = subprocess.check_output(['git', 'rev-parse', '--short', 'HEAD']).strip()
+        print(self.build_version)
 
     def build(self):
         self.theme_cls.theme_style = "Dark"
@@ -210,6 +219,9 @@ class StellaPay(MDApp):
     def on_stop(self):
         Logger.debug("Stopping!")
         self.loop.stop()  # Stop event loop
+
+    def get_git_revisions_hash(self):
+        return subprocess.check_output(['git', 'rev-parse', 'HEAD'])
 
 
 if __name__ == '__main__':

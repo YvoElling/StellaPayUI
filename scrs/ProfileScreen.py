@@ -1,7 +1,7 @@
 from kivy.app import App
 from kivy.clock import Clock
 from kivy.lang import Builder
-from kivy.uix.screenmanager import Screen
+from kivy.uix.screenmanager import Screen, SlideTransition
 
 from utils.Screens import Screens
 
@@ -24,10 +24,12 @@ class ProfileScreen(Screen):
 
     # Return to the product page
     def on_back(self):
+        self.manager.transition = SlideTransition(direction="right")
         self.manager.current = Screens.PRODUCT_SCREEN.value
 
     # Called when timer is timed out
     def on_timeout(self, dt):
+        self.manager.transition = SlideTransition(direction="right")
         # Make sure to clean up product screen after going to profile screen
         self.manager.get_screen(Screens.PRODUCT_SCREEN.value).end_user_session()
 

@@ -1,4 +1,5 @@
 import os
+import time
 from asyncio import AbstractEventLoop
 from typing import Dict, List
 
@@ -6,7 +7,7 @@ from kivy import Logger
 from kivy.app import App
 from kivy.clock import Clock
 from kivy.lang import Builder
-from kivy.uix.screenmanager import Screen
+from kivy.uix.screenmanager import Screen, SlideTransition
 from kivymd.uix.button import MDFlatButton, MDRaisedButton
 from kivymd.uix.dialog import MDDialog
 
@@ -16,8 +17,6 @@ from utils.Connections import BackendURLs
 from utils.Screens import Screens
 from ux.ItemListUX import ItemListUX
 from ux.ShoppingCartItem import ShoppingCartItem
-
-import time
 
 
 class OnChangeShoppingCartListener(ShoppingCartListener):
@@ -177,6 +176,7 @@ class ProductScreen(Screen):
     # move to profile screen
     #
     def on_profile_screen(self):
+        self.manager.transition = SlideTransition(direction="left")
         # Switch to profile screen
         self.manager.current = Screens.PROFILE_SCREEN.value
 

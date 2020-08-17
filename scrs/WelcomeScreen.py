@@ -21,7 +21,7 @@ class WelcomeScreen(Screen):
         self.tap_target_view = MDTapTargetView(
             widget=self.ids.info,
             title_text="Version Information",
-            description_text="Build 08-08-2020\n",
+            description_text=f"Build {App.get_running_app().build_version}\n",
             widget_position="right_bottom"
         )
 
