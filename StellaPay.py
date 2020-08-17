@@ -79,7 +79,7 @@ class StellaPay(MDApp):
         if self.config.get('device', 'show_cursor') == 'True':
             Window.show_cursor = True
         else:
-            Window.fullscreen = False
+            Window.show_cursor = False
 
         Config.write()
 
