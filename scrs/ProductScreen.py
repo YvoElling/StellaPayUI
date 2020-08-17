@@ -43,9 +43,6 @@ class ProductScreen(Screen):
 
         self.event_loop: AbstractEventLoop = App.get_running_app().loop
 
-        # Load category information and tabs
-        self.event_loop.call_soon_threadsafe(self.load_category_data)
-
     # Start timeout counter
     def on_start_timeout(self):
         self.timeout_event = Clock.schedule_once(self.on_timeout, self.timeout_time)
@@ -83,6 +80,10 @@ class ProductScreen(Screen):
     # upon entering the screen, set the timeout
     #
     def on_enter(self, *args):
+
+        # Load product data
+        self.event_loop.call_soon_threadsafe(self.load_category_data)
+
         # Initialize timeouts
         self.on_start_timeout()
 
