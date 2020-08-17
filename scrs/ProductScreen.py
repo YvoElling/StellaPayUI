@@ -129,7 +129,8 @@ class ProductScreen(Screen):
                                                     price=None,
                                                     shopping_cart=None))
 
-            print(f"Loaded products (no skipping) in {time.time() - start_time} seconds")
+            print(f"Loaded products of category {tab.text} (no skipping) in {time.time() - start_time} seconds")
+        print(f"Loaded all products (no skipping) in {time.time() - start_time} seconds")
 
     #
     # timeout callback function
