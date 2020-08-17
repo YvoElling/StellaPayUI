@@ -1,3 +1,4 @@
+import time
 from typing import List
 
 from kivy.app import App
@@ -9,7 +10,6 @@ from kivymd.uix.list import TwoLineAvatarIconListItem
 from ds.Purchase import Purchase
 from ds.ShoppingCart import ShoppingCart
 from ux.PurchaserItem import PurchaserItem
-import time
 
 Builder.load_file('kvs/ItemListUX.kv')
 
@@ -96,7 +96,8 @@ class ItemListUX(TwoLineAvatarIconListItem):
                               secondary_text=" ", secondary_theme_text_color="Custom",
                               secondary_text_color=[0.509, 0.509, 0.509, 1])
             )
-            print(f"Added user to dialog screen in {time.time() - start_time} seconds")
+
+        print(f"Added user to dialog screen in {time.time() - start_time} seconds")
 
         self.purchaser_list_dialog = MDDialog(
             type="confirmation",
