@@ -10,11 +10,15 @@ from kivymd.uix.list import TwoLineAvatarIconListItem
 from ds.Purchase import Purchase
 from ds.ShoppingCart import ShoppingCart
 from ux.PurchaserItem import PurchaserItem
+from ux.SelectPurchaserDialog import SelectPurchaserDialog
 
 Builder.load_file('kvs/ItemListUX.kv')
 
 
 class ItemListUX(TwoLineAvatarIconListItem):
+    # Dialog that opens when you want to select a different purchaser
+    purchaser_list_dialog = None
+
     def __init__(self, price: str, shopping_cart: ShoppingCart, **kwargs):
         super(ItemListUX, self).__init__(**kwargs)
 
@@ -38,15 +42,9 @@ class ItemListUX(TwoLineAvatarIconListItem):
         # Disable ripple effect
         self.ripple_scale = 0
 
-        # Mail addresses
-        self.alternative_purchaser_list: List[PurchaserItem] = []
-
-        self.purchaser_list_dialog = None
-
         # Create dialog if it wasn't created before.
-        # if price is not None and shopping_cart is not None:
-        #     print("Run this shit")
-        #     App.get_running_app().loop.call_soon_threadsafe(self.load_dialog_screen)
+        if price is not None and shopping_cart is not None:
+            App.get_running_app().loop.call_soon_threadsafe(self.load_dialog_screen)
 
     def on_add_product(self):
         # Update the count on the UI
@@ -73,13 +71,17 @@ class ItemListUX(TwoLineAvatarIconListItem):
     #
     def on_select_purchaser(self):
         if self.purchaser_list_dialog is None:
+            # If the dialog has not been loaded before, make sure to load it for the first time.
             self.load_dialog_screen()
+        else:
+            # It's already been built, so only refresh the contents
+            self.refresh_dialog_count()
 
-        # Open the dialog to display the shopping cart
+        # Open the dialog to display the users you may select.
         self.purchaser_list_dialog.open()
 
-
     def on_ok(self, dt):
+        # Called when the dialog is opened
         if self.purchaser_list_dialog:
             self.purchaser_list_dialog.dismiss()
 
@@ -88,33 +90,59 @@ class ItemListUX(TwoLineAvatarIconListItem):
         self.ids.count.text = "0"
 
         # Clear the count of the items for other users (if the dialog was opened).
-        if self.purchaser_list_dialog is not None:
-            for purchaser_item in self.purchaser_list_dialog.items:
+        if ItemListUX.purchaser_list_dialog is not None:
+            for purchaser_item in ItemListUX.purchaser_list_dialog.items:
                 purchaser_item.ids.count.text = "0"
 
     def load_dialog_screen(self):
         start_time = time.time()
 
-        for user_name, user_email in App.get_running_app().user_mapping.items():
-            self.alternative_purchaser_list.append(
-                PurchaserItem(text=user_name, product_name=self.text, shoppingcart=self.shopping_cart,
-                              secondary_text=" ", secondary_theme_text_color="Custom",
-                              secondary_text_color=[0.509, 0.509, 0.509, 1])
+        if ItemListUX.purchaser_list_dialog is None:
+
+            list = []
+            for user_name, user_email in App.get_running_app().user_mapping.items():
+                list.append(
+                    PurchaserItem(text=user_name, secondary_text=" ", secondary_theme_text_color="Custom",
+                                  secondary_text_color=[0.509, 0.509, 0.509, 1])
+                )
+
+            ItemListUX.purchaser_list_dialog = SelectPurchaserDialog(
+                shopping_cart=self.shopping_cart,
+                type="confirmation",
+                height="440px",
+                width="700px",
+                items=list,
+                buttons=[
+                    MDFlatButton(
+                        text="OK",
+                        on_release=self.on_ok
+                    ),
+                ],
             )
 
-        print(f"Added user to dialog screen in {time.time() - start_time} seconds")
+            # Make sure to provide the purchaser item class with a reference to the dialog we will open
+            PurchaserItem.purchaser_dialog = ItemListUX.purchaser_list_dialog
 
-        self.purchaser_list_dialog = MDDialog(
-            type="confirmation",
-            height="440px",
-            width="700px",
-            items=self.alternative_purchaser_list,
-            buttons=[
-                MDFlatButton(
-                    text="OK",
-                    on_release=self.on_ok
-                ),
-            ],
-        )
+            print(f"Loaded dialog screen of item-ux view in {time.time() - start_time} seconds")
 
-        print(f"Loaded dialog screen of item-ux view in {time.time() - start_time} seconds")
+    # Because we are using a single dialog, we need to refresh its contents when we open and close it.
+    # This method does exactly that.
+    def refresh_dialog_count(self):
+        # Make sure to update for which product the dialog is being opened
+        SelectPurchaserDialog.selected_product = self.text
+
+        # Show correct counts of items for this dialog screen
+        for purchaser_item in ItemListUX.purchaser_list_dialog.items:
+            # Loop over every name in the dialog
+            is_in_shopping_cart = False
+
+            # Check if we find a matching purchase in the shoppping cart
+            for product in self.shopping_cart.get_shopping_cart():
+                if product.product_name == self.text and product.purchaser_name == purchaser_item.get_purchaser_name():
+                    # If we find a match, set the count to the current amount in the shopping cart
+                    purchaser_item.set_item_count(product.amount)
+                    is_in_shopping_cart = True
+
+            # If we did not find a match, set the current count to zero.
+            if not is_in_shopping_cart:
+                purchaser_item.set_item_count(0)

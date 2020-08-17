@@ -143,6 +143,8 @@ class ProductScreen(Screen):
             self.direct_confirm.dismiss()
         if self.shopping_cart_dialog:
             self.shopping_cart_dialog.dismiss()
+        if ItemListUX.purchaser_list_dialog:
+            ItemListUX.purchaser_list_dialog.dismiss()
 
         self.manager.current = Screens.DEFAULT_SCREEN.value
 
