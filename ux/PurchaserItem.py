@@ -11,9 +11,9 @@ class PurchaserItem(TwoLineAvatarIconListItem):
 
     # Set local member variables and forwards **kwargs to super class
     def __init__(self, product_name: str, shoppingcart: ShoppingCart, **kwargs):
+        start_time = time.time()
         super(PurchaserItem, self).__init__(**kwargs)
 
-        start_time = time.time()
         self.product = product_name
         self.shopping_cart = shoppingcart
 
