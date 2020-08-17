@@ -59,6 +59,8 @@ class ProductScreen(Screen):
     # Load tabs (if they are not loaded yet) and load product information afterwards
     def load_category_data(self):
 
+        print("Start loading category data")
+
         start_time = time.time()
 
         if len(self.tabs) > 0:
@@ -97,6 +99,8 @@ class ProductScreen(Screen):
 
     # Load product information and set up product view
     def load_products(self):
+
+        print("Start loading product data")
 
         start_time = time.time()
 
