@@ -3,20 +3,23 @@ from kivymd.uix.list import TwoLineAvatarIconListItem
 
 from ds.Purchase import Purchase
 from ds.ShoppingCart import ShoppingCart
+import time
 
 Builder.load_file('kvs/PurchaserItem.kv')
-
 
 class PurchaserItem(TwoLineAvatarIconListItem):
 
     # Set local member variables and forwards **kwargs to super class
     def __init__(self, product_name: str, shoppingcart: ShoppingCart, **kwargs):
         super(PurchaserItem, self).__init__(**kwargs)
+
+        start_time = time.time()
         self.product = product_name
         self.shopping_cart = shoppingcart
 
         # Disable ripple effect
         self.ripple_scale = 0
+        print(f"Init function of purchaseritem done in {time.time() - start_time} seconds")
 
     # Adds product to the shopping cart.
     def on_add_product(self):
