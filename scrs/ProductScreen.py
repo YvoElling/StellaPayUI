@@ -66,7 +66,7 @@ class ProductScreen(Screen):
         if len(self.tabs) > 0:
             Logger.debug("Don't load tabs as we already have that information.")
 
-            print(f"Loaded category data and tabs in {time.time() - start_time} seconds")
+            print(f"Loaded category data and tabs (after skipping) in {time.time() - start_time} seconds")
 
             # Load product items (because we still need to reload them)
             self.load_products()
@@ -81,7 +81,7 @@ class ProductScreen(Screen):
             self.ids.android_tabs.add_widget(tab)
             self.tabs.append(tab)
 
-        print(f"Loaded category data and tabs in {time.time() - start_time} seconds")
+        print(f"Loaded category data and tabs (no skipping) in {time.time() - start_time} seconds")
 
         # Load product items
         self.load_products()
@@ -106,7 +106,7 @@ class ProductScreen(Screen):
 
         if len(self.tabs[0].ids.container.children) > 0:
             Logger.debug("Don't load products view again as it's already there..")
-            print(f"Loaded products in {time.time() - start_time} seconds")
+            print(f"Loaded products (after skipping) in {time.time() - start_time} seconds")
             return
 
         Logger.debug(f"Setting up product view")
@@ -129,7 +129,7 @@ class ProductScreen(Screen):
                                                     price=None,
                                                     shopping_cart=None))
 
-            print(f"Loaded products in {time.time() - start_time} seconds")
+            print(f"Loaded products (no skipping) in {time.time() - start_time} seconds")
 
     #
     # timeout callback function
