@@ -43,6 +43,9 @@ class ProductScreen(Screen):
 
         self.event_loop: AbstractEventLoop = App.get_running_app().loop
 
+        # Load category information and tabs
+        self.event_loop.call_soon_threadsafe(self.load_category_data)
+
     # Start timeout counter
     def on_start_timeout(self):
         self.timeout_event = Clock.schedule_once(self.on_timeout, self.timeout_time)
@@ -76,14 +79,10 @@ class ProductScreen(Screen):
         # Load product items
         self.load_products()
 
-
     #
     # upon entering the screen, set the timeout
     #
     def on_enter(self, *args):
-        # Load category information and tabs
-        self.event_loop.call_soon_threadsafe(self.load_category_data)
-
         # Initialize timeouts
         self.on_start_timeout()
 
@@ -109,9 +108,7 @@ class ProductScreen(Screen):
                                                         shopping_cart=self.shopping_cart))
 
             # Add last item to the products (for each category) that is empty. This improves readability.
-            tab.ids.container.add_widget(ItemListUX(text="",
-                                                    secondary_text="",
-                                                    secondary_theme_text_color="Custom",
+            tab.ids.container.add_widget(ItemListUX(text="", secondary_text="", secondary_theme_text_color="Custom",
                                                     secondary_text_color=[0.509, 0.509, 0.509, 1],
                                                     price=None,
                                                     shopping_cart=None))
