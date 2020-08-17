@@ -52,8 +52,12 @@ class ShoppingCart:
 
         # Check if the purchase actually exists
         if duplicate is not None:
-            self.basket.remove(duplicate)
+            if duplicate.amount == 1:
+                self.basket.remove(duplicate)
+            else:
+                duplicate.amount -= purchase.amount
         else:
+
             Logger.warning("Tried to remove a purchase from the basket that was not present!")
 
         self.notify_listener()
