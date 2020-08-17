@@ -1,6 +1,9 @@
+from kivy.app import App
 from kivy.clock import Clock
 from kivy.lang import Builder
-from kivy.uix.screenmanager import Screen
+from kivy.uix.screenmanager import Screen, SlideTransition
+
+from utils.Screens import Screens
 
 
 class ProfileScreen(Screen):
@@ -16,25 +19,27 @@ class ProfileScreen(Screen):
     # Called when the screen is loaded:
     # - for retrieving user name
     def on_enter(self, *args):
-        self.ids.username.text = self.manager.get_screen("DefaultScreen").user_name
+        self.ids.username.text = App.get_running_app().active_user
         self.timeout_event = Clock.schedule_once(self.on_timeout, self.timeout_time)
 
     # Return to the product page
     def on_back(self):
-        self.manager.current = 'ProductScreen'
-        self.timeout_event.cancel()
+        self.manager.transition = SlideTransition(direction="right")
+        self.manager.current = Screens.PRODUCT_SCREEN.value
 
-    # Return to defaultScreen upon timeout
+    # Called when timer is timed out
     def on_timeout(self, dt):
-        self.manager.current = 'DefaultScreen'
+        self.manager.transition = SlideTransition(direction="right")
+        # Make sure to clean up product screen after going to profile screen
+        self.manager.get_screen(Screens.PRODUCT_SCREEN.value).end_user_session()
+
+        self.manager.current = Screens.DEFAULT_SCREEN.value
 
     # Reset timer when the screen is touched
     def on_touch_up(self, touch):
         self.timeout_event.cancel()
         self.timeout_event = Clock.schedule_once(self.on_timeout, self.timeout_time)
 
-    # Clear name on leave
+    # Clear time on leave
     def on_leave(self, *args):
-        self.ids.username.text = ""
-        self.manager.get_screen("ProductScreen") \
-            .load_data(self.manager.get_screen('DefaultScreen').static_database)
+        self.timeout_event.cancel()

@@ -1,7 +1,10 @@
+from kivy.app import App
 from kivy.clock import Clock
-from kivy.uix.screenmanager import Screen, SlideTransition
 from kivy.lang import Builder
+from kivy.uix.screenmanager import Screen, SlideTransition
 from kivymd.uix.taptargetview import MDTapTargetView
+
+from utils.Screens import Screens
 
 
 class WelcomeScreen(Screen):
@@ -18,9 +21,12 @@ class WelcomeScreen(Screen):
         self.tap_target_view = MDTapTargetView(
             widget=self.ids.info,
             title_text="Version Information",
-            description_text="Release 01-08-20: Version 0.7\n",
+            description_text=f"Build {App.get_running_app().build_version}\n",
             widget_position="right_bottom"
         )
+
+    def on_pre_enter(self, *args):
+        self.ids.label.text = App.get_running_app().active_user
 
     #
     # performed upon each screen entry
@@ -46,22 +52,23 @@ class WelcomeScreen(Screen):
     # Called when the stop button is pressed
     #
     def on_cancel(self):
-        # If tap target view is open, close it
-        if self.tap_target_view.state == "open":
-            self.tap_target_view.stop()
-
-        # Clean up the loaded products that are stored in the tabs
-        self.manager.get_screen("ProductScreen").on_cleanup()
+        self.manager.transition = SlideTransition(direction='right')
         # Switch back to the default screen to welcome a new user
-        self.manager.current = 'DefaultScreen'
+        self.manager.current = Screens.DEFAULT_SCREEN.value
 
     #
     # Called when buy is pressed
     #
     def on_buy(self):
-        self.timeout_event.cancel()
-        self.manager.get_screen('ProductScreen').user_name = self.ids.label.text
-        self.manager.current = 'ProductScreen'
+        self.manager.transition = SlideTransition(direction='left')
+        self.manager.get_screen(Screens.PRODUCT_SCREEN.value).user_name = self.ids.label.text
+        self.manager.current = Screens.PRODUCT_SCREEN.value
+
+    def on_touch_move(self, touch):
+        if touch.dx > 0:
+            self.on_cancel()
+        elif touch.dx < 0:
+            self.on_buy()
 
     #
     # Opens the little information screen at the right bottom
@@ -70,4 +77,11 @@ class WelcomeScreen(Screen):
         if self.tap_target_view.state == "close":
             self.tap_target_view.start()
         else:
+            self.tap_target_view.stop()
+
+    def on_leave(self, *args):
+        self.timeout_event.cancel()
+
+        # If tap target view is open, close it
+        if self.tap_target_view.state == "open":
             self.tap_target_view.stop()

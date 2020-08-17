@@ -1,32 +1,44 @@
-from kivy.uix.screenmanager import Screen, SlideTransition
+import os
+import time
+from asyncio import AbstractEventLoop
+from typing import Dict, List
+
+from kivy import Logger
+from kivy.app import App
 from kivy.clock import Clock
 from kivy.lang import Builder
+from kivy.uix.screenmanager import Screen, SlideTransition
 from kivymd.uix.button import MDFlatButton, MDRaisedButton
 from kivymd.uix.dialog import MDDialog
-from ds.Product import Product
-from ds.ShoppingCart import ShoppingCart
+
+from ds.ShoppingCart import ShoppingCart, ShoppingCartListener
 from scrs.TabDisplay import TabDisplay
+from utils.Connections import BackendURLs
+from utils.Screens import Screens
 from ux.ItemListUX import ItemListUX
 from ux.ShoppingCartItem import ShoppingCartItem
 
-import random
+
+class OnChangeShoppingCartListener(ShoppingCartListener):
+
+    def __init__(self, product_screen):
+        self.product_screen = product_screen
+
+    def on_change(self):
+        print("Shopping cart changed")
+        self.product_screen.ids.buy_button.disabled = len(ProductScreen.shopping_cart.get_shopping_cart()) == 0
+        self.product_screen.ids.shopping_cart_button.disabled = len(ProductScreen.shopping_cart.get_shopping_cart()) == 0
 
 
 class ProductScreen(Screen):
-    # Store items per category, these are stored locally to reduce the amount of queries required
-    local_items = {}
-    # Store tab objects, these are later used to add the products
-    tabs = []
+    product_items_per_category: Dict[str, List[ItemListUX]] = {}
 
-    # API Links
-    get_cat_api_url = "http://staartvin.com:8181/products/"
-    get_all_cat_api = "http://staartvin.com:8181/categories"
-    confirm_api = "http://staartvin.com:8181/transactions/create"
+    tabs = []
 
     # shopping cart
     shopping_cart = ShoppingCart()
 
-    def __init__(self, cookies, **kwargs):
+    def __init__(self, **kwargs):
         # Load screen
         Builder.load_file('kvs/ProductScreen.kv')
         super(ProductScreen, self).__init__(**kwargs)
@@ -35,51 +47,16 @@ class ProductScreen(Screen):
         self.direct_confirm = None
         # Shopping_cart dialog screen object
         self.shopping_cart_dialog = None
-        self.requests_cookies = cookies
+        self.session = App.get_running_app().session
 
         # Timeout variables
         self.timeout_event = None
         self.timeout_time = 75
 
-        # Get all categories names
-        response = self.requests_cookies.get(url=self.get_all_cat_api)
+        self.event_loop: AbstractEventLoop = App.get_running_app().loop
 
-        # Check status response
-        if response.ok:
-            categories = response.json()
-
-            # add all tabs to the tabbar
-            for cat in categories:
-                # Create tab display
-                tab = TabDisplay(text=cat['name'])
-                self.tabs.append(tab)
-                self.ids.android_tabs.add_widget(tab)
-                self.local_items[cat['name']] = []
-
-                # Request products from category tab_text
-                request = self.get_cat_api_url + cat['name']
-                response = self.requests_cookies.get(request)
-
-                # Evaluate server response
-                if response.ok:
-                    # convert response to json
-                    products_json = response.json()
-
-                    # Create a product object for all
-                    for product in products_json:
-                        # Only add the product to the list if the product must be shown
-                        if product['shown']:
-                            p = Product().create_from_json(product)
-                            self.local_items[cat['name']].append(p)
-                else:
-                    # Error in retrieving products from server
-                    print("Products could not be retrieved: " + response)
-                    exit(7)
-
-        else:
-            # Error
-            print("Categories could not be retrieved: " + response)
-            exit(6)
+        self.shopping_cart_listener = OnChangeShoppingCartListener(self)
+        self.shopping_cart.add_listener(self.shopping_cart_listener)
 
     # Start timeout counter
     def on_start_timeout(self):
@@ -92,102 +69,127 @@ class ProductScreen(Screen):
         self.timeout_event.cancel()
         self.on_start_timeout()
 
+    # Load tabs (if they are not loaded yet) and load product information afterwards
+    def load_category_data(self):
+
+        print("Start loading category data")
+
+        start_time = time.time()
+
+        if len(self.tabs) > 0:
+            Logger.debug("Don't load tabs as we already have that information.")
+
+            print(f"Loaded category data and tabs (after skipping) in {time.time() - start_time} seconds")
+
+            # Load product items (because we still need to reload them)
+            self.load_products()
+
+            return
+
+        Logger.debug("Loading category view")
+
+        for category in App.get_running_app().products_per_category.keys():
+            # Create tab display
+            tab = TabDisplay(text=category)
+            self.ids.android_tabs.add_widget(tab)
+            self.tabs.append(tab)
+
+        print(f"Loaded category data and tabs (no skipping) in {time.time() - start_time} seconds")
+
+        # Load product items
+        self.load_products()
+
     #
     # upon entering the screen, set the timeout
     #
     def on_enter(self, *args):
+
+        # Load product data
+        self.event_loop.call_soon_threadsafe(self.load_category_data)
+
         # Initialize timeouts
         self.on_start_timeout()
 
-    def load_data(self, database):
-        # Clean the tabs before reloading them
-        self.on_cleanup()
+    # Load product information and set up product view
+    def load_products(self):
 
-        database_conn = database.cursor()
+        print("Start loading product data")
+
+        start_time = time.time()
+
+        if len(self.tabs[0].ids.container.children) > 0:
+            Logger.debug("Don't load products view again as it's already there..")
+            print(f"Loaded products (after skipping) in {time.time() - start_time} seconds")
+            return
+
+        Logger.debug(f"Setting up product view")
 
         for tab in self.tabs:
-            for product in self.local_items[tab.text]:
-                # Should update this to PREPARED STATEMENT instead of this, but it's fun facts, so what the heck
-                # Get all fun facts for this product
-                database_conn.execute(
-                    "SELECT fun_fact FROM static_fun_facts WHERE product='" + product.get_name() + "'")
-
-                # store all fun facts that were found for this product in a list.
-                fun_facts = database_conn.fetchall()
-
-                cff = "Zoveel facts gevonden als Stella's in 2012"
-                if fun_facts:
-                    # Select a random fun fact from the list
-                    pff = random.choice(fun_facts)
-
-                    # Clean the fun fact by removing unnecessary tokens
-                    cff = str(pff).replace('(', '').replace(')', '').replace('\'', '').replace('\"', '')
-                    cff = cff[:-1]
+            for product in App.get_running_app().products_per_category[tab.text]:
+                # Get fun fact description of database
+                product_description = App.get_running_app().database_manager.get_random_fun_fact(product.get_name())
 
                 # Add item to the tab
-                tab.ids.container.add_widget(ItemListUX(text=product.get_name(),
-                                                        user_mail=self.manager.get_screen("DefaultScreen").user_mail,
-                                                        price="€" + product.get_price(),
-                                                        shoppingcart=self.shopping_cart,
-                                                        cookies=self.requests_cookies,
-                                                        secondary_text=cff,
+                tab.ids.container.add_widget(ItemListUX(text=product.get_name(), secondary_text=product_description,
                                                         secondary_theme_text_color="Custom",
-                                                        secondary_text_color=[0.509, 0.509, 0.509, 1]))
+                                                        secondary_text_color=[0.509, 0.509, 0.509, 1],
+                                                        price="€" + product.get_price(),
+                                                        shopping_cart=self.shopping_cart))
+
+            # Add last item to the products (for each category) that is empty. This improves readability.
+            tab.ids.container.add_widget(ItemListUX(text="", secondary_text="", secondary_theme_text_color="Custom",
+                                                    secondary_text_color=[0.509, 0.509, 0.509, 1],
+                                                    price=None,
+                                                    shopping_cart=None))
+
+            print(f"Loaded products of category {tab.text} (no skipping) in {time.time() - start_time} seconds")
+        print(f"Loaded all products (no skipping) in {time.time() - start_time} seconds")
 
     #
     # timeout callback function
     #
     def on_timeout(self, dt):
-        self.__end_process()
+        self.end_user_session()
 
         # If the dialogs are instantiated, dismiss them before timeouts
         if self.direct_confirm:
             self.direct_confirm.dismiss()
         if self.shopping_cart_dialog:
             self.shopping_cart_dialog.dismiss()
+        if ItemListUX.purchaser_list_dialog:
+            ItemListUX.purchaser_list_dialog.dismiss()
 
-        self.manager.current = 'DefaultScreen'
+        self.manager.current = Screens.DEFAULT_SCREEN.value
 
     #
     # upon leaving the screen, cancel the timeout event
     #
     def on_leave(self, *args):
-        self.on_cleanup()
-
-    #
-    # Clean up display upon leaving
-    #
-    def on_cleanup(self):
-        for tab in self.tabs:
-            tab.ids.container.clear_widgets()
-
-    def on_cancel(self):
         self.timeout_event.cancel()
-        self.__end_process()
-        self.manager.current = 'DefaultScreen'
+
+    # Called when the user wants to leave this active session.
+    def on_leave_product_screen_button(self):
+        self.end_user_session()
+        self.manager.current = Screens.DEFAULT_SCREEN.value
 
     #
     # move to profile screen
     #
     def on_profile_screen(self):
-        # Clear the shopping cart upon leaving this screen for consistency
-        self.shopping_cart.get_shopping_cart().clear()
-
-        # Cancel timeout event and switch to ProfileScreen
-        self.timeout_event.cancel()
-        self.manager.current = 'ProfileScreen'
+        self.manager.transition = SlideTransition(direction="left")
+        # Switch to profile screen
+        self.manager.current = Screens.PROFILE_SCREEN.value
 
     #
     # callback function for when tab is switched
     #
     def on_tab_switch(self, instance_tabs, instance_tab, instance_tab_label, tab_text):
-        self.timeout_event.cancel()
-        self.on_start_timeout()
+        pass
 
     #
-    # open confirmation dialog
+    # Open payment confirmation dialog
     #
-    def open_confirmation(self):
+    def open_payment_confirmation(self):
         # Restart timeout counter
         self.timeout_event.cancel()
         self.on_start_timeout()
@@ -198,26 +200,26 @@ class ProductScreen(Screen):
             # Create direct_confirm dialog
             if not self.direct_confirm:
                 self.direct_confirm = MDDialog(
-                    text="Voeg deze aankopen aan mijn account toe",
+                    title="",
+                    text="Wil je deze artikelen afrekenen?",
                     buttons=[
                         MDFlatButton(
-                            text="TERUG",
-                            on_release=self.on_return_direct_confirm
+                            text="Nee",
+                            on_release=self.on_cancel_payment
 
                         ),
                         MDRaisedButton(
-                            text="BEVESTIG",
-                            on_release=self.on_confirm,
-                            md_bg_color=[0.933, 0.203, 0.125, 1]
+                            text="Ja",
+                            on_release=self.on_confirm_payment
                         ),
-                    ],
+                    ]
                 )
             self.direct_confirm.open()
 
     #
-    # opens shoppingcart display
+    # Open shopping cart dialog
     #
-    def show_shoppingcart(self):
+    def show_shopping_cart(self):
         # Reset timeout counter
         self.timeout_event.cancel()
         self.on_start_timeout()
@@ -229,9 +231,9 @@ class ProductScreen(Screen):
         for purchase in self.shopping_cart.get_shopping_cart():
             item = ShoppingCartItem(purchase=purchase,
                                     text=purchase.product_name,
-                                    tertiary_text=" ",
-                                    tertiary_theme_text_color="Custom",
-                                    tertiary_text_color=[0.509, 0.509, 0.509, 1])
+                                    secondary_text="",
+                                    secondary_theme_text_color="Custom",
+                                    secondary_text_color=[0.509, 0.509, 0.509, 1])
             shopping_cart_items.append(item)
 
         # If there are items in the shopping cart, display them
@@ -242,25 +244,26 @@ class ProductScreen(Screen):
                 buttons=[
                     MDFlatButton(
                         text="OK",
-                        on_release=self.on_return_shoppingcart
+                        on_release=self.on_close_shoppingcart
                     ),
                 ],
             )
+
             # Open the dialog to display the shopping cart
             self.shopping_cart_dialog.open()
 
     #
-    # Close dialog when TERUG is pressed
+    # When shopping cart needs to be closed
     #
-    def on_return_shoppingcart(self, dt):
+    def on_close_shoppingcart(self, dt):
         self.timeout_event.cancel()
         self.on_start_timeout()
         self.shopping_cart_dialog.dismiss()
 
     #
-    # Close dialog when TERUG is pressed
+    # When payment is not confirmed by user
     #
-    def on_return_direct_confirm(self, dt):
+    def on_cancel_payment(self, dt):
         self.timeout_event.cancel()
         self.on_start_timeout()
         self.direct_confirm.dismiss()
@@ -268,29 +271,33 @@ class ProductScreen(Screen):
     #
     # Confirms a payment
     #
-    def on_confirm(self, dt):
+    def on_confirm_payment(self, dt):
         # Serialize the shopping cart
         json_cart = self.shopping_cart.to_json()
 
         # use a POST-request to forward the shopping cart
-        response = self.requests_cookies.post(self.confirm_api, json=json_cart)
+        response = self.session.post(BackendURLs.CREATE_TRANSACTION.value, json=json_cart)
 
         if response.ok:
             # Reset instance variables
-            self.__end_process()
-
-            # Stop timer
-            self.timeout_event.cancel()
+            self.end_user_session()
 
             # Close the dialog
             self.direct_confirm.dismiss()
 
             # Return to the default screen for a new user to log in
-            self.manager.current = "DefaultScreen"
+            self.manager.current = Screens.DEFAULT_SCREEN.value
 
         else:
-            print("Payment could not be made: error: " + response.content)
-            exit(8)
+            Logger.critical("Payment could not be made: error: " + response.content)
+            os._exit(1)
 
-    def __end_process(self):
-        self.shopping_cart.emtpy_cart()
+    # This method ought to be called when the user session is finished
+    def end_user_session(self):
+        # Clear shopping car
+        self.shopping_cart.clear_cart()
+
+        # Make sure to clear all products from each tab, as we need to reload them if we come back.
+        for tab in self.tabs:
+            for product_item in tab.ids.container.children:
+                product_item.clear_item()

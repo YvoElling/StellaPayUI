@@ -2,6 +2,8 @@ from kivy.clock import Clock
 from kivy.lang import Builder
 from kivy.uix.screenmanager import Screen
 
+from utils.Screens import Screens
+
 
 class CreditsScreen(Screen):
     def __init__(self, **kwargs):
@@ -15,25 +17,23 @@ class CreditsScreen(Screen):
         self.timeout_event = None
         self.timeout_time = 45
 
-    #
-    # used to return to the welcome pages. Callback function from stop button
-    #
-    def on_stop(self):
+    def on_leave(self, *args):
         self.timeout_event.cancel()
-        self.manager.current = 'DefaultScreen'
+
+    def clicked_stop_button(self):
+        self.on_timeout(0)
 
     #
     # calls upon entry of this screen
     #
     def on_enter(self, *args):
         self.timeout_event = Clock.schedule_once(self.on_timeout, self.timeout_time)
-        self.manager.get_screen("ProductScreen").on_cleanup()
 
     #
     # Timeout callback function.
     #
     def on_timeout(self, dt):
-        self.on_stop()
+        self.manager.current = Screens.DEFAULT_SCREEN.value
 
     #
     # when the screen is touched, reset the timer

@@ -14,13 +14,13 @@
         id: stop
         markup: True
         text: '[b]STOP[/b]'
-        md_bg_color: 0.933, 0.203, 0.125, 1
+#        md_bg_color: 0.933, 0.203, 0.125, 1
         font_size: '25sp'
         size_hint: None, None
         pos_hint: {"center_x": 0.90,"center_y":0.93}
         pos_hint_x: root.center_x
         pos_hint_y: root.center_y
-        on_release: root.on_stop()
+        on_release: root.clicked_stop_button()
 
     Label:
         id: label

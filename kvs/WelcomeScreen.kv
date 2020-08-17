@@ -6,16 +6,9 @@
         id: label
         text: "FIRSTNAME LASTNAME"
         size_hint: None, None
-        pos_hint: {"center_x":0.5,"center_y":0.52}
+        pos_hint: {"center_x":0.5,"center_y":0.6}
         font_size: '70sp'
-
-    Label:
-        id: hello
-        markup: True
-        text: "[b]Hallo[/b]"
-        font_size: '20sp'
-        size_hint: None, None
-        pos_hint: {"center_x": 0.5,"center_y":0.62}
+        font_name: 'fonts/roboto/Roboto-Regular.ttf'
 
     Label:
         id: stella_pay
@@ -25,28 +18,25 @@
         font_name: 'fonts/orbitron/Orbitron-Bold.ttf'
         markup: True
 
-    MDFillRoundFlatIconButton:
-        icon: "shopping"
-        width: dp(110)
-        height: dp(55)
+    MDIconButton:
+        icon: "basket"
         id: vmk
         markup: True
-        text: '[b]KOOP[/b]'
-        md_bg_color: 0.062, 0.898, 0.105, 1
-        font_size: '25sp'
+        text: 'KOOP'
+        md_bg_color: app.theme_cls.green_button
+        user_font_size: "64sp"
         pos_hint: {"center_x": 0.42,"center_y":0.35}
         pos_hint_x: root.center_x
         pos_hint_y: root.center_y
         on_release: root.on_buy()
 
-    MDFillRoundFlatButton:
-        width: dp(260)
-        height: dp(55)
+    MDIconButton:
         id: stop
+        icon: 'window-close'
         markup: True
         text: '[b]STOP[/b]'
-        md_bg_color: 0.933, 0.203, 0.125, 1
-        font_size: '25sp'
+        md_bg_color: app.theme_cls.red_button
+        user_font_size: "64sp"
         size_hint: None, None
         pos_hint: {"center_x": 0.58,"center_y":0.35}
         pos_hint_x: root.center_x

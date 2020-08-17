@@ -5,8 +5,7 @@
         MDToolbar:
             title: 'STELLA PAY'
             font_name: 'fonts/orbitron/Orbitron-Bold.ttf'
-            md_bg_color: 0.078, 0.537, 0.882, 1
-            right_action_items: [["account", lambda x: root.on_profile_screen()]]
+            right_action_items: [["account-circle", lambda x: root.on_profile_screen()]]
             elevation: 10
             type: 'top'
 
@@ -15,34 +14,34 @@
             tab_bar_height: '35dp'
             on_tab_switch: root.on_tab_switch(*args)
 
-    MDFillRoundFlatButton:
-        width: dp(200)
-        height: dp(45)
+    MDIconButton:
         id: stop
-        markup: True
-        text: '[b]STOP[/b]'
-        md_bg_color: 0.933, 0.203, 0.125, 1
+        icon: "logout-variant"
         font_size: '25sp'
         size_hint: None, None
-        pos_hint: {"center_x": 0.85,"center_y":0.93}
+        pos_hint: {"center_x": 0.87,"center_y":0.935}
         pos_hint_x: root.center_x
         pos_hint_y: root.center_y
-        on_release: root.on_cancel()
+        on_release: root.on_leave_product_screen_button()
 
     MDFloatingActionButton:
+        id: buy_button
         icon: "currency-eur"
-        md_bg_color: 0.062, 0.898, 0.105, 1
+        md_bg_color: app.theme_cls.complementary_color_1
         pos_hint: {"center_x": 0.93,"center_y":0.1}
         pos_hint_x: root.center_x
         pos_hint_y: root.center_y
         size: 70, 70
-        on_release: root.open_confirmation()
+        on_release: root.open_payment_confirmation()
+        disabled: True
 
     MDFloatingActionButton:
+        id: shopping_cart_button
         icon: "shopping"
-        md_bg_color: 0.062, 0.898, 0.105, 1
+        md_bg_color: app.theme_cls.complementary_color_1
         pos_hint: {"center_x": 0.07,"center_y":0.1}
         pos_hint_x: root.center_x
         pos_hint_y: root.center_y
         size: 70, 70
-        on_release: root.show_shoppingcart()
+        on_release: root.show_shopping_cart()
+        disabled: True

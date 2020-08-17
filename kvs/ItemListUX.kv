@@ -1,7 +1,7 @@
-<ItemListUX@@OneLineAvatarIconListItem>
+<ItemListUX@@TwoLineAvatarIconListItem>
     MDIconButton:
         id: plus
-        md_bg_color: 0.062, 0.898, 0.105, 1
+        md_bg_color: app.theme_cls.green_button
         user_font_size: "25sp"
         icon: "plus"
         pos_hint: {"center_x": 0.88,"center_y":0.5}
@@ -10,21 +10,17 @@
     MDIconButton:
         id: minus
         user_font_size: "25sp"
-        md_bg_color: 0.933, 0.203, 0.125, 1
+        md_bg_color: app.theme_cls.red_button
         icon: "minus"
         pos_hint: {"center_x": 0.95,"center_y":0.5}
         on_release: root.on_remove_product()
 
-    MDFillRoundFlatIconButton:
-        id: plus
-        text: "[b]kies[/b]"
-        font_size: "20sp"
-        markup: True
-        height: dp(45)
-        md_bg_color: 0.062, 0.898, 0.105, 1
-        user_font_size: "45sp"
+    MDIconButton:
+        id: other_user
+        font_size: "10sp"
+        #md_bg_color: app.theme_cls.accent_color
         icon: "account"
-        pos_hint: {"center_x": 0.77,"center_y":0.5}
+        pos_hint: {"center_x": 0.8,"center_y":0.5}
         on_release: root.on_select_purchaser()
 
     MDLabel:
