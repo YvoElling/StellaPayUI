@@ -90,7 +90,7 @@ class ItemListUX(TwoLineAvatarIconListItem):
     def load_dialog_screen(self):
         start_time = time.time()
 
-        for user_name, user_email in sorted(App.get_running_app().user_mapping.items()):
+        for user_name, user_email in App.get_running_app().user_mapping.items():
             self.alternative_purchaser_list.append(
                 PurchaserItem(text=user_name, product_name=self.text, shoppingcart=self.shopping_cart,
                               secondary_text=" ", secondary_theme_text_color="Custom",

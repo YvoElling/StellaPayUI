@@ -1,5 +1,6 @@
 import os
 from asyncio import AbstractEventLoop
+from collections import OrderedDict
 
 from kivy import Logger
 from kivy.app import App
@@ -86,6 +87,8 @@ class DefaultScreen(Screen):
             for user in user_json:
                 # store all emails adressed in the sheet_menu
                 App.get_running_app().user_mapping[user["name"]] = user["email"]
+
+            App.get_running_app().user_mapping = OrderedDict(sorted(App.get_running_app().user_mapping.items(), key=lambda x: x[0]))
         else:
             Logger.critical("Error: addresses could not be fetched from server in DefaultScreen.py:on_no_nfc()")
             os._exit(1)
