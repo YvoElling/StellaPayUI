@@ -44,7 +44,7 @@ class ProductScreen(Screen):
         self.event_loop: AbstractEventLoop = App.get_running_app().loop
 
         # Load category information and tabs
-        self.event_loop.call_soon_threadsafe(self.load_category_data)
+        self.load_category_data()
 
     # Start timeout counter
     def on_start_timeout(self):
