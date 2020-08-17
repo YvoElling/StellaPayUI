@@ -9,6 +9,7 @@ from kivymd.uix.list import TwoLineAvatarIconListItem
 from ds.Purchase import Purchase
 from ds.ShoppingCart import ShoppingCart
 from ux.PurchaserItem import PurchaserItem
+import time
 
 Builder.load_file('kvs/ItemListUX.kv')
 
@@ -87,12 +88,15 @@ class ItemListUX(TwoLineAvatarIconListItem):
                 purchaser_item.ids.count.text = "0"
 
     def load_dialog_screen(self):
+        start_time = time.time()
+
         for user_name, user_email in sorted(App.get_running_app().user_mapping.items()):
             self.alternative_purchaser_list.append(
                 PurchaserItem(text=user_name, product_name=self.text, shoppingcart=self.shopping_cart,
                               secondary_text=" ", secondary_theme_text_color="Custom",
                               secondary_text_color=[0.509, 0.509, 0.509, 1])
             )
+            print(f"Added user to dialog screen in {time.time() - start_time} seconds")
 
         self.purchaser_list_dialog = MDDialog(
             type="confirmation",
@@ -106,3 +110,5 @@ class ItemListUX(TwoLineAvatarIconListItem):
                 ),
             ],
         )
+
+        print(f"Loaded dialog screen of item-ux view in {time.time() - start_time} seconds")
