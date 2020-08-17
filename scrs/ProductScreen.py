@@ -10,7 +10,7 @@ from kivy.uix.screenmanager import Screen
 from kivymd.uix.button import MDFlatButton, MDRaisedButton
 from kivymd.uix.dialog import MDDialog
 
-from ds.ShoppingCart import ShoppingCart
+from ds.ShoppingCart import ShoppingCart, ShoppingCartListener
 from scrs.TabDisplay import TabDisplay
 from utils.Connections import BackendURLs
 from utils.Screens import Screens
@@ -18,6 +18,17 @@ from ux.ItemListUX import ItemListUX
 from ux.ShoppingCartItem import ShoppingCartItem
 
 import time
+
+
+class OnChangeShoppingCartListener(ShoppingCartListener):
+
+    def __init__(self, product_screen):
+        self.product_screen = product_screen
+
+    def on_change(self):
+        print("Shopping cart changed")
+        self.product_screen.ids.buy_button.disabled = len(ProductScreen.shopping_cart.get_shopping_cart()) == 0
+        self.product_screen.ids.shopping_cart_button.disabled = len(ProductScreen.shopping_cart.get_shopping_cart()) == 0
 
 
 class ProductScreen(Screen):
@@ -44,6 +55,9 @@ class ProductScreen(Screen):
         self.timeout_time = 75
 
         self.event_loop: AbstractEventLoop = App.get_running_app().loop
+
+        self.shopping_cart_listener = OnChangeShoppingCartListener(self)
+        self.shopping_cart.add_listener(self.shopping_cart_listener)
 
     # Start timeout counter
     def on_start_timeout(self):

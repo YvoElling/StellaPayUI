@@ -1,9 +1,16 @@
+from abc import abstractmethod, ABC
 from typing import List, Optional
 
 from kivy import Logger
 from kivy.app import App
 
 from ds.Purchase import Purchase
+
+
+class ShoppingCartListener(ABC):
+    @abstractmethod
+    def on_change(self):
+        pass
 
 
 class ShoppingCart:
@@ -13,6 +20,10 @@ class ShoppingCart:
     #
     def __init__(self):
         self.basket: List[Purchase] = []
+        self.listeners: List[ShoppingCartListener] = []
+
+    def add_listener(self, listener: ShoppingCartListener):
+        self.listeners.append(listener)
 
     #
     # Adds a Purchase object to the shopping cart
@@ -30,6 +41,8 @@ class ShoppingCart:
             # No duplicate
             self.basket.append(purchase)
 
+        self.notify_listener()
+
     #
     # Remove from shoppingcart
     #
@@ -42,6 +55,8 @@ class ShoppingCart:
             self.basket.remove(duplicate)
         else:
             Logger.warning("Tried to remove a purchase from the basket that was not present!")
+
+        self.notify_listener()
 
     # Look for a duplicate purchase.
     def __find_duplicate(self, purchase: Purchase) -> Optional[Purchase]:
@@ -64,6 +79,12 @@ class ShoppingCart:
     #
     def clear_cart(self):
         self.basket = []
+
+        self.notify_listener()
+
+    def notify_listener(self):
+        for listener in self.listeners:
+            listener.on_change()
 
     #
     # implement json serializer
