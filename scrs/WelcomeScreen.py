@@ -1,7 +1,7 @@
 from kivy.app import App
 from kivy.clock import Clock
 from kivy.lang import Builder
-from kivy.uix.screenmanager import Screen
+from kivy.uix.screenmanager import Screen, SlideTransition
 from kivymd.uix.taptargetview import MDTapTargetView
 
 from utils.Screens import Screens
@@ -52,6 +52,7 @@ class WelcomeScreen(Screen):
     # Called when the stop button is pressed
     #
     def on_cancel(self):
+        self.manager.transition = SlideTransition(direction='right')
         # Switch back to the default screen to welcome a new user
         self.manager.current = Screens.DEFAULT_SCREEN.value
 
@@ -59,8 +60,15 @@ class WelcomeScreen(Screen):
     # Called when buy is pressed
     #
     def on_buy(self):
+        self.manager.transition = SlideTransition(direction='left')
         self.manager.get_screen(Screens.PRODUCT_SCREEN.value).user_name = self.ids.label.text
         self.manager.current = Screens.PRODUCT_SCREEN.value
+
+    def on_touch_move(self, touch):
+        if touch.dx > 0:
+            self.on_cancel()
+        elif touch.dx < 0:
+            self.on_buy()
 
     #
     # Opens the little information screen at the right bottom

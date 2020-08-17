@@ -103,6 +103,8 @@ class DefaultScreen(Screen):
         # Set member variables, these are required for making a purchase later
         user_name = item.text
 
+        self.manager.transition = SlideTransition(direction='left')
+
         App.get_running_app().active_user = user_name
 
         # Set the name as the name of the user on the next page
