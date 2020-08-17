@@ -17,6 +17,8 @@ from utils.Screens import Screens
 from ux.ItemListUX import ItemListUX
 from ux.ShoppingCartItem import ShoppingCartItem
 
+import time
+
 
 class ProductScreen(Screen):
     product_items_per_category: Dict[str, List[ItemListUX]] = {}
@@ -57,8 +59,12 @@ class ProductScreen(Screen):
     # Load tabs (if they are not loaded yet) and load product information afterwards
     def load_category_data(self):
 
+        start_time = time.time()
+
         if len(self.tabs) > 0:
             Logger.debug("Don't load tabs as we already have that information.")
+
+            print(f"Loaded category data and tabs in {time.time() - start_time} seconds")
 
             # Load product items (because we still need to reload them)
             self.load_products()
@@ -72,6 +78,8 @@ class ProductScreen(Screen):
             tab = TabDisplay(text=category)
             self.ids.android_tabs.add_widget(tab)
             self.tabs.append(tab)
+
+        print(f"Loaded category data and tabs in {time.time() - start_time} seconds")
 
         # Load product items
         self.load_products()
@@ -90,8 +98,11 @@ class ProductScreen(Screen):
     # Load product information and set up product view
     def load_products(self):
 
+        start_time = time.time()
+
         if len(self.tabs[0].ids.container.children) > 0:
             Logger.debug("Don't load products view again as it's already there..")
+            print(f"Loaded products in {time.time() - start_time} seconds")
             return
 
         Logger.debug(f"Setting up product view")
@@ -113,6 +124,8 @@ class ProductScreen(Screen):
                                                     secondary_text_color=[0.509, 0.509, 0.509, 1],
                                                     price=None,
                                                     shopping_cart=None))
+
+            print(f"Loaded products in {time.time() - start_time} seconds")
 
     #
     # timeout callback function
