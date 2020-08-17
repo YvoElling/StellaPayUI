@@ -44,8 +44,9 @@ class ItemListUX(TwoLineAvatarIconListItem):
         self.purchaser_list_dialog = None
 
         # Create dialog if it wasn't created before.
-        if price is not None and shopping_cart is not None:
-           App.get_running_app().loop.call_soon_threadsafe(self.load_dialog_screen)
+        # if price is not None and shopping_cart is not None:
+        #     print("Run this shit")
+        #     App.get_running_app().loop.call_soon_threadsafe(self.load_dialog_screen)
 
     def on_add_product(self):
         # Update the count on the UI
@@ -71,8 +72,12 @@ class ItemListUX(TwoLineAvatarIconListItem):
     # open when trying to add a purchase for someone else
     #
     def on_select_purchaser(self):
+        if self.purchaser_list_dialog is None:
+            self.load_dialog_screen()
+
         # Open the dialog to display the shopping cart
         self.purchaser_list_dialog.open()
+
 
     def on_ok(self, dt):
         if self.purchaser_list_dialog:
