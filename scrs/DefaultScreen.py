@@ -110,7 +110,8 @@ class DefaultScreen(Screen):
         self.manager.current = Screens.WELCOME_SCREEN.value
 
     def on_leave(self, *args):
-        pass
+        # Hide the spinner
+        self.ids.spinner.active = False
 
     def nfc_card_presented(self, uid: str):
         Logger.debug("Read NFC card with uid" + uid)
@@ -119,6 +120,9 @@ class DefaultScreen(Screen):
         if App.get_running_app().active_user is not None:
             Logger.debug("Ignoring NFC card as we are currently making a transaction.")
             return
+
+        # Show the spinner
+        self.ids.spinner.active = True
 
         # Request user info for the specific UID to validate person
         response = App.get_running_app().session_manager.do_get_request(url=BackendURLs.REQUEST_USER_INFO.value + uid)
