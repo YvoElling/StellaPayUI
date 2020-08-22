@@ -47,7 +47,6 @@ class ProductScreen(Screen):
         self.direct_confirm = None
         # Shopping_cart dialog screen object
         self.shopping_cart_dialog = None
-        self.session = App.get_running_app().session
 
         # Timeout variables
         self.timeout_event = None
@@ -276,9 +275,10 @@ class ProductScreen(Screen):
         json_cart = self.shopping_cart.to_json()
 
         # use a POST-request to forward the shopping cart
-        response = self.session.post(BackendURLs.CREATE_TRANSACTION.value, json=json_cart)
+        response = App.get_running_app().session_manager.do_post_request(url=BackendURLs.CREATE_TRANSACTION.value,
+                                                                         json=json_cart)
 
-        if response.ok:
+        if response and response.ok:
             # Reset instance variables
             self.end_user_session()
 

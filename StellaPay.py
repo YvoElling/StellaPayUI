@@ -1,5 +1,4 @@
 import asyncio
-import json
 import os
 import subprocess
 import threading
@@ -7,8 +6,8 @@ from asyncio import AbstractEventLoop
 from typing import Optional, Dict, List
 
 import kivy
-import requests
 from kivy import Logger
+from kivy.app import App
 from kivy.config import Config
 from kivy.core.window import Window
 from kivy.lang import Builder
@@ -27,6 +26,7 @@ from scrs.RegisterUIDScreen import RegisterUIDScreen
 from scrs.WelcomeScreen import WelcomeScreen
 from utils.Connections import BackendURLs
 from utils.Screens import Screens
+from utils.SessionManager import SessionManager
 
 kivy.require('1.11.1')
 
@@ -46,7 +46,8 @@ class StellaPay(MDApp):
         self.database_manager.load_facts_database()
 
         self.card_connection_manager = CardConnectionManager()
-        self.session = requests.Session()
+        self.session_manager: SessionManager = SessionManager()
+
         # Store user that is logged in (can be none)
         self.active_user: Optional[str] = None
 
@@ -102,7 +103,8 @@ class StellaPay(MDApp):
         Logger.debug("Started event loop")
 
         Logger.debug("Start authentication to backend")
-        self.loop.call_soon_threadsafe(self.setup_authentication)
+
+        self.loop.call_soon_threadsafe(self.session_manager.setup_session, self.load_categories_and_products)
 
         # Initialize defaultScreen (to create session cookies for API calls)
         ds_screen = DefaultScreen(name=Screens.DEFAULT_SCREEN.value)
@@ -130,43 +132,14 @@ class StellaPay(MDApp):
         asyncio.set_event_loop(loop)
         loop.run_forever()
 
-    @staticmethod
-    def __parse_to_json(file):
-        with open(file) as credentials:
-            return json.load(credentials)
-
-    def setup_authentication(self):
-        # Convert authentication.json to json dict
-
-        json_credentials = None
-
-        try:
-            json_credentials = self.__parse_to_json('authenticate.json')
-        except Exception:
-            Logger.critical("You need to provide an 'authenticate.json' file for your backend credentials.")
-            os._exit(1)
-
-        # Attempt to log in
-        response = self.session.post(url=BackendURLs.AUTHENTICATE.value, json=json_credentials)
-
-        # Break control flow if the user cannot identify himself
-        if not response.ok:
-            Logger.critical("Could not correctly authenticate, error code 8. Check your username and password")
-            os._exit(1)
-        else:
-            Logger.debug("Authenticated correctly to backend.")
-
-        # Load categories and products
-        self.load_categories_and_products()
-
     def load_categories_and_products(self):
         # Get all categories names
-        response = self.session.get(url=BackendURLs.GET_CATEGORIES.value)
+        response = App.get_running_app().session_manager.do_get_request(url=BackendURLs.GET_CATEGORIES.value)
 
         Logger.debug("Loading product categories")
 
         # Check status response
-        if response.ok:
+        if response and response.ok:
 
             categories = response.json()
 
@@ -176,12 +149,12 @@ class StellaPay(MDApp):
             for cat in categories:
                 # Request products from category tab_text
                 request = BackendURLs.GET_PRODUCTS.value + cat['name']
-                response = self.session.get(request)
+                response = App.get_running_app().session_manager.do_get_request(request)
 
                 Logger.debug(f"Loading products for category '{cat['name']}'")
 
                 # Evaluate server response
-                if response.ok:
+                if response and response.ok:
                     # convert response to json
                     products_json = response.json()
 

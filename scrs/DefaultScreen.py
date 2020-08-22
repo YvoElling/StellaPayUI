@@ -32,8 +32,6 @@ class DefaultScreen(Screen):
 
         self.nfc_listener = DefaultScreen.NFCListener(self)
 
-        self.session = App.get_running_app().session
-
         # Create a session to maintain cookie data for this instance
         self.event_loop: AbstractEventLoop = App.get_running_app().loop
 
@@ -73,13 +71,13 @@ class DefaultScreen(Screen):
             Logger.debug("Not loading user data again")
             return
 
-        user_data = self.session.get(BackendURLs.GET_USERS.value)
+        user_data = App.get_running_app().session_manager.do_get_request(url=BackendURLs.GET_USERS.value)
 
         Logger.debug("Loaded user data")
 
         App.get_running_app().user_mapping = {}
 
-        if user_data.ok:
+        if user_data and user_data.ok:
             # convert to json
             user_json = user_data.json()
 
@@ -88,7 +86,8 @@ class DefaultScreen(Screen):
                 # store all emails adressed in the sheet_menu
                 App.get_running_app().user_mapping[user["name"]] = user["email"]
 
-            App.get_running_app().user_mapping = OrderedDict(sorted(App.get_running_app().user_mapping.items(), key=lambda x: x[0]))
+            App.get_running_app().user_mapping = OrderedDict(
+                sorted(App.get_running_app().user_mapping.items(), key=lambda x: x[0]))
         else:
             Logger.critical("Error: addresses could not be fetched from server in DefaultScreen.py:on_no_nfc()")
             os._exit(1)
@@ -122,11 +121,11 @@ class DefaultScreen(Screen):
             return
 
         # Request user info for the specific UID to validate person
-        response = self.session.get(url=BackendURLs.REQUEST_USER_INFO.value + uid)
+        response = App.get_running_app().session_manager.do_get_request(url=BackendURLs.REQUEST_USER_INFO.value + uid)
 
         # Check response code to validate whether this user existed already. If so, proceed
         # to the productScreen, else proceed to the registerUID screen
-        if response.ok:
+        if response and response.ok:
             # store result in JSON
             query_json = response.json()
 
