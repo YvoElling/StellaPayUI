@@ -115,4 +115,9 @@ class RegisterUIDScreen(Screen):
         self.ids.chosen_user.text = item.text
 
     def on_leave(self, *args):
+        # Stop the timer
         self.timeout_event.cancel()
+
+        # Hide name of selected user
+        self.ids.chosen_user.text = ""
+
