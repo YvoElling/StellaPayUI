@@ -93,7 +93,7 @@ class DefaultScreen(Screen):
             os._exit(1)
 
     def fill_bottom_sheet(self):
-        for user_name, user_email in sorted(App.get_running_app().user_mapping.items()):
+        for user_name, user_email in App.get_running_app().user_mapping.items():
             # store all emails addresses in the sheet_menu
             self.bottom_sheet_menu.add_item(user_name, self.selected_active_user)
 
