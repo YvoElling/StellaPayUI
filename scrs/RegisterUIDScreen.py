@@ -77,8 +77,8 @@ class RegisterUIDScreen(Screen):
     def register_card_mapping(self, selected_user_name, selected_user_email: str):
         # Use a POST command to add connect this UID to the user
         request = App.get_running_app().session_manager.do_post_request(url=BackendURLs.ADD_USER_MAPPING.value,
-                                                                        json={'card_id': str(self.nfc_id),
-                                                                              'email': selected_user_email})
+                                                                        json_data={'card_id': str(self.nfc_id),
+                                                                                   'email': selected_user_email})
 
         # If the users was added successfully ( status_code : 200), proceed to WelcomeScreen
         if request.ok:
