@@ -1,6 +1,6 @@
 from enum import Enum
 
-hostname = "http://staartvin.com:8181/"
+hostname = "http://168.119.102.144:8181/"
 
 
 class BackendURLs(Enum):
