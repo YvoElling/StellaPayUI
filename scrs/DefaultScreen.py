@@ -13,7 +13,7 @@ from kivymd.uix.bottomsheet import MDListBottomSheet
 #
 from PythonNFCReader.CardListener import CardListener
 from PythonNFCReader.NFCReader import CardConnectionManager
-from utils.Connections import BackendURLs
+from utils import Connections
 from utils.Screens import Screens
 
 
@@ -71,7 +71,7 @@ class DefaultScreen(Screen):
             Logger.debug("Not loading user data again")
             return
 
-        user_data = App.get_running_app().session_manager.do_get_request(url=BackendURLs.GET_USERS.value)
+        user_data = App.get_running_app().session_manager.do_get_request(url=Connections.get_users())
 
         Logger.debug("Loaded user data")
 
@@ -125,7 +125,7 @@ class DefaultScreen(Screen):
         self.ids.spinner.active = True
 
         # Request user info for the specific UID to validate person
-        response = App.get_running_app().session_manager.do_get_request(url=BackendURLs.REQUEST_USER_INFO.value + uid)
+        response = App.get_running_app().session_manager.do_get_request(url=Connections.request_user_info() + uid)
 
         # Check response code to validate whether this user existed already. If so, proceed
         # to the productScreen, else proceed to the registerUID screen
