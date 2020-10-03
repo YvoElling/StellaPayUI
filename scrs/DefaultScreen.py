@@ -44,6 +44,7 @@ class DefaultScreen(Screen):
     def on_enter(self, *args):
         # Reset active user, because we are back at this screen.
         App.get_running_app().active_user = None
+        self.ids.spinner.active = False
 
         # Start loading user data.
         self.event_loop.call_soon_threadsafe(self.load_user_data)
