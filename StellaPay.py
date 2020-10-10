@@ -79,9 +79,17 @@ class StellaPay(MDApp):
         Window.size = (int(self.config.get('device', 'width')), int(self.config.get('device', 'height')))
         Window.borderless = True
 
-        Logger.info(f"Hostname for server: {self.config.get('server', 'hostname')}")
+        hostname = None
 
-        Connections.hostname = self.config.get('server', 'hostname')
+        try:
+            hostname = self.config.get('server', 'hostname')
+
+            Logger.info(f"Hostname for server: {hostname}")
+
+            Connections.hostname = hostname
+        except Exception:
+            Logger.info("Using default hostname, since none was provided")
+            pass
 
         if self.config.get('device', 'fullscreen') == 'True':
             Window.fullscreen = True
