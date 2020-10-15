@@ -180,12 +180,6 @@ class ProductScreen(Screen):
         self.manager.current = Screens.PROFILE_SCREEN.value
 
     #
-    # callback function for when tab is switched
-    #
-    def on_tab_switch(self, instance_tabs, instance_tab, instance_tab_label, tab_text):
-        pass
-
-    #
     # Open payment confirmation dialog
     #
     def open_payment_confirmation(self):
