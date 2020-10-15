@@ -8,7 +8,6 @@ from typing import Optional, Dict, List
 import kivy
 from kivy import Logger
 from kivy.app import App
-from kivy.config import Config
 from kivy.core.window import Window
 from kivy.lang import Builder
 from kivy.uix.screenmanager import ScreenManager
@@ -24,7 +23,7 @@ from scrs.ProductScreen import ProductScreen
 from scrs.ProfileScreen import ProfileScreen
 from scrs.RegisterUIDScreen import RegisterUIDScreen
 from scrs.WelcomeScreen import WelcomeScreen
-from utils.Connections import BackendURLs
+from utils import Connections
 from utils.Screens import Screens
 from utils.SessionManager import SessionManager
 
@@ -76,10 +75,21 @@ class StellaPay(MDApp):
         # Set background image to match color of STE logo
         Window.clearcolor = (0.12549, 0.12549, 0.12549, 0)
 
-        # Disable full screen (classic Python, doesn't do anything)
-        Config.set('kivy', 'window_icon', 'img/StellaPayLogo.ico')
-        Config.set('graphics', 'width', self.config.get('device', 'width'))
-        Config.set('graphics', 'height', self.config.get('device', 'height'))
+        # Set size of the window
+        Window.size = (int(self.config.get('device', 'width')), int(self.config.get('device', 'height')))
+        Window.borderless = True
+
+        hostname = None
+
+        try:
+            hostname = self.config.get('server', 'hostname')
+
+            Logger.info(f"Hostname for server: {hostname}")
+
+            Connections.hostname = hostname
+        except Exception:
+            Logger.info("Using default hostname, since none was provided")
+            pass
 
         if self.config.get('device', 'fullscreen') == 'True':
             Window.fullscreen = True
@@ -90,8 +100,6 @@ class StellaPay(MDApp):
             Window.show_cursor = True
         else:
             Window.show_cursor = False
-
-        Config.write()
 
         # Load .kv file
         Builder.load_file('kvs/DefaultScreen.kv')
@@ -134,7 +142,7 @@ class StellaPay(MDApp):
 
     def load_categories_and_products(self):
         # Get all categories names
-        response = App.get_running_app().session_manager.do_get_request(url=BackendURLs.GET_CATEGORIES.value)
+        response = App.get_running_app().session_manager.do_get_request(url=Connections.get_categories())
 
         Logger.debug("Loading product categories")
 
@@ -148,7 +156,7 @@ class StellaPay(MDApp):
             # Load tab for each category
             for cat in categories:
                 # Request products from category tab_text
-                request = BackendURLs.GET_PRODUCTS.value + cat['name']
+                request = Connections.get_products() + cat['name']
                 response = App.get_running_app().session_manager.do_get_request(request)
 
                 Logger.debug(f"Loading products for category '{cat['name']}'")

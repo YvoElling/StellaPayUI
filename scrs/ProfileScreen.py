@@ -19,7 +19,7 @@ class ProfileScreen(Screen):
     # Called when the screen is loaded:
     # - for retrieving user name
     def on_enter(self, *args):
-        self.ids.username.text = App.get_running_app().active_user
+        self.ids.username.text = App.get_running_app().active_user if App.get_running_app().active_user is not None else "Unknown"
         self.timeout_event = Clock.schedule_once(self.on_timeout, self.timeout_time)
 
     # Return to the product page

@@ -13,7 +13,7 @@ from kivymd.uix.dialog import MDDialog
 
 from ds.ShoppingCart import ShoppingCart, ShoppingCartListener
 from scrs.TabDisplay import TabDisplay
-from utils.Connections import BackendURLs
+from utils import Connections
 from utils.Screens import Screens
 from ux.ItemListUX import ItemListUX
 from ux.ShoppingCartItem import ShoppingCartItem
@@ -275,7 +275,7 @@ class ProductScreen(Screen):
         json_cart = self.shopping_cart.to_json()
 
         # use a POST-request to forward the shopping cart
-        response = App.get_running_app().session_manager.do_post_request(url=BackendURLs.CREATE_TRANSACTION.value,
+        response = App.get_running_app().session_manager.do_post_request(url=Connections.create_transaction(),
                                                                          json_data=json_cart)
 
         if response and response.ok:

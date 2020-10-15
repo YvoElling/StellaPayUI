@@ -5,16 +5,17 @@ from collections import OrderedDict
 from kivy import Logger
 from kivy.app import App
 from kivy.uix.screenmanager import Screen, SlideTransition
-from kivymd.uix.bottomsheet import MDListBottomSheet
-
 # defaultScreen class
 # creates the default screen when the program waits for a card to be presented
 # changes when a card is presented
 #
+from kivymd.uix.dialog import MDDialog
+
 from PythonNFCReader.CardListener import CardListener
 from PythonNFCReader.NFCReader import CardConnectionManager
-from utils.Connections import BackendURLs
+from utils import Connections
 from utils.Screens import Screens
+from ux.SelectUserItem import SelectUserItem
 
 
 class DefaultScreen(Screen):
@@ -28,12 +29,19 @@ class DefaultScreen(Screen):
 
     def __init__(self, **kwargs):
         # Call to super (Screen class)
+
         super(DefaultScreen, self).__init__(**kwargs)
 
         self.nfc_listener = DefaultScreen.NFCListener(self)
 
         # Create a session to maintain cookie data for this instance
         self.event_loop: AbstractEventLoop = App.get_running_app().loop
+
+        # Store the dialog that we use to select an active user
+        self.user_select_dialog: MDDialog = None
+
+        # Store a list of users we want to be able to select
+        self.users_to_select = []
 
     def register_card_listener(self, card_connection_manager: "CardConnectionManager"):
         card_connection_manager.register_listener(self.nfc_listener)
@@ -44,6 +52,7 @@ class DefaultScreen(Screen):
     def on_enter(self, *args):
         # Reset active user, because we are back at this screen.
         App.get_running_app().active_user = None
+        self.ids.spinner.active = False
 
         # Start loading user data.
         self.event_loop.call_soon_threadsafe(self.load_user_data)
@@ -53,17 +62,19 @@ class DefaultScreen(Screen):
 
     #
     # gets called when the 'NFC kaart vergeten button' is pressed
-    # shows a bottom sheet menu with all users. The user can select himself.
+    # Shows a dialog to select a user.
     #
     def on_no_nfc(self):
-        # Reset the bottom sheet because it's not working nicely
-        self.bottom_sheet_menu = MDListBottomSheet()
+        # Check if the dialog has been opened before (or whether the data has been loaded properly)
+        if not self.user_select_dialog or len(self.user_select_dialog.items) < 1:
+            # If not, create a dialog once.
+            self.user_select_dialog = MDDialog(
+                type="confirmation",
+                items=self.users_to_select,
+            )
 
-        # Fill sheet with users
-        self.fill_bottom_sheet()
-
-        # Show the sheet
-        self.bottom_sheet_menu.open()
+        # Open the dialog once it's been created.
+        self.user_select_dialog.open()
 
     def load_user_data(self):
 
@@ -71,7 +82,7 @@ class DefaultScreen(Screen):
             Logger.debug("Not loading user data again")
             return
 
-        user_data = App.get_running_app().session_manager.do_get_request(url=BackendURLs.GET_USERS.value)
+        user_data = App.get_running_app().session_manager.do_get_request(url=Connections.get_users())
 
         Logger.debug("Loaded user data")
 
@@ -88,17 +99,23 @@ class DefaultScreen(Screen):
 
             App.get_running_app().user_mapping = OrderedDict(
                 sorted(App.get_running_app().user_mapping.items(), key=lambda x: x[0]))
+
+            # Load usernames into user select dialog
+            if len(self.users_to_select) < 1:
+                for user_name, user_email in App.get_running_app().user_mapping.items():
+                    # store all users in a list of items that we will open with a dialog
+                    self.users_to_select.append(
+                        SelectUserItem(user_email=user_email, callback=self.selected_active_user, text=user_name))
+                    # Add a callback so we know when a user has been selected
         else:
             Logger.critical("Error: addresses could not be fetched from server in DefaultScreen.py:on_no_nfc()")
             os._exit(1)
 
-    def fill_bottom_sheet(self):
-        for user_name, user_email in App.get_running_app().user_mapping.items():
-            # store all emails addresses in the sheet_menu
-            self.bottom_sheet_menu.add_item(user_name, self.selected_active_user)
-
-    # set_mail
+    # An active user is selected via the dialog
     def selected_active_user(self, item):
+        # Close the user dialog
+        self.user_select_dialog.dismiss()
+
         # Set member variables, these are required for making a purchase later
         user_name = item.text
 
@@ -125,7 +142,7 @@ class DefaultScreen(Screen):
         self.ids.spinner.active = True
 
         # Request user info for the specific UID to validate person
-        response = App.get_running_app().session_manager.do_get_request(url=BackendURLs.REQUEST_USER_INFO.value + uid)
+        response = App.get_running_app().session_manager.do_get_request(url=Connections.request_user_info() + uid)
 
         # Check response code to validate whether this user existed already. If so, proceed
         # to the productScreen, else proceed to the registerUID screen

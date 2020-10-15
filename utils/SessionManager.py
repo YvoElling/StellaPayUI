@@ -5,7 +5,7 @@ from typing import Optional
 import requests
 from kivy import Logger
 
-from utils.Connections import BackendURLs
+from utils import Connections
 
 
 class SessionManager:
@@ -39,7 +39,7 @@ class SessionManager:
             os._exit(1)
 
         # Attempt to log in
-        response = self.session.post(url=BackendURLs.AUTHENTICATE.value, json=json_credentials)
+        response = self.session.post(url=Connections.authenticate(), json=json_credentials)
 
         # Break control flow if the user cannot identify himself
         if not response.ok:
