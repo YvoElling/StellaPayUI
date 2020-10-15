@@ -103,6 +103,9 @@ class ProductScreen(Screen):
     #
     def on_enter(self, *args):
 
+        # Set name of user in toolbar
+        self.ids.toolbar.title = App.get_running_app().active_user
+
         # Load product data
         self.event_loop.call_soon_threadsafe(self.load_category_data)
 
