@@ -1,17 +1,13 @@
-from kivy.lang import Builder
-from kivymd.uix.list import TwoLineAvatarIconListItem
-
-from ds.Purchase import Purchase
-from ds.ShoppingCart import ShoppingCart
 import time
-import ux.SelectPurchaserDialog
+
+from kivy.lang import Builder
+from kivymd.uix.list import OneLineAvatarIconListItem
 
 Builder.load_file('kvs/PurchaserItem.kv')
 
-class PurchaserItem(TwoLineAvatarIconListItem):
 
+class PurchaserItem(OneLineAvatarIconListItem):
     purchaser_dialog: "SelectPurchaserDialog" = None
-
 
     # Set local member variables and forwards **kwargs to super class
     def __init__(self, **kwargs):
@@ -45,4 +41,3 @@ class PurchaserItem(TwoLineAvatarIconListItem):
 
     def get_purchaser_name(self) -> str:
         return self.text
-
