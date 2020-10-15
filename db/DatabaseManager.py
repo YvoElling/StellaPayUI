@@ -83,10 +83,17 @@ class DatabaseManager:
 
     def get_random_fun_fact(self, product_name: str):
         # If we don't have any fun facts about this product, return a default string.
-        if product_name not in self.loaded_facts:
-            return "Ik kon hier geen leuk feitje over vinden."
+        fun_facts = []
 
-        fun_facts = self.loaded_facts[product_name]
+        for item_name, fun_fact in self.loaded_facts.items():
+            # Check to see if the product name is contained in the product name
+            if item_name.lower().strip() in product_name.lower().strip():
+                # If so, we want to choose it.
+                fun_facts.extend(fun_fact)
+
+        # If we found no fun facts.
+        if len(fun_facts) == 0:
+            fun_facts.append("Ik kon hier geen leuk feitje over vinden")
 
         # Choose a random one
         return random.choice(fun_facts)
