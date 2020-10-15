@@ -130,6 +130,9 @@ class DefaultScreen(Screen):
         # Hide the spinner
         self.ids.spinner.active = False
 
+        # Dismiss the dialog if it was open
+        self.user_select_dialog.dismiss()
+
     def nfc_card_presented(self, uid: str):
         Logger.debug("Read NFC card with uid" + uid)
 
