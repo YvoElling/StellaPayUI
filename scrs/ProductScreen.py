@@ -69,7 +69,7 @@ class ProductScreen(Screen):
         self.on_start_timeout()
 
     # Load tabs (if they are not loaded yet) and load product information afterwards
-    def load_category_data(self):
+    def load_category_data(self) -> bool:
 
         print("Start loading category data")
 
@@ -83,7 +83,7 @@ class ProductScreen(Screen):
             # Load product items (because we still need to reload them)
             self.load_products()
 
-            return
+            return True
 
         Logger.debug("Loading category view")
 
@@ -96,7 +96,7 @@ class ProductScreen(Screen):
         print(f"Loaded category data and tabs (no skipping) in {time.time() - start_time} seconds")
 
         # Load product items
-        self.load_products()
+        return self.load_products()
 
     #
     # upon entering the screen, set the timeout
@@ -113,7 +113,7 @@ class ProductScreen(Screen):
         self.on_start_timeout()
 
     # Load product information and set up product view
-    def load_products(self):
+    def load_products(self) -> bool:
 
         print("Start loading product data")
 
@@ -122,7 +122,7 @@ class ProductScreen(Screen):
         if len(self.tabs[0].ids.container.children) > 0:
             Logger.debug("Don't load products view again as it's already there..")
             print(f"Loaded products (after skipping) in {time.time() - start_time} seconds")
-            return
+            return True
 
         Logger.debug(f"Setting up product view")
 
@@ -146,6 +146,8 @@ class ProductScreen(Screen):
 
             print(f"Loaded products of category {tab.text} (no skipping) in {time.time() - start_time} seconds")
         print(f"Loaded all products (no skipping) in {time.time() - start_time} seconds")
+
+        return True
 
     #
     # timeout callback function

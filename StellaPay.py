@@ -22,6 +22,7 @@ from scrs.DefaultScreen import DefaultScreen
 from scrs.ProductScreen import ProductScreen
 from scrs.ProfileScreen import ProfileScreen
 from scrs.RegisterUIDScreen import RegisterUIDScreen
+from scrs.StartupScreen import StartupScreen
 from scrs.WelcomeScreen import WelcomeScreen
 from utils import Connections
 from utils.Screens import Screens
@@ -56,10 +57,8 @@ class StellaPay(MDApp):
         # Store a mapping from user name to user email
         self.user_mapping: Dict[str, str] = {}
 
-        print()
-
         StellaPay.build_version = subprocess.check_output(['git', 'rev-parse', '--short', 'HEAD']).strip()
-        print(self.build_version)
+        print(f"Running build {self.build_version}")
 
     def build(self):
         self.theme_cls.theme_style = "Dark"
@@ -118,6 +117,7 @@ class StellaPay(MDApp):
         ds_screen = DefaultScreen(name=Screens.DEFAULT_SCREEN.value)
 
         # Load screenloader and add screens
+        screen_manager.add_widget(StartupScreen(name=Screens.STARTUP_SCREEN.value))
         screen_manager.add_widget(ds_screen)
         screen_manager.add_widget(WelcomeScreen(name=Screens.WELCOME_SCREEN.value))
         screen_manager.add_widget(
@@ -181,6 +181,8 @@ class StellaPay(MDApp):
                     Logger.critical("Products could not be retrieved: " + response.text)
                     os._exit(1)
 
+            # If we loaded everything correctly, we can tell the startup screen we loaded correctly.
+            screen_manager.get_screen(Screens.STARTUP_SCREEN.value).on_products_loaded()
         else:
             # Error
             Logger.critical("Categories could not be retrieved: " + response.text)
