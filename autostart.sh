@@ -8,8 +8,11 @@ do
 done
 printf "Connected!"
 
+# CD to the current directory of the script
+cd "${0%/*}"
+
 # Change to the StellaPayUI directory
-cd /home/pi/StellaPayUI || cd /home/yvoelling/Repositories/Python/StellaPayUI || exit
+#cd /home/pi/StellaPayUI || cd /home/yvoelling/Repositories/Python/StellaPayUI || exit
 
 # Launch git pull to update the running StellaPay version to the latest available on the master
 sudo git pull

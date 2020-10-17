@@ -1,9 +1,13 @@
 import os
+import threading
+import time
 from asyncio import AbstractEventLoop
 from collections import OrderedDict
+from typing import Optional, Callable
 
 from kivy import Logger
 from kivy.app import App
+from kivy.clock import mainthread
 from kivy.uix.screenmanager import Screen, SlideTransition
 # defaultScreen class
 # creates the default screen when the program waits for a card to be presented
@@ -70,13 +74,13 @@ class DefaultScreen(Screen):
             # If not, create a dialog once.
             self.user_select_dialog = MDDialog(
                 type="confirmation",
-                items=self.users_to_select,
+                items=self.users_to_select
             )
 
         # Open the dialog once it's been created.
         self.user_select_dialog.open()
 
-    def load_user_data(self):
+    def load_user_data(self, callback: Optional[Callable] = None):
 
         if len(App.get_running_app().user_mapping) > 0:
             Logger.debug("Not loading user data again")
@@ -92,24 +96,42 @@ class DefaultScreen(Screen):
             # convert to json
             user_json = user_data.json()
 
+            print(f"Loading user mapping on thread {threading.current_thread().name}")
+
             # append json to list and sort the list
             for user in user_json:
                 # store all emails adressed in the sheet_menu
                 App.get_running_app().user_mapping[user["name"]] = user["email"]
 
+            # Sort items
             App.get_running_app().user_mapping = OrderedDict(
                 sorted(App.get_running_app().user_mapping.items(), key=lambda x: x[0]))
 
-            # Load usernames into user select dialog
-            if len(self.users_to_select) < 1:
-                for user_name, user_email in App.get_running_app().user_mapping.items():
-                    # store all users in a list of items that we will open with a dialog
-                    self.users_to_select.append(
-                        SelectUserItem(user_email=user_email, callback=self.selected_active_user, text=user_name))
-                    # Add a callback so we know when a user has been selected
+            # Create dialog and its items on the main thread
+            self.create_user_select_dialog(callback=callback)
         else:
-            Logger.critical("Error: addresses could not be fetched from server in DefaultScreen.py:on_no_nfc()")
+            Logger.critical("Error: addresses could not be fetched from server")
             os._exit(1)
+
+    @mainthread
+    def create_user_select_dialog(self, callback: Optional[Callable] = None):
+        # Load usernames into user select dialog
+        if len(self.users_to_select) < 1:
+            for user_name, user_email in App.get_running_app().user_mapping.items():
+                # store all users in a list of items that we will open with a dialog
+                self.users_to_select.append(
+                    SelectUserItem(user_email=user_email, callback=self.selected_active_user, text=user_name))
+                # Add a callback so we know when a user has been selected
+
+        # Create user dialog so we open it later.
+        self.user_select_dialog = MDDialog(
+            type="confirmation",
+            items=self.users_to_select
+        )
+
+        # If we have a callback, call it.
+        if callback is not None:
+            callback()
 
     # An active user is selected via the dialog
     def selected_active_user(self, item):
@@ -123,12 +145,16 @@ class DefaultScreen(Screen):
 
         App.get_running_app().active_user = user_name
 
-        # Set the name as the name of the user on the next page
-        self.manager.current = Screens.WELCOME_SCREEN.value
+        # Go to the next screen
+        self.manager.current = Screens.PRODUCT_SCREEN.value
 
     def on_leave(self, *args):
         # Hide the spinner
         self.ids.spinner.active = False
+
+        # Dismiss the dialog if it was open
+        if self.user_select_dialog:
+            self.user_select_dialog.dismiss()
 
     def nfc_card_presented(self, uid: str):
         Logger.debug("Read NFC card with uid" + uid)
@@ -159,9 +185,29 @@ class DefaultScreen(Screen):
 
             App.get_running_app().active_user = user_name
 
-            # Go to the welcome screen
-            self.manager.current = Screens.WELCOME_SCREEN.value
+            # Go to the product screen
+            self.manager.current = Screens.PRODUCT_SCREEN.value
         else:
             # User was not found, proceed to registerUID file
             self.manager.get_screen(Screens.REGISTER_UID_SCREEN.value).nfc_id = uid
             self.manager.current = Screens.REGISTER_UID_SCREEN.value
+
+    def on_select_guest(self):
+        self.select_special_user("Gast Account")
+
+    def on_select_beheer(self):
+        self.select_special_user("Beheer Algemeen")
+
+    def on_select_onderhoud(self):
+        self.select_special_user("Beheer Onderhoud")
+
+    def select_special_user(self, user: str):
+        # Close the user dialog
+        self.user_select_dialog.dismiss()
+
+        self.manager.transition = SlideTransition(direction='left')
+
+        App.get_running_app().active_user = user
+
+        # Go to the next screen
+        self.manager.current = Screens.PRODUCT_SCREEN.value

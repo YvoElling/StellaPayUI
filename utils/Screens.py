@@ -9,3 +9,4 @@ class Screens(Enum):
     PROFILE_SCREEN = "ProfileScreen"
     REGISTER_UID_SCREEN = "RegisterUIDScreen"
     CONFIRMED_SCREEN = "ConfirmedScreen"
+    STARTUP_SCREEN = "StartupScreen"

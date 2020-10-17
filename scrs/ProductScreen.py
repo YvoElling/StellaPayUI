@@ -1,11 +1,12 @@
 import os
+import threading
 import time
 from asyncio import AbstractEventLoop
 from typing import Dict, List
 
 from kivy import Logger
 from kivy.app import App
-from kivy.clock import Clock
+from kivy.clock import Clock, mainthread
 from kivy.lang import Builder
 from kivy.uix.screenmanager import Screen, SlideTransition
 from kivymd.uix.button import MDFlatButton, MDRaisedButton
@@ -25,9 +26,9 @@ class OnChangeShoppingCartListener(ShoppingCartListener):
         self.product_screen = product_screen
 
     def on_change(self):
-        print("Shopping cart changed")
         self.product_screen.ids.buy_button.disabled = len(ProductScreen.shopping_cart.get_shopping_cart()) == 0
-        self.product_screen.ids.shopping_cart_button.disabled = len(ProductScreen.shopping_cart.get_shopping_cart()) == 0
+        self.product_screen.ids.shopping_cart_button.disabled = len(
+            ProductScreen.shopping_cart.get_shopping_cart()) == 0
 
 
 class ProductScreen(Screen):
@@ -69,9 +70,10 @@ class ProductScreen(Screen):
         self.on_start_timeout()
 
     # Load tabs (if they are not loaded yet) and load product information afterwards
+    @mainthread
     def load_category_data(self):
 
-        print("Start loading category data")
+        print(f"Loading category data on thread {threading.current_thread().name}")
 
         start_time = time.time()
 
@@ -103,6 +105,10 @@ class ProductScreen(Screen):
     #
     def on_enter(self, *args):
 
+        # Set name of the active user in the toolbar (if there is one)
+        self.ids.toolbar.title = \
+            App.get_running_app().active_user if App.get_running_app().active_user is not None else "Stella Pay"
+
         # Load product data
         self.event_loop.call_soon_threadsafe(self.load_category_data)
 
@@ -110,9 +116,10 @@ class ProductScreen(Screen):
         self.on_start_timeout()
 
     # Load product information and set up product view
+    @mainthread
     def load_products(self):
 
-        print("Start loading product data")
+        print(f"Loading product data on thread {threading.current_thread().name}")
 
         start_time = time.time()
 
@@ -143,6 +150,8 @@ class ProductScreen(Screen):
 
             print(f"Loaded products of category {tab.text} (no skipping) in {time.time() - start_time} seconds")
         print(f"Loaded all products (no skipping) in {time.time() - start_time} seconds")
+
+        return
 
     #
     # timeout callback function
@@ -178,12 +187,6 @@ class ProductScreen(Screen):
         self.manager.transition = SlideTransition(direction="left")
         # Switch to profile screen
         self.manager.current = Screens.PROFILE_SCREEN.value
-
-    #
-    # callback function for when tab is switched
-    #
-    def on_tab_switch(self, instance_tabs, instance_tab, instance_tab_label, tab_text):
-        pass
 
     #
     # Open payment confirmation dialog

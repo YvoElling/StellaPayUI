@@ -135,3 +135,6 @@ authenticate.json
 
 # Ignore configuration file
 stellapay.ini
+
+# Ignore database
+*.db
