@@ -2,6 +2,7 @@ import time
 from typing import List
 
 from kivy.app import App
+from kivy.clock import mainthread
 from kivy.lang import Builder
 from kivymd.uix.button import MDFlatButton
 from kivymd.uix.dialog import MDDialog
@@ -94,6 +95,7 @@ class ItemListUX(TwoLineAvatarIconListItem):
             for purchaser_item in ItemListUX.purchaser_list_dialog.items:
                 purchaser_item.ids.count.text = "0"
 
+    @mainthread
     def load_dialog_screen(self):
         start_time = time.time()
 

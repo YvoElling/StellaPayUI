@@ -1,11 +1,12 @@
 import os
+import threading
 import time
 from asyncio import AbstractEventLoop
 from typing import Dict, List
 
 from kivy import Logger
 from kivy.app import App
-from kivy.clock import Clock
+from kivy.clock import Clock, mainthread
 from kivy.lang import Builder
 from kivy.uix.screenmanager import Screen, SlideTransition
 from kivymd.uix.button import MDFlatButton, MDRaisedButton
@@ -69,9 +70,10 @@ class ProductScreen(Screen):
         self.on_start_timeout()
 
     # Load tabs (if they are not loaded yet) and load product information afterwards
-    def load_category_data(self) -> bool:
+    @mainthread
+    def load_category_data(self):
 
-        print("Start loading category data")
+        print(f"Loading category data on thread {threading.current_thread().name}")
 
         start_time = time.time()
 
@@ -83,7 +85,7 @@ class ProductScreen(Screen):
             # Load product items (because we still need to reload them)
             self.load_products()
 
-            return True
+            return
 
         Logger.debug("Loading category view")
 
@@ -96,7 +98,7 @@ class ProductScreen(Screen):
         print(f"Loaded category data and tabs (no skipping) in {time.time() - start_time} seconds")
 
         # Load product items
-        return self.load_products()
+        self.load_products()
 
     #
     # upon entering the screen, set the timeout
@@ -113,16 +115,17 @@ class ProductScreen(Screen):
         self.on_start_timeout()
 
     # Load product information and set up product view
-    def load_products(self) -> bool:
+    @mainthread
+    def load_products(self):
 
-        print("Start loading product data")
+        print(f"Loading product data on thread {threading.current_thread().name}")
 
         start_time = time.time()
 
         if len(self.tabs[0].ids.container.children) > 0:
             Logger.debug("Don't load products view again as it's already there..")
             print(f"Loaded products (after skipping) in {time.time() - start_time} seconds")
-            return True
+            return
 
         Logger.debug(f"Setting up product view")
 
@@ -147,7 +150,7 @@ class ProductScreen(Screen):
             print(f"Loaded products of category {tab.text} (no skipping) in {time.time() - start_time} seconds")
         print(f"Loaded all products (no skipping) in {time.time() - start_time} seconds")
 
-        return True
+        return
 
     #
     # timeout callback function

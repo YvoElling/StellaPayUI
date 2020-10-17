@@ -107,7 +107,6 @@ class StellaPay(MDApp):
         self.loop: AbstractEventLoop = asyncio.new_event_loop()
         self.event_loop_thread = threading.Thread(target=self.run_event_loop, args=(self.loop,), daemon=True)
         self.event_loop_thread.start()
-        Logger.debug("Started event loop")
 
         Logger.debug("Start authentication to backend")
 

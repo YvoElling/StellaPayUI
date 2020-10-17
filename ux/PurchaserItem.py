@@ -16,7 +16,6 @@ class PurchaserItem(OneLineAvatarIconListItem):
 
         # Disable ripple effect
         self.ripple_scale = 0
-        print(f"Init function of purchaseritem done in {time.time() - start_time} seconds")
 
     # Adds product to the shopping cart.
     def on_add_product(self):
