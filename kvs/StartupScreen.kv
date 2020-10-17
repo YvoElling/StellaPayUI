@@ -1,0 +1,25 @@
+# -*- coding: utf-8 -*-
+<StartupScreen>:
+    name: 'StartupScreen'
+
+    Label:
+        id: stella_pay_logo
+        text: "[b]STELLA PAY[/b]"
+        font_size: '70sp'
+        pos_hint: {"center_x":0.5,"center_y":0.7}
+        font_name: 'fonts/orbitron/Orbitron-Bold.ttf'
+        markup: True
+
+    MDSpinner:
+        id: spinner_startup
+        size_hint: None, None
+        pos_hint: {"center_x":0.5,"center_y":0.25}
+        active: True
+
+    Label:
+        id: loading_text
+        text: "Loading StellaPay..."
+        size_hint: None, None
+        pos_hint: {"center_x":0.5,"center_y":0.4}
+        font_size: '35sp'
+

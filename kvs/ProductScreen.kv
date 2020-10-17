@@ -3,26 +3,21 @@
         orientation: "vertical"
 
         MDToolbar:
-            title: 'STELLA PAY'
+            id: toolbar
+            title: 'Stella Pay'
             font_name: 'fonts/orbitron/Orbitron-Bold.ttf'
-            right_action_items: [["account-circle", lambda x: root.on_profile_screen()]]
+            right_action_items: [["account-circle", lambda x: root.on_profile_screen()], ["logout-variant", lambda x: root.on_leave_product_screen_button()]]
             elevation: 10
             type: 'top'
 
         MDTabs:
             id: android_tabs
-            tab_bar_height: '35dp'
-            on_tab_switch: root.on_tab_switch(*args)
-
-    MDIconButton:
-        id: stop
-        icon: "logout-variant"
-        font_size: '25sp'
-        size_hint: None, None
-        pos_hint: {"x": 0.9,"y":0.948}
-        pos_hint_x: root.center_x
-        pos_hint_y: root.center_y
-        on_release: root.on_leave_product_screen_button()
+            tab_bar_height: '50dp'
+            lock_swiping: True
+            anim_duration: 0.0
+            text_color_normal: (0,0,0,1)
+            text_color_active: (1,1,1,1)
+            color_indicator: (0,0,0,1)
 
     MDFloatingActionButton:
         id: buy_button

@@ -67,10 +67,12 @@ class DefaultScreen(Screen):
     def on_no_nfc(self):
         # Check if the dialog has been opened before (or whether the data has been loaded properly)
         if not self.user_select_dialog or len(self.user_select_dialog.items) < 1:
+            print("Creating dialog")
+            print(f"User to select has length {len(self.users_to_select)}")
             # If not, create a dialog once.
             self.user_select_dialog = MDDialog(
                 type="confirmation",
-                items=self.users_to_select,
+                items=self.users_to_select
             )
 
         # Open the dialog once it's been created.
@@ -108,7 +110,7 @@ class DefaultScreen(Screen):
                         SelectUserItem(user_email=user_email, callback=self.selected_active_user, text=user_name))
                     # Add a callback so we know when a user has been selected
         else:
-            Logger.critical("Error: addresses could not be fetched from server in DefaultScreen.py:on_no_nfc()")
+            Logger.critical("Error: addresses could not be fetched from server")
             os._exit(1)
 
     # An active user is selected via the dialog
@@ -129,6 +131,9 @@ class DefaultScreen(Screen):
     def on_leave(self, *args):
         # Hide the spinner
         self.ids.spinner.active = False
+
+        # Dismiss the dialog if it was open
+        self.user_select_dialog.dismiss()
 
     def nfc_card_presented(self, uid: str):
         Logger.debug("Read NFC card with uid" + uid)
