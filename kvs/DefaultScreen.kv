@@ -20,12 +20,51 @@
     MDFillRoundFlatButton:
         text: "NFC kaart vergeten?"
         font_size: '35sp'
-        pos_hint: {"center_x":0.5,"center_y":0.25}
+        pos_hint: {"center_x":0.5,"center_y":0.275}
         size_hint: (None, 0.05) # Only increase size on Y part (because X part is done by KivyMD)
         text_color: 1, 1, 1, 1
 #        md_bg_color: 0.078, 0.537, 0.882, 1
         on_press: root.on_no_nfc()
         opacity: 0 if spinner.active else 1
+
+    MDIconButton:
+        icon: "account-clock"
+        text: "test"
+        user_font_size: "64sp"
+        pos_hint: {"center_x":0.4,"center_y":0.15}
+        on_press: root.on_select_guest()
+
+    MDLabel:
+        text: "Gasten"
+        pos_hint: {"x":0.3825,"center_y":0.10}
+        font_style: "H6"
+        theme_text_color: "Primary"
+
+    MDIconButton:
+        icon: "account-supervisor-circle"
+        user_font_size: "64sp"
+        pos_hint: {"center_x":0.5,"center_y":0.15}
+        on_press: root.on_select_beheer()
+
+    MDLabel:
+        text: "Beheer"
+        pos_hint: {"x":0.4825,"center_y":0.10}
+        font_style: "H6"
+        theme_text_color: "Primary"
+
+    MDIconButton:
+        icon: "tools"
+        user_font_size: "64sp"
+        pos_hint: {"center_x":0.6,"center_y":0.15}
+        on_press: root.on_select_onderhoud()
+
+    MDLabel:
+        text: "Onderhoud"
+        pos_hint: {"x":0.575,"center_y":0.10}
+        font_style: "H6"
+        theme_text_color: "Primary"
+
+
 
     MDSpinner:
         id: spinner

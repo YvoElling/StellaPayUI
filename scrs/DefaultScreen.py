@@ -191,3 +191,23 @@ class DefaultScreen(Screen):
             # User was not found, proceed to registerUID file
             self.manager.get_screen(Screens.REGISTER_UID_SCREEN.value).nfc_id = uid
             self.manager.current = Screens.REGISTER_UID_SCREEN.value
+
+    def on_select_guest(self):
+        self.select_special_user("Gast Account")
+
+    def on_select_beheer(self):
+        self.select_special_user("Beheer Algemeen")
+
+    def on_select_onderhoud(self):
+        self.select_special_user("Beheer Onderhoud")
+
+    def select_special_user(self, user: str):
+        # Close the user dialog
+        self.user_select_dialog.dismiss()
+
+        self.manager.transition = SlideTransition(direction='left')
+
+        App.get_running_app().active_user = user
+
+        # Go to the next screen
+        self.manager.current = Screens.PRODUCT_SCREEN.value
