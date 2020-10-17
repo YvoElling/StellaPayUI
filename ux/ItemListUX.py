@@ -19,6 +19,8 @@ Builder.load_file('kvs/ItemListUX.kv')
 class ItemListUX(TwoLineAvatarIconListItem):
     # Dialog that opens when you want to select a different purchaser
     purchaser_list_dialog = None
+    purchaser_list_children = []
+
 
     def __init__(self, price: str, shopping_cart: ShoppingCart, **kwargs):
         super(ItemListUX, self).__init__(**kwargs)
@@ -101,19 +103,21 @@ class ItemListUX(TwoLineAvatarIconListItem):
 
         if ItemListUX.purchaser_list_dialog is None:
 
-            list = []
-            for user_name, user_email in App.get_running_app().user_mapping.items():
-                list.append(
-                    PurchaserItem(text=user_name, secondary_text=" ", secondary_theme_text_color="Custom",
-                                  secondary_text_color=[0.509, 0.509, 0.509, 1])
-                )
+            if len(ItemListUX.purchaser_list_children) < 1:
+                for user_name, user_email in App.get_running_app().user_mapping.items():
+                    ItemListUX.purchaser_list_children.append(
+                        PurchaserItem(text=user_name, secondary_text=" ", secondary_theme_text_color="Custom",
+                                      secondary_text_color=[0.509, 0.509, 0.509, 1])
+                    )
+
+            print(f"Creating purchasing items took {time.time() - start_time} seconds")
 
             ItemListUX.purchaser_list_dialog = SelectPurchaserDialog(
                 shopping_cart=self.shopping_cart,
                 type="confirmation",
                 height="440px",
                 width="700px",
-                items=list,
+                items=ItemListUX.purchaser_list_children,
                 buttons=[
                     MDFlatButton(
                         text="OK",
@@ -121,6 +125,8 @@ class ItemListUX(TwoLineAvatarIconListItem):
                     ),
                 ],
             )
+
+            print(f"Creating additional itemlistux took {time.time() - start_time} seconds")
 
             # Make sure to provide the purchaser item class with a reference to the dialog we will open
             PurchaserItem.purchaser_dialog = ItemListUX.purchaser_list_dialog
