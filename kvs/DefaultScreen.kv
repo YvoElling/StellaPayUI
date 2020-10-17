@@ -19,8 +19,9 @@
 
     MDFillRoundFlatButton:
         text: "NFC kaart vergeten?"
-        font_size: '25sp'
+        font_size: '35sp'
         pos_hint: {"center_x":0.5,"center_y":0.25}
+        size_hint: (None, 0.05) # Only increase size on Y part (because X part is done by KivyMD)
         text_color: 1, 1, 1, 1
 #        md_bg_color: 0.078, 0.537, 0.882, 1
         on_press: root.on_no_nfc()
