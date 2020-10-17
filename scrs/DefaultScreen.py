@@ -1,7 +1,9 @@
 import os
 import threading
+import time
 from asyncio import AbstractEventLoop
 from collections import OrderedDict
+from typing import Optional, Callable
 
 from kivy import Logger
 from kivy.app import App
@@ -78,7 +80,7 @@ class DefaultScreen(Screen):
         # Open the dialog once it's been created.
         self.user_select_dialog.open()
 
-    def load_user_data(self):
+    def load_user_data(self, callback: Optional[Callable] = None):
 
         if len(App.get_running_app().user_mapping) > 0:
             Logger.debug("Not loading user data again")
@@ -106,13 +108,13 @@ class DefaultScreen(Screen):
                 sorted(App.get_running_app().user_mapping.items(), key=lambda x: x[0]))
 
             # Create dialog and its items on the main thread
-            self.create_user_select_dialog()
+            self.create_user_select_dialog(callback=callback)
         else:
             Logger.critical("Error: addresses could not be fetched from server")
             os._exit(1)
 
     @mainthread
-    def create_user_select_dialog(self):
+    def create_user_select_dialog(self, callback: Optional[Callable] = None):
         # Load usernames into user select dialog
         if len(self.users_to_select) < 1:
             for user_name, user_email in App.get_running_app().user_mapping.items():
@@ -121,11 +123,15 @@ class DefaultScreen(Screen):
                     SelectUserItem(user_email=user_email, callback=self.selected_active_user, text=user_name))
                 # Add a callback so we know when a user has been selected
 
-        # Create user dialog
+        # Create user dialog so we open it later.
         self.user_select_dialog = MDDialog(
             type="confirmation",
             items=self.users_to_select
         )
+
+        # If we have a callback, call it.
+        if callback is not None:
+            callback()
 
     # An active user is selected via the dialog
     def selected_active_user(self, item):

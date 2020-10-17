@@ -24,22 +24,23 @@ class StartupScreen(Screen):
     def on_products_loaded(self):
         print("Loaded products from database.")
 
-        self.ids.loading_text.text = "Setting up products page..."
-
-        # Load product data
-        self.manager.get_screen(Screens.PRODUCT_SCREEN.value).load_category_data()
-
         self.ids.loading_text.text = "Loading user data..."
-        #
+
         # Load users and their data
-        App.get_running_app().loop.call_soon_threadsafe(self.manager.get_screen(Screens.DEFAULT_SCREEN.value).load_user_data)
-
-        self.ids.loading_text.text = "Ready!"
-
-        # Done loading, so call callback in one second.
-        Clock.schedule_once(self.finished_loading, 1)
+        App.get_running_app().loop.call_soon_threadsafe(self.manager.get_screen(Screens.DEFAULT_SCREEN.value).load_user_data, self.on_users_loaded)
 
     def finished_loading(self, dt):
         print(f"Done loading startup screen in {dt} seconds")
 
         self.manager.current = Screens.DEFAULT_SCREEN.value
+
+    def on_users_loaded(self):
+        self.ids.loading_text.text = "Setting up products page..."
+
+        # Load product data
+        self.manager.get_screen(Screens.PRODUCT_SCREEN.value).load_category_data()
+
+        self.ids.loading_text.text = "Ready!"
+
+        # Done loading, so call callback in one second.
+        Clock.schedule_once(self.finished_loading, 1)
