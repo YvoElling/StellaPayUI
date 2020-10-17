@@ -26,7 +26,6 @@ class OnChangeShoppingCartListener(ShoppingCartListener):
         self.product_screen = product_screen
 
     def on_change(self):
-        print("Shopping cart changed")
         self.product_screen.ids.buy_button.disabled = len(ProductScreen.shopping_cart.get_shopping_cart()) == 0
         self.product_screen.ids.shopping_cart_button.disabled = len(ProductScreen.shopping_cart.get_shopping_cart()) == 0
 
