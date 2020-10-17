@@ -27,7 +27,8 @@ class OnChangeShoppingCartListener(ShoppingCartListener):
 
     def on_change(self):
         self.product_screen.ids.buy_button.disabled = len(ProductScreen.shopping_cart.get_shopping_cart()) == 0
-        self.product_screen.ids.shopping_cart_button.disabled = len(ProductScreen.shopping_cart.get_shopping_cart()) == 0
+        self.product_screen.ids.shopping_cart_button.disabled = len(
+            ProductScreen.shopping_cart.get_shopping_cart()) == 0
 
 
 class ProductScreen(Screen):
@@ -104,8 +105,9 @@ class ProductScreen(Screen):
     #
     def on_enter(self, *args):
 
-        # Set name of user in toolbar
-        self.ids.toolbar.title = App.get_running_app().active_user
+        # Set name of the active user in the toolbar (if there is one)
+        self.ids.toolbar.title = \
+            App.get_running_app().active_user if App.get_running_app().active_user is not None else "Stella Pay"
 
         # Load product data
         self.event_loop.call_soon_threadsafe(self.load_category_data)
