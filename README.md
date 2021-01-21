@@ -13,4 +13,12 @@ https://github.com/YvoElling/PythonNFCReader
 
 
 -------------------
+# General installation instructions
 To get started with this repo, clone it and update the submodules by performing `git submodule update --init --recursive`. Next, go to [this](https://github.com/YvoElling/PythonNFCReader) submodule and follow the instructions there.
+
+This project was built and tested on a Raspberry Pi 4 Model B, although it can be run on any other system (I presume). Since this project uses Kivy and KivyMD, make sure to install those as well.
+Install instructions can be found [here](https://kivy.org/doc/stable/installation/installation-linux.html) for Kivy and [here](https://kivymd.readthedocs.io/en/latest/getting-started/) for KivyMD.
+
+-----------
+# Read on
+If you came this far you probably want to use this system. Head over to the wiki to see more detailed info about the actual usage of the system.
