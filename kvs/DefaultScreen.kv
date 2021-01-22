@@ -13,7 +13,7 @@
         id: stella_pay
         text: "[b]STELLA PAY[/b]"
         font_size: '50sp'
-        pos_hint: {"center_x":0.5,"center_y":0.4}
+        pos_hint: {"center_x":0.5,"center_y":0.375}
         font_name: 'fonts/orbitron/Orbitron-Bold.ttf'
         markup: True
 
@@ -21,7 +21,7 @@
         text: "NFC kaart vergeten?"
         font_size: '35sp'
         pos_hint: {"center_x":0.5,"center_y":0.275}
-        size_hint: (None, 0.05) # Only increase size on Y part (because X part is done by KivyMD)
+        size_hint: (None, 0.075) # Only increase size on Y part (because X part is done by KivyMD)
         text_color: 1, 1, 1, 1
 #        md_bg_color: 0.078, 0.537, 0.882, 1
         on_press: root.on_no_nfc()
@@ -36,7 +36,7 @@
 
     MDLabel:
         text: "Gasten"
-        pos_hint: {"x":0.3825,"center_y":0.10}
+        pos_hint: {"x":0.375,"center_y":0.09}
         font_style: "H6"
         theme_text_color: "Primary"
 
@@ -48,7 +48,7 @@
 
     MDLabel:
         text: "Beheer"
-        pos_hint: {"x":0.4825,"center_y":0.10}
+        pos_hint: {"x":0.475,"center_y":0.09}
         font_style: "H6"
         theme_text_color: "Primary"
 
@@ -60,7 +60,7 @@
 
     MDLabel:
         text: "Onderhoud"
-        pos_hint: {"x":0.575,"center_y":0.10}
+        pos_hint: {"x":0.56,"center_y":0.09}
         font_style: "H6"
         theme_text_color: "Primary"
 
