@@ -28,6 +28,9 @@ from utils import Connections
 from utils.Screens import Screens
 from utils.SessionManager import SessionManager
 
+import os
+os.environ['KIVY_WINDOW'] = 'egl_rpi' 
+
 kivy.require('1.11.1')
 
 screen_manager = ScreenManager()
