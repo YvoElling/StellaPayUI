@@ -88,7 +88,8 @@ class RegisterUIDScreen(Screen):
         else:
             # User could not be added succesfully, give error 2.
             Logger.critical(
-                "Error " + str(request.status_code) + " occurred when trying to add the user: error message: " +
+                "StellaPayUI: Error " + str(
+                    request.status_code) + " occurred when trying to add the user: error message: " +
                 request.text)
             os._exit(1)
 

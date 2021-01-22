@@ -58,7 +58,7 @@ class ShoppingCart:
                 duplicate.amount -= purchase.amount
         else:
 
-            Logger.warning("Tried to remove a purchase from the basket that was not present!")
+            Logger.warning("StellaPayUI: Tried to remove a purchase from the basket that was not present!")
 
         self.notify_listener()
 

@@ -1,6 +1,5 @@
 import os
 import threading
-import time
 from asyncio import AbstractEventLoop
 from collections import OrderedDict
 from typing import Optional, Callable
@@ -83,12 +82,12 @@ class DefaultScreen(Screen):
     def load_user_data(self, callback: Optional[Callable] = None):
 
         if len(App.get_running_app().user_mapping) > 0:
-            Logger.debug("Not loading user data again")
+            Logger.debug("StellaPayUI: Not loading user data again")
             return
 
         user_data = App.get_running_app().session_manager.do_get_request(url=Connections.get_users())
 
-        Logger.debug("Loaded user data")
+        Logger.debug("StellaPayUI: Loaded user data")
 
         App.get_running_app().user_mapping = {}
 
@@ -96,7 +95,7 @@ class DefaultScreen(Screen):
             # convert to json
             user_json = user_data.json()
 
-            print(f"Loading user mapping on thread {threading.current_thread().name}")
+            print(f"StellaPayUI: Loading user mapping on thread {threading.current_thread().name}")
 
             # append json to list and sort the list
             for user in user_json:
@@ -110,7 +109,7 @@ class DefaultScreen(Screen):
             # Create dialog and its items on the main thread
             self.create_user_select_dialog(callback=callback)
         else:
-            Logger.critical("Error: addresses could not be fetched from server")
+            Logger.critical("StellaPayUI: Error: addresses could not be fetched from server")
             os._exit(1)
 
     @mainthread
@@ -157,11 +156,11 @@ class DefaultScreen(Screen):
             self.user_select_dialog.dismiss()
 
     def nfc_card_presented(self, uid: str):
-        Logger.debug("Read NFC card with uid" + uid)
+        Logger.debug("StellaPayUI: Read NFC card with uid" + uid)
 
         # If we are currently making a transaction, ignore the card reading.
         if App.get_running_app().active_user is not None:
-            Logger.debug("Ignoring NFC card as we are currently making a transaction.")
+            Logger.debug("StellaPayUI: Ignoring NFC card as we are currently making a transaction.")
             return
 
         # Show the spinner

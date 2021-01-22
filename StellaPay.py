@@ -83,11 +83,11 @@ class StellaPay(MDApp):
         try:
             hostname = self.config.get('server', 'hostname')
 
-            Logger.info(f"Hostname for server: {hostname}")
+            Logger.info(f"StellaPayUI: Hostname for server: {hostname}")
 
             Connections.hostname = hostname
         except Exception:
-            Logger.info("Using default hostname, since none was provided")
+            Logger.warning("StellaPayUI: Using default hostname, since none was provided")
             pass
 
         if self.config.get('device', 'fullscreen') == 'True':
@@ -103,12 +103,12 @@ class StellaPay(MDApp):
         # Load .kv file
         Builder.load_file('kvs/DefaultScreen.kv')
 
-        Logger.debug("Starting event loop")
+        Logger.debug("StellaPayUI: Starting event loop")
         self.loop: AbstractEventLoop = asyncio.new_event_loop()
         self.event_loop_thread = threading.Thread(target=self.run_event_loop, args=(self.loop,), daemon=True)
         self.event_loop_thread.start()
 
-        Logger.debug("Start authentication to backend")
+        Logger.debug("StellaPayUI: Start authentication to backend")
 
         self.loop.call_soon_threadsafe(self.session_manager.setup_session, self.load_categories_and_products)
 
@@ -127,10 +127,10 @@ class StellaPay(MDApp):
             ProductScreen(name=Screens.PRODUCT_SCREEN.value))
         screen_manager.add_widget(ProfileScreen(name=Screens.PROFILE_SCREEN.value))
 
-        Logger.debug("Registering default screen as card listener")
+        Logger.debug("StellaPayUI: Registering default screen as card listener")
         ds_screen.register_card_listener(self.card_connection_manager)
 
-        Logger.debug("Starting NFC reader")
+        Logger.debug("StellaPayUI: Starting NFC reader")
         self.card_connection_manager.start_nfc_reader()
 
         return screen_manager
@@ -143,14 +143,14 @@ class StellaPay(MDApp):
         # Get all categories names
         response = App.get_running_app().session_manager.do_get_request(url=Connections.get_categories())
 
-        Logger.debug("Loading product categories")
+        Logger.debug("StellaPayUI: Loading product categories")
 
         # Check status response
         if response and response.ok:
 
             categories = response.json()
 
-            Logger.debug(f"Retrieved {len(categories)} categories")
+            Logger.debug(f"StellaPayUI: Retrieved {len(categories)} categories")
 
             # Load tab for each category
             for cat in categories:
@@ -158,7 +158,7 @@ class StellaPay(MDApp):
                 request = Connections.get_products() + cat['name']
                 response = App.get_running_app().session_manager.do_get_request(request)
 
-                Logger.debug(f"Loading products for category '{cat['name']}'")
+                Logger.debug(f"StellaPayUI: Loading products for category '{cat['name']}'")
 
                 # Evaluate server response
                 if response and response.ok:
@@ -167,7 +167,7 @@ class StellaPay(MDApp):
 
                     self.products_per_category[cat['name']] = []
 
-                    Logger.debug(f"Retrieved {len(products_json)} products for category '{cat['name']}'")
+                    Logger.debug(f"StellaPayUI: Retrieved {len(products_json)} products for category '{cat['name']}'")
 
                     # Create a product object for all
                     for product in products_json:
@@ -177,14 +177,14 @@ class StellaPay(MDApp):
                             self.products_per_category[cat['name']].append(p)
                 else:
                     # Error in retrieving products from server
-                    Logger.critical("Products could not be retrieved: " + response.text)
+                    Logger.critical("StellaPayUI: Products could not be retrieved: " + response.text)
                     os._exit(1)
 
             # If we loaded everything correctly, we can tell the startup screen we loaded correctly.
             screen_manager.get_screen(Screens.STARTUP_SCREEN.value).on_products_loaded()
         else:
             # Error
-            Logger.critical("Categories could not be retrieved: " + response.text)
+            Logger.critical("StellaPayUI: Categories could not be retrieved: " + response.text)
             os._exit(1)
 
     def build_config(self, config):
@@ -196,10 +196,10 @@ class StellaPay(MDApp):
         })
 
     def on_start(self):
-        Logger.debug("Starting StellaPay!")
+        Logger.debug("StellaPayUI: Starting StellaPay!")
 
     def on_stop(self):
-        Logger.debug("Stopping!")
+        Logger.debug("StellaPayUI: Stopping!")
         self.loop.stop()  # Stop event loop
 
     def get_git_revisions_hash(self):

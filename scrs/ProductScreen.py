@@ -73,21 +73,21 @@ class ProductScreen(Screen):
     @mainthread
     def load_category_data(self):
 
-        print(f"Loading category data on thread {threading.current_thread().name}")
+        print(f"StellaPayUI: Loading category data on thread {threading.current_thread().name}")
 
         start_time = time.time()
 
         if len(self.tabs) > 0:
-            Logger.debug("Don't load tabs as we already have that information.")
+            Logger.debug("StellaPayUI: Don't load tabs as we already have that information.")
 
-            print(f"Loaded category data and tabs (after skipping) in {time.time() - start_time} seconds")
+            print(f"StellaPayUI: Loaded category data and tabs (after skipping) in {time.time() - start_time} seconds")
 
             # Load product items (because we still need to reload them)
             self.load_products()
 
             return
 
-        Logger.debug("Loading category view")
+        Logger.debug("StellaPayUI: Loading category view")
 
         for category in App.get_running_app().products_per_category.keys():
             # Create tab display
@@ -95,7 +95,7 @@ class ProductScreen(Screen):
             self.ids.android_tabs.add_widget(tab)
             self.tabs.append(tab)
 
-        print(f"Loaded category data and tabs (no skipping) in {time.time() - start_time} seconds")
+        print(f"StellaPayUI: Loaded category data and tabs (no skipping) in {time.time() - start_time} seconds")
 
         # Load product items
         self.load_products()
@@ -124,11 +124,11 @@ class ProductScreen(Screen):
         start_time = time.time()
 
         if len(self.tabs[0].ids.container.children) > 0:
-            Logger.debug("Don't load products view again as it's already there..")
+            Logger.debug("StellaPayUI: Don't load products view again as it's already there..")
             print(f"Loaded products (after skipping) in {time.time() - start_time} seconds")
             return
 
-        Logger.debug(f"Setting up product view")
+        Logger.debug(f"StellaPayUI: Setting up product view")
 
         for tab in self.tabs:
             for product in App.get_running_app().products_per_category[tab.text]:
@@ -292,7 +292,7 @@ class ProductScreen(Screen):
             self.manager.current = Screens.DEFAULT_SCREEN.value
 
         else:
-            Logger.critical("Payment could not be made: error: " + response.content)
+            Logger.critical("StellaPayUI: Payment could not be made: error: " + response.content)
             os._exit(1)
 
     # This method ought to be called when the user session is finished

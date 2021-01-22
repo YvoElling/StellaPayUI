@@ -35,7 +35,8 @@ class SessionManager:
         try:
             json_credentials = self.parse_to_json('authenticate.json')
         except Exception:
-            Logger.critical("You need to provide an 'authenticate.json' file for your backend credentials.")
+            Logger.critical(
+                "StellaPayUI: You need to provide an 'authenticate.json' file for your backend credentials.")
             os._exit(1)
 
         # Attempt to log in
@@ -43,10 +44,11 @@ class SessionManager:
 
         # Break control flow if the user cannot identify himself
         if not response.ok:
-            Logger.critical("Could not correctly authenticate, error code 8. Check your username and password")
+            Logger.critical(
+                "StellaPayUI: Could not correctly authenticate, error code 8. Check your username and password")
             os._exit(1)
         else:
-            Logger.debug("Authenticated correctly to backend.")
+            Logger.debug("StellaPayUI: Authenticated correctly to backend.")
 
     # Perform a get request to the given url. You can give do functions as callbacks (which will return the response)
     def do_get_request(self, url: str) -> Optional[requests.Response]:
