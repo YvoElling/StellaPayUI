@@ -9,13 +9,26 @@ from utils import Connections
 
 
 class SessionManager:
+
+    AUTHENTICATION_FILE = "authenticate.json"
+
     def __init__(self):
         self.session = None
 
     @staticmethod
     def parse_to_json(file):
+        # Create the file if does not exist
+        SessionManager.create_authentication_file()
+
+        # The read from it.
         with open(file) as credentials:
             return json.load(credentials)
+
+    @staticmethod
+    def create_authentication_file():
+        # Create the authentication file if it doesn't exist.
+        if not os.path.exists(SessionManager.AUTHENTICATION_FILE):
+            open(SessionManager.AUTHENTICATION_FILE, 'w').close()
 
     # This method authenticates to the backend and makes the session ready for use
     def setup_session(self, on_finish=None):
@@ -33,7 +46,7 @@ class SessionManager:
         json_credentials = None
 
         try:
-            json_credentials = self.parse_to_json('authenticate.json')
+            json_credentials = self.parse_to_json(SessionManager.AUTHENTICATION_FILE)
         except Exception:
             Logger.critical(
                 "StellaPayUI: You need to provide an 'authenticate.json' file for your backend credentials.")
