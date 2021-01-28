@@ -1,3 +1,4 @@
+import datetime
 import os
 import threading
 from asyncio import AbstractEventLoop
@@ -45,6 +46,8 @@ class DefaultScreen(Screen):
 
         # Store a list of users we want to be able to select
         self.users_to_select = []
+
+        self.ids.copyright.text = self.ids.copyright.text.replace("%year%", str(datetime.datetime.now().year))
 
     def register_card_listener(self, card_connection_manager: "CardConnectionManager"):
         card_connection_manager.register_listener(self.nfc_listener)

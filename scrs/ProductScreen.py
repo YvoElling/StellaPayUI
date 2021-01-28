@@ -100,6 +100,10 @@ class ProductScreen(Screen):
         # Load product items
         self.load_products()
 
+    def on_pre_enter(self, *args):
+        # Initialize timeouts
+        self.on_start_timeout()
+
     #
     # upon entering the screen, set the timeout
     #
@@ -111,9 +115,6 @@ class ProductScreen(Screen):
 
         # Load product data
         self.event_loop.call_soon_threadsafe(self.load_category_data)
-
-        # Initialize timeouts
-        self.on_start_timeout()
 
     # Load product information and set up product view
     @mainthread
