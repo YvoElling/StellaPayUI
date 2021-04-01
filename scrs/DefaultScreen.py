@@ -47,6 +47,7 @@ class DefaultScreen(Screen):
         # Store a list of users we want to be able to select
         self.users_to_select = []
 
+        # Adjust year of copyright text
         self.ids.copyright.text = self.ids.copyright.text.replace("%year%", str(datetime.datetime.now().year))
 
     def register_card_listener(self, card_connection_manager: "CardConnectionManager"):
@@ -64,6 +65,7 @@ class DefaultScreen(Screen):
         self.event_loop.call_soon_threadsafe(self.load_user_data)
 
     def to_credits(self):
+        self.manager.transition = SlideTransition(direction='left')
         self.manager.current = Screens.CREDITS_SCREEN.value
 
     #

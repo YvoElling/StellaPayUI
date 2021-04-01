@@ -179,6 +179,7 @@ class ProductScreen(Screen):
     # Called when the user wants to leave this active session.
     def on_leave_product_screen_button(self):
         self.end_user_session()
+        self.manager.transition = SlideTransition(direction='right')
         self.manager.current = Screens.DEFAULT_SCREEN.value
 
     #
