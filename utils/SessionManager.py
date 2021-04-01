@@ -53,7 +53,7 @@ class SessionManager:
             os._exit(1)
 
         # Attempt to log in
-        response = self.session.post(url=Connections.authenticate(), json=json_credentials)
+        response = self.session.post(url=Connections.authenticate(), json=json_credentials, timeout=10)
 
         # Break control flow if the user cannot identify himself
         if not response.ok:
@@ -66,7 +66,7 @@ class SessionManager:
     # Perform a get request to the given url. You can give do functions as callbacks (which will return the response)
     def do_get_request(self, url: str) -> Optional[requests.Response]:
         try:
-            response = self.session.get(url)
+            response = self.session.get(url, timeout=10)
 
             return response
         except requests.exceptions.ConnectionError as e1:
@@ -83,7 +83,7 @@ class SessionManager:
     # Perform a post request to the given url. You can give do functions as callbacks (which will return the response)
     def do_post_request(self, url: str, json_data=None) -> Optional[requests.Response]:
         try:
-            response = self.session.post(url, json=json_data)
+            response = self.session.post(url, json=json_data, timeout=10)
 
             return response
         except requests.exceptions.ConnectionError as e1:
