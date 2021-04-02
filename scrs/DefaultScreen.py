@@ -47,8 +47,9 @@ class DefaultScreen(Screen):
         # Store a list of users we want to be able to select
         self.users_to_select = []
 
-        # Adjust year of copyright text
-        self.ids.copyright.text = self.ids.copyright.text.replace("%year%", str(datetime.datetime.now().year))
+        # Add extra information to footer text
+        self.ids.copyright.text = self.ids.copyright.text.replace("%year%", str(datetime.datetime.now().year)) \
+            .replace("%date%", str(datetime.datetime.now().strftime("%Y/%m/%d @ %H:%M:%S")))
 
     def register_card_listener(self, card_connection_manager: "CardConnectionManager"):
         card_connection_manager.register_listener(self.nfc_listener)
