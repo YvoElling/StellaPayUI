@@ -78,6 +78,7 @@ class SessionManager:
 
             return self.session.get(url)
         except Exception as e2:
+            Logger.critical(f"StellaPayUI: A problem with a GET request {e2}")
             return None
 
     # Perform a post request to the given url. You can give do functions as callbacks (which will return the response)
@@ -94,4 +95,5 @@ class SessionManager:
 
             return self.session.post(url, json=json_data)
         except Exception as e2:
+            Logger.critical(f"StellaPayUI: A problem with a POST request {e2}")
             return None
