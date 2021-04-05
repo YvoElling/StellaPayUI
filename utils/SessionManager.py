@@ -69,7 +69,7 @@ class SessionManager:
             response = self.session.get(url, timeout=10)
 
             return response
-        except requests.exceptions.ConnectionError as e1:
+        except (requests.exceptions.ConnectionError, requests.exceptions.Timeout) as e1:
             print("Connection was reset, so reauthenticating...")
 
             self.session = requests.Session()
@@ -86,7 +86,7 @@ class SessionManager:
             response = self.session.post(url, json=json_data, timeout=10)
 
             return response
-        except requests.exceptions.ConnectionError as e1:
+        except (requests.exceptions.ConnectionError, requests.exceptions.Timeout) as e1:
             print("Connection was reset, so reauthenticating...")
             self.session = requests.Session()
 
