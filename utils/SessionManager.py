@@ -76,6 +76,8 @@ class SessionManager:
 
             self.__setup_authentication()
 
+            Logger.critical(f"StellaPayUI: Timeout on get request {e1}")
+
             return self.session.get(url)
         except Exception as e2:
             Logger.critical(f"StellaPayUI: A problem with a GET request {e2}")
@@ -92,6 +94,8 @@ class SessionManager:
             self.session = requests.Session()
 
             self.__setup_authentication()
+
+            Logger.critical(f"StellaPayUI: Timeout on post request {e1}")
 
             return self.session.post(url, json=json_data)
         except Exception as e2:
