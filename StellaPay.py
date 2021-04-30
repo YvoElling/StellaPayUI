@@ -71,6 +71,7 @@ class StellaPay(MDApp):
         self.theme_cls.accent_hue = "300"
         self.theme_cls.green_button = (0.262, 0.627, 0.278, 1)
         self.theme_cls.red_button = (0.898, 0.450, 0.450, 1)
+        self.theme_cls.purple_button = (0.694, 0.612, 0.851, 1)
         self.theme_cls.complementary_color_1 = (0.623, 0.858, 0.180, 1)
         self.theme_cls.complementary_color_2 = (0, 0.525, 0.490, 1)
 
