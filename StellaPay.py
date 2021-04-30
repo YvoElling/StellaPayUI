@@ -137,6 +137,8 @@ class StellaPay(MDApp):
         Logger.debug("StellaPayUI: Starting NFC reader")
         self.card_connection_manager.start_nfc_reader()
 
+        screen_manager.get_screen(Screens.CREDITS_SCREEN.value).ids.version_build.text = str(self.build_version)
+
         return screen_manager
 
     def run_event_loop(self, loop):
