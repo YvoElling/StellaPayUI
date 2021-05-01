@@ -4,7 +4,7 @@ from typing import List
 from kivy.app import App
 from kivy.clock import mainthread
 from kivy.lang import Builder
-from kivymd.uix.button import MDFlatButton
+from kivymd.uix.button import MDFlatButton, MDRaisedButton
 from kivymd.uix.dialog import MDDialog
 from kivymd.uix.list import TwoLineAvatarIconListItem
 
@@ -115,12 +115,13 @@ class ItemListUX(TwoLineAvatarIconListItem):
             ItemListUX.purchaser_list_dialog = SelectPurchaserDialog(
                 shopping_cart=self.shopping_cart,
                 type="confirmation",
-                height="440px",
-                width="700px",
+                title="Selecteer hoeveelheid voor anderen",
+                height="500px",
+                width="720px",
                 items=ItemListUX.purchaser_list_children,
                 buttons=[
-                    MDFlatButton(
-                        text="OK",
+                    MDRaisedButton(
+                        text="Selecteer",
                         on_release=self.on_ok
                     ),
                 ],

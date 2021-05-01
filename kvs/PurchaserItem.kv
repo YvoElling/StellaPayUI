@@ -9,7 +9,7 @@
 
     MDIconButton:
         id: plus
-#        md_bg_color: 0.062, 0.898, 0.105, 1
+        md_bg_color: app.theme_cls.green_button
         user_font_size: "25sp"
         icon: "plus"
         pos_hint: {"center_x": 0.84,"center_y":0.5}
@@ -18,7 +18,7 @@
     MDIconButton:
         id: minus
         user_font_size: "25sp"
-#        md_bg_color: 0.933, 0.203, 0.125, 1
+        md_bg_color: app.theme_cls.red_button
         icon: "minus"
         pos_hint: {"center_x": 0.94,"center_y":0.5}
         on_release: root.on_remove_product()

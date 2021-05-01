@@ -13,7 +13,7 @@ from kivymd.uix.button import MDFlatButton, MDRaisedButton
 from kivymd.uix.dialog import MDDialog
 
 from ds.ShoppingCart import ShoppingCart, ShoppingCartListener
-from scrs.CartDialog import CartDialog
+from ux.CartDialog import CartDialog
 from scrs.TabDisplay import TabDisplay
 from utils import Connections
 from utils.Screens import Screens
@@ -46,8 +46,6 @@ class ProductScreen(Screen):
         super(ProductScreen, self).__init__(**kwargs)
 
         # Class level variables
-        self.direct_confirm = None
-        # Shopping_cart dialog screen object
         self.shopping_cart_dialog = None
         self.final_dialog = None
 
@@ -163,8 +161,6 @@ class ProductScreen(Screen):
         self.end_user_session()
 
         # If the dialogs are instantiated, dismiss them before timeouts
-        if self.direct_confirm:
-            self.direct_confirm.dismiss()
         if self.shopping_cart_dialog:
             self.shopping_cart_dialog.dismiss()
         if ItemListUX.purchaser_list_dialog:
@@ -191,36 +187,6 @@ class ProductScreen(Screen):
         self.manager.transition = SlideTransition(direction="left")
         # Switch to profile screen
         self.manager.current = Screens.PROFILE_SCREEN.value
-
-    #
-    # Open payment confirmation dialog
-    #
-    def open_payment_confirmation(self):
-        # Restart timeout counter
-        self.timeout_event.cancel()
-        self.on_start_timeout()
-
-        shopping_cart_items = self.shopping_cart.get_shopping_cart()
-
-        if shopping_cart_items:
-            # Create direct_confirm dialog
-            if not self.direct_confirm:
-                self.direct_confirm = MDDialog(
-                    title="",
-                    text="Wil je deze artikelen afrekenen?",
-                    buttons=[
-                        MDFlatButton(
-                            text="Nee",
-                            on_release=self.on_cancel_payment
-
-                        ),
-                        MDRaisedButton(
-                            text="Ja",
-                            on_release=self.on_confirm_payment
-                        ),
-                    ]
-                )
-            self.direct_confirm.open()
 
     #
     # Open shopping cart dialog
@@ -277,7 +243,6 @@ class ProductScreen(Screen):
     def on_cancel_payment(self, dt):
         self.timeout_event.cancel()
         self.on_start_timeout()
-        self.direct_confirm.dismiss()
 
     #
     # Confirms a payment
@@ -294,10 +259,6 @@ class ProductScreen(Screen):
         if response and response.ok:
             # Reset instance variables
             self.end_user_session()
-
-            # Close the dialog
-            if self.direct_confirm is not None:
-                self.direct_confirm.dismiss()
 
             if self.shopping_cart_dialog is not None:
                 self.shopping_cart_dialog.dismiss()
@@ -318,10 +279,6 @@ class ProductScreen(Screen):
         elif not response.ok:
             # Reset instance variables
             self.end_user_session()
-
-            # Close the dialog
-            if self.direct_confirm is not None:
-                self.direct_confirm.dismiss()
 
             if self.shopping_cart_dialog is not None:
                 self.shopping_cart_dialog.dismiss()
