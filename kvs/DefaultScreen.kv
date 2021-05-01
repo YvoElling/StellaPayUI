@@ -12,18 +12,17 @@
     Label:
         id: stella_pay
         text: "[b]STELLA PAY[/b]"
-        font_size: '50sp'
+        font_size: '53sp'
         pos_hint: {"center_x":0.5,"center_y":0.375}
         font_name: 'fonts/orbitron/Orbitron-Bold.ttf'
         markup: True
 
     MDFillRoundFlatButton:
-        text: "NFC kaart vergeten?"
+        text: "Strepen maar!"
         font_size: '35sp'
-        pos_hint: {"center_x":0.5,"center_y":0.275}
+        pos_hint: {"center_x":0.5,"center_y":0.225}
         size_hint: (None, 0.075) # Only increase size on Y part (because X part is done by KivyMD)
         text_color: 1, 1, 1, 1
-#        md_bg_color: 0.078, 0.537, 0.882, 1
         on_press: root.on_no_nfc()
         opacity: 0 if spinner.active else 1
 
@@ -31,40 +30,38 @@
         icon: "account-clock"
         text: "test"
         user_font_size: "64sp"
-        pos_hint: {"center_x":0.4,"center_y":0.15}
+        pos_hint: {"center_x":0.93,"center_y":0.7}
         on_press: root.on_select_guest()
 
     MDLabel:
         text: "Gasten"
-        pos_hint: {"x":0.375,"center_y":0.09}
-        font_style: "H6"
-        theme_text_color: "Primary"
-
-    MDIconButton:
-        icon: "account-supervisor-circle"
-        user_font_size: "64sp"
-        pos_hint: {"center_x":0.5,"center_y":0.15}
-        on_press: root.on_select_beheer()
-
-    MDLabel:
-        text: "Beheer"
-        pos_hint: {"x":0.475,"center_y":0.09}
+        pos_hint: {"x":0.90,"center_y":0.64}
         font_style: "H6"
         theme_text_color: "Primary"
 
     MDIconButton:
         icon: "tools"
         user_font_size: "64sp"
-        pos_hint: {"center_x":0.6,"center_y":0.15}
+        pos_hint: {"center_x":0.93,"center_y":0.5}
         on_press: root.on_select_onderhoud()
 
     MDLabel:
         text: "Onderhoud"
-        pos_hint: {"x":0.565,"center_y":0.09}
+        pos_hint: {"x":0.89,"center_y":0.44}
         font_style: "H6"
         theme_text_color: "Primary"
 
+    MDIconButton:
+        icon: "account-supervisor-circle"
+        user_font_size: "64sp"
+        pos_hint: {"center_x":0.93,"center_y":0.3}
+        on_press: root.on_select_beheer()
 
+    MDLabel:
+        text: "Beheer"
+        pos_hint: {"x":0.905,"center_y":0.24}
+        font_style: "H6"
+        theme_text_color: "Primary"
 
     MDSpinner:
         id: spinner

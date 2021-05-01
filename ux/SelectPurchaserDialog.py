@@ -17,6 +17,9 @@ class SelectPurchaserDialog(MDDialog):
         super(SelectPurchaserDialog, self).__init__(**kwargs)
         self.shopping_cart = shopping_cart
 
+        self.ids.title.theme_text_color = "Custom"
+        self.ids.title.text_color = (1, 1, 1, 1)
+
     def on_add_product(self, purchaser_name: str):
         # Create purchase object
         purchase = Purchase(purchaser_name=purchaser_name, product_name=self.selected_product, count=1)

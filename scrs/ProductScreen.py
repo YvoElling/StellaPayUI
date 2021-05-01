@@ -13,6 +13,7 @@ from kivymd.uix.button import MDFlatButton, MDRaisedButton
 from kivymd.uix.dialog import MDDialog
 
 from ds.ShoppingCart import ShoppingCart, ShoppingCartListener
+from ux.CartDialog import CartDialog
 from scrs.TabDisplay import TabDisplay
 from utils import Connections
 from utils.Screens import Screens
@@ -26,7 +27,7 @@ class OnChangeShoppingCartListener(ShoppingCartListener):
         self.product_screen = product_screen
 
     def on_change(self):
-        self.product_screen.ids.buy_button.disabled = len(ProductScreen.shopping_cart.get_shopping_cart()) == 0
+        #self.product_screen.ids.buy_button.disabled = len(ProductScreen.shopping_cart.get_shopping_cart()) == 0
         self.product_screen.ids.shopping_cart_button.disabled = len(
             ProductScreen.shopping_cart.get_shopping_cart()) == 0
 
@@ -45,9 +46,8 @@ class ProductScreen(Screen):
         super(ProductScreen, self).__init__(**kwargs)
 
         # Class level variables
-        self.direct_confirm = None
-        # Shopping_cart dialog screen object
         self.shopping_cart_dialog = None
+        self.final_dialog = None
 
         # Timeout variables
         self.timeout_event = None
@@ -161,8 +161,6 @@ class ProductScreen(Screen):
         self.end_user_session()
 
         # If the dialogs are instantiated, dismiss them before timeouts
-        if self.direct_confirm:
-            self.direct_confirm.dismiss()
         if self.shopping_cart_dialog:
             self.shopping_cart_dialog.dismiss()
         if ItemListUX.purchaser_list_dialog:
@@ -191,36 +189,6 @@ class ProductScreen(Screen):
         self.manager.current = Screens.PROFILE_SCREEN.value
 
     #
-    # Open payment confirmation dialog
-    #
-    def open_payment_confirmation(self):
-        # Restart timeout counter
-        self.timeout_event.cancel()
-        self.on_start_timeout()
-
-        shopping_cart_items = self.shopping_cart.get_shopping_cart()
-
-        if shopping_cart_items:
-            # Create direct_confirm dialog
-            if not self.direct_confirm:
-                self.direct_confirm = MDDialog(
-                    title="",
-                    text="Wil je deze artikelen afrekenen?",
-                    buttons=[
-                        MDFlatButton(
-                            text="Nee",
-                            on_release=self.on_cancel_payment
-
-                        ),
-                        MDRaisedButton(
-                            text="Ja",
-                            on_release=self.on_confirm_payment
-                        ),
-                    ]
-                )
-            self.direct_confirm.open()
-
-    #
     # Open shopping cart dialog
     #
     def show_shopping_cart(self):
@@ -242,13 +210,18 @@ class ProductScreen(Screen):
 
         # If there are items in the shopping cart, display them
         if shopping_cart_items:
-            self.shopping_cart_dialog = MDDialog(
-                type="confirmation",
-                items=shopping_cart_items,
+            self.shopping_cart_dialog = CartDialog(
+                title="Wil je de aankoop afronden?",
+                auto_dismiss=False,
+                list_content=shopping_cart_items,
                 buttons=[
                     MDFlatButton(
-                        text="OK",
+                        text="Nee",
                         on_release=self.on_close_shoppingcart
+                    ),
+                    MDRaisedButton(
+                        text="Ja",
+                        on_release=self.on_confirm_payment
                     ),
                 ],
             )
@@ -270,12 +243,12 @@ class ProductScreen(Screen):
     def on_cancel_payment(self, dt):
         self.timeout_event.cancel()
         self.on_start_timeout()
-        self.direct_confirm.dismiss()
 
     #
     # Confirms a payment
     #
-    def on_confirm_payment(self, dt):
+    def on_confirm_payment(self, dt=None):
+        print("OnClicked")
         # Serialize the shopping cart
         json_cart = self.shopping_cart.to_json()
 
@@ -287,15 +260,52 @@ class ProductScreen(Screen):
             # Reset instance variables
             self.end_user_session()
 
-            # Close the dialog
-            self.direct_confirm.dismiss()
+            if self.shopping_cart_dialog is not None:
+                self.shopping_cart_dialog.dismiss()
 
-            # Return to the default screen for a new user to log in
-            self.manager.current = Screens.DEFAULT_SCREEN.value
+            self.timeout_event.cancel()
 
+            self.final_dialog = MDDialog(
+                text="Gelukt! Je aankoop is geregistreerd",
+                buttons=[
+                    MDRaisedButton(
+                        text="Thanks",
+                        on_release=self.on_thanks
+                    ),
+                ]
+            )
+            self.timeout_event = Clock.schedule_once(self.on_thanks, 5)
+            self.final_dialog.open()
+        elif not response.ok:
+            # Reset instance variables
+            self.end_user_session()
+
+            if self.shopping_cart_dialog is not None:
+                self.shopping_cart_dialog.dismiss()
+
+            self.final_dialog = MDDialog(
+                text="Het is niet gelukt je aankoop te registreren. Herstart de app svp.",
+                buttons=[
+                    MDRaisedButton(
+                        text="Herstart",
+                        on_release=(
+                            os._exit(1)
+                        )
+                    ),
+                ]
+            )
+            self.final_dialog.open()
         else:
             Logger.critical("StellaPayUI: Payment could not be made: error: " + response.content)
             os._exit(1)
+
+    def on_thanks(self, dt=None):
+        if self.final_dialog is not None:
+            self.final_dialog.dismiss()
+            self.final_dialog = None
+
+        # Return to the default screen for a new user to log in
+        self.manager.current = Screens.DEFAULT_SCREEN.value
 
     # This method ought to be called when the user session is finished
     def end_user_session(self):

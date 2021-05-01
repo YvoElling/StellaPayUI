@@ -1,6 +1,7 @@
 import asyncio
 import os
 import subprocess
+import sys
 import threading
 from asyncio import AbstractEventLoop
 from typing import Optional, Dict, List
@@ -28,8 +29,7 @@ from utils import Connections
 from utils.Screens import Screens
 from utils.SessionManager import SessionManager
 
-import os
-os.environ['KIVY_WINDOW'] = 'egl_rpi' 
+# os.environ['KIVY_WINDOW'] = 'egl_rpi'
 
 kivy.require('1.11.1')
 
@@ -80,7 +80,11 @@ class StellaPay(MDApp):
 
         # Set size of the window
         Window.size = (int(self.config.get('device', 'width')), int(self.config.get('device', 'height')))
-        Window.borderless = True
+        Logger.info(
+            f"StellaPayUI: Window height {self.config.get('device', 'height')} and width {self.config.get('device', 'width')}.")
+
+        # Don't run in borderless mode when we're running on Linux (it doesn't seem to work so well).
+        Window.borderless = False if sys.platform.startswith("linux") else True
 
         hostname = None
 
@@ -95,8 +99,10 @@ class StellaPay(MDApp):
             pass
 
         if self.config.get('device', 'fullscreen') == 'True':
+            Logger.info(f"StellaPayUI: Running in fullscreen mode!")
             Window.fullscreen = True
         else:
+            Logger.info(f"StellaPayUI: Running in windowed mode!")
             Window.fullscreen = False
 
         if self.config.get('device', 'show_cursor') == 'True':
@@ -136,6 +142,8 @@ class StellaPay(MDApp):
 
         Logger.debug("StellaPayUI: Starting NFC reader")
         self.card_connection_manager.start_nfc_reader()
+
+        screen_manager.get_screen(Screens.CREDITS_SCREEN.value).ids.version_build.text = str(self.build_version)
 
         return screen_manager
 
