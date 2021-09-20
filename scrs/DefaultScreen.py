@@ -13,6 +13,7 @@ from kivy.uix.screenmanager import Screen, SlideTransition
 # creates the default screen when the program waits for a card to be presented
 # changes when a card is presented
 #
+from kivymd.toast import toast
 from kivymd.uix.dialog import MDDialog
 
 from PythonNFCReader.CardListener import CardListener
@@ -166,6 +167,7 @@ class DefaultScreen(Screen):
 
         # If we are currently making a transaction, ignore the card reading.
         if App.get_running_app().active_user is not None:
+            toast("Ik negeer de gescande kaart omdat we met een transactie bezig zijn.")
             Logger.debug("StellaPayUI: Ignoring NFC card as we are currently making a transaction.")
             return
 
@@ -194,6 +196,7 @@ class DefaultScreen(Screen):
             self.manager.current = Screens.PRODUCT_SCREEN.value
         else:
             # User was not found, proceed to registerUID file
+            self.manager.transition = SlideTransition(direction='right')
             self.manager.get_screen(Screens.REGISTER_UID_SCREEN.value).nfc_id = uid
             self.manager.current = Screens.REGISTER_UID_SCREEN.value
 
