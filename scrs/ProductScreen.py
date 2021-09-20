@@ -9,14 +9,15 @@ from kivy.app import App
 from kivy.clock import Clock, mainthread
 from kivy.lang import Builder
 from kivy.uix.screenmanager import Screen, SlideTransition
+from kivymd.toast import toast
 from kivymd.uix.button import MDFlatButton, MDRaisedButton
 from kivymd.uix.dialog import MDDialog
 
 from ds.ShoppingCart import ShoppingCart, ShoppingCartListener
-from ux.CartDialog import CartDialog
 from scrs.TabDisplay import TabDisplay
 from utils import Connections
 from utils.Screens import Screens
+from ux.CartDialog import CartDialog
 from ux.ItemListUX import ItemListUX
 from ux.ShoppingCartItem import ShoppingCartItem
 
@@ -250,7 +251,14 @@ class ProductScreen(Screen):
     def on_confirm_payment(self, dt=None):
         print("OnClicked")
         # Serialize the shopping cart
-        json_cart = self.shopping_cart.to_json()
+        json_cart = None
+
+        try:
+            json_cart = self.shopping_cart.to_json()
+        except Exception as e:
+            Logger.warning("StellaPayUI: There was an error while parsing the shopping cart to JSON!")
+            toast("Er ging iets fout tijdens het betalen. Probeer het nogmaals.")
+            return
 
         # use a POST-request to forward the shopping cart
         response = App.get_running_app().session_manager.do_post_request(url=Connections.create_transaction(),
@@ -274,6 +282,8 @@ class ProductScreen(Screen):
                     ),
                 ]
             )
+            toast("Smakelijk!")
+
             self.timeout_event = Clock.schedule_once(self.on_thanks, 5)
             self.final_dialog.open()
         elif not response.ok:
