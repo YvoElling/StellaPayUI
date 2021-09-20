@@ -9,10 +9,6 @@ from kivy import Logger
 from kivy.app import App
 from kivy.clock import mainthread
 from kivy.uix.screenmanager import Screen, SlideTransition
-# defaultScreen class
-# creates the default screen when the program waits for a card to be presented
-# changes when a card is presented
-#
 from kivymd.toast import toast
 from kivymd.uix.dialog import MDDialog
 
