@@ -5,6 +5,7 @@ from asyncio import AbstractEventLoop
 from collections import OrderedDict
 from typing import Optional, Callable
 
+import typing
 from kivy import Logger
 from kivy.app import App
 from kivy.clock import mainthread
@@ -14,6 +15,7 @@ from kivymd.uix.dialog import MDDialog
 
 from PythonNFCReader.CardListener import CardListener
 from PythonNFCReader.NFCReader import CardConnectionManager
+from data.OnlineDataStorage import OnlineDataStorage
 from utils import Connections
 from utils.Screens import Screens
 from ux.SelectUserItem import SelectUserItem
@@ -84,42 +86,59 @@ class DefaultScreen(Screen):
 
     def load_user_data(self, callback: Optional[Callable] = None):
 
-        if len(App.get_running_app().user_mapping) > 0:
-            Logger.debug("StellaPayUI: Not loading user data again")
-            return
+        # if len(App.get_running_app().user_mapping) > 0:
+        #     Logger.debug("StellaPayUI: Not loading user data again")
+        #     return
+        #
+        # user_data = App.get_running_app().session_manager.do_get_request(url=Connections.get_users())
+        #
+        # Logger.debug("StellaPayUI: Loaded user data")
+        #
+        # App.get_running_app().user_mapping = {}
+        #
+        # if user_data and user_data.ok:
+        #     # convert to json
+        #     user_json = user_data.json()
+        #
+        #     print(f"StellaPayUI: Loading user mapping on thread {threading.current_thread().name}")
+        #
+        #     # append json to list and sort the list
+        #     for user in user_json:
+        #         # store all emails adressed in the sheet_menu
+        #         App.get_running_app().user_mapping[user["name"]] = user["email"]
+        #
+        #     # Sort items
+        #     App.get_running_app().user_mapping = OrderedDict(
+        #         sorted(App.get_running_app().user_mapping.items(), key=lambda x: x[0]))
+        #
+        #     # Create dialog and its items on the main thread
+        #     self.create_user_select_dialog(callback=callback)
+        # else:
+        #     Logger.critical("StellaPayUI: Error: addresses could not be fetched from server")
+        #     os._exit(1)
 
-        user_data = App.get_running_app().session_manager.do_get_request(url=Connections.get_users())
+        def callback_handle(user_data: typing.Dict[str, str]):
+            if user_data is not None:
+                Logger.info(f"StellaPayUI: Retrieved {len(user_data)} users!")
+                # Make sure that system can create selection dialog based on users.
+                self.create_user_select_dialog(user_data)
+            else:
+                Logger.warning(f"StellaPayUI: Could not retrieve users!")
 
-        Logger.debug("StellaPayUI: Loaded user data")
+            # Make sure to call the original callback when we're done.
+            if callback is not None:
+                callback()
 
-        App.get_running_app().user_mapping = {}
+        # Try to grab user data
+        App.get_running_app().data_controller.get_user_data(callback_handle)
 
-        if user_data and user_data.ok:
-            # convert to json
-            user_json = user_data.json()
 
-            print(f"StellaPayUI: Loading user mapping on thread {threading.current_thread().name}")
-
-            # append json to list and sort the list
-            for user in user_json:
-                # store all emails adressed in the sheet_menu
-                App.get_running_app().user_mapping[user["name"]] = user["email"]
-
-            # Sort items
-            App.get_running_app().user_mapping = OrderedDict(
-                sorted(App.get_running_app().user_mapping.items(), key=lambda x: x[0]))
-
-            # Create dialog and its items on the main thread
-            self.create_user_select_dialog(callback=callback)
-        else:
-            Logger.critical("StellaPayUI: Error: addresses could not be fetched from server")
-            os._exit(1)
 
     @mainthread
-    def create_user_select_dialog(self, callback: Optional[Callable] = None):
+    def create_user_select_dialog(self, user_mapping: typing.Dict[str, str]):
         # Load usernames into user select dialog
         if len(self.users_to_select) < 1:
-            for user_name, user_email in App.get_running_app().user_mapping.items():
+            for user_name, user_email in user_mapping.items():
                 # store all users in a list of items that we will open with a dialog
                 self.users_to_select.append(
                     SelectUserItem(user_email=user_email, callback=self.selected_active_user, text=user_name))
@@ -130,10 +149,6 @@ class DefaultScreen(Screen):
             type="confirmation",
             items=self.users_to_select
         )
-
-        # If we have a callback, call it.
-        if callback is not None:
-            callback()
 
     # An active user is selected via the dialog
     def selected_active_user(self, item):

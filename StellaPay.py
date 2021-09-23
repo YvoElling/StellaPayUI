@@ -15,6 +15,7 @@ from kivy.uix.screenmanager import ScreenManager
 from kivymd.app import MDApp
 
 from PythonNFCReader.NFCReader import CardConnectionManager
+from data.DataController import DataController
 from db.DatabaseManager import DatabaseManager
 from ds.Product import Product
 from scrs.ConfirmedScreen import ConfirmedScreen
@@ -59,6 +60,9 @@ class StellaPay(MDApp):
 
         # Store a mapping from user name to user email
         self.user_mapping: Dict[str, str] = {}
+
+        # Create a data controller that is used to access data of users and products.
+        self.data_controller = DataController()
 
         StellaPay.build_version = subprocess.check_output(['git', 'rev-parse', '--short', 'HEAD']).strip()
         print(f"Running build {self.build_version}")
@@ -153,51 +157,55 @@ class StellaPay(MDApp):
 
     def load_categories_and_products(self):
         # Get all categories names
-        response = App.get_running_app().session_manager.do_get_request(url=Connections.get_categories())
+        # response = App.get_running_app().session_manager.do_get_request(url=Connections.get_categories())
 
         Logger.debug("StellaPayUI: Loading product categories")
 
+        # If we loaded everything correctly, we can tell the startup screen we loaded correctly.
+        screen_manager.get_screen(Screens.STARTUP_SCREEN.value).on_products_loaded()
+
         # Check status response
-        if response and response.ok:
-
-            categories = response.json()
-
-            Logger.debug(f"StellaPayUI: Retrieved {len(categories)} categories")
-
-            # Load tab for each category
-            for cat in categories:
-                # Request products from category tab_text
-                request = Connections.get_products() + cat['name']
-                response = App.get_running_app().session_manager.do_get_request(request)
-
-                Logger.debug(f"StellaPayUI: Loading products for category '{cat['name']}'")
-
-                # Evaluate server response
-                if response and response.ok:
-                    # convert response to json
-                    products_json = response.json()
-
-                    self.products_per_category[cat['name']] = []
-
-                    Logger.debug(f"StellaPayUI: Retrieved {len(products_json)} products for category '{cat['name']}'")
-
-                    # Create a product object for all
-                    for product in products_json:
-                        # Only add the product to the list if the product must be shown
-                        if product['shown']:
-                            p = Product().create_from_json(product)
-                            self.products_per_category[cat['name']].append(p)
-                else:
-                    # Error in retrieving products from server
-                    Logger.critical("StellaPayUI: Products could not be retrieved: " + response.text)
-                    os._exit(1)
-
-            # If we loaded everything correctly, we can tell the startup screen we loaded correctly.
-            screen_manager.get_screen(Screens.STARTUP_SCREEN.value).on_products_loaded()
-        else:
-            # Error
-            Logger.critical("StellaPayUI: Categories could not be retrieved: " + response.text)
-            os._exit(1)
+        # if response and response.ok:
+        #
+        #     categories = response.json()
+        #
+        #     Logger.debug(f"StellaPayUI: Retrieved {len(categories)} categories")
+        #
+        #     # Load tab for each category
+        #     for cat in categories:
+        #         # Request products from category tab_text
+        #         request = Connections.get_products() + cat['name']
+        #         response = App.get_running_app().session_manager.do_get_request(request)
+        #
+        #         Logger.debug(f"StellaPayUI: Loading products for category '{cat['name']}'")
+        #
+        #         # Evaluate server response
+        #         if response and response.ok:
+        #             # convert response to json
+        #             products_json = response.json()
+        #
+        #             self.products_per_category[cat['name']] = []
+        #
+        #             Logger.debug(f"StellaPayUI: Retrieved {len(products_json)} products for category '{cat['name']}'")
+        #
+        #             # Create a product object for all
+        #             for product in products_json:
+        #                 # Only add the product to the list if the product must be shown
+        #                 if product['shown']:
+        #                     p = Product().create_from_json(product)
+        #                     self.products_per_category[cat['name']].append(p)
+        #         else:
+        #             # Error in retrieving products from server
+        #             Logger.critical("StellaPayUI: Products could not be retrieved: " + response.text)
+        #             os._exit(1)
+        #
+        #     # If we loaded everything correctly, we can tell the startup screen we loaded correctly.
+        #     screen_manager.get_screen(Screens.STARTUP_SCREEN.value).on_products_loaded()
+        # else:
+        #     # Error
+        #     Logger.critical("StellaPayUI: Categories could not be retrieved: " + "no response" if response is None
+        #                     else response.text)
+        #     os._exit(1)
 
     def build_config(self, config):
         config.setdefaults('device', {
@@ -216,6 +224,10 @@ class StellaPay(MDApp):
 
     def get_git_revisions_hash(self):
         return subprocess.check_output(['git', 'rev-parse', 'HEAD'])
+
+    @staticmethod
+    def get_app() -> "StellaPay":
+        return App.get_running_app()
 
 
 if __name__ == '__main__':

@@ -1,6 +1,7 @@
 import json
 import os
-from typing import Optional
+import traceback
+from typing import Optional, Callable
 
 import requests
 from kivy import Logger
@@ -63,12 +64,10 @@ class SessionManager:
         else:
             Logger.debug("StellaPayUI: Authenticated correctly to backend.")
 
-    # Perform a get request to the given url. You can give do functions as callbacks (which will return the response)
-    def do_get_request(self, url: str) -> Optional[requests.Response]:
+    # Perform a get request to the given url. You can provide a callback to receive the result.
+    def do_get_request(self, url: str, callback: Callable[[Optional[requests.Response]], None] = None) -> None:
         try:
             response = self.session.get(url, timeout=5)
-
-            return response
         except (requests.exceptions.ConnectionError, requests.exceptions.Timeout) as e1:
             print("Connection was reset, so reauthenticating...")
 
@@ -78,10 +77,25 @@ class SessionManager:
 
             Logger.critical(f"StellaPayUI: Timeout on get request {e1}")
 
-            return self.session.get(url)
+            # Make sure to call the callback
+            if callback is not None:
+                callback(self.session.get(url))
+
+            return
         except Exception as e2:
-            Logger.critical(f"StellaPayUI: A problem with a GET request {e2}")
-            return None
+            Logger.critical(f"StellaPayUI: A problem with a GET request")
+            traceback.print_exception(None, e2, e2.__traceback__)
+
+            # Make sure to call the callback
+            if callback is not None:
+                callback(None)
+
+            return
+
+        # Make sure to call the callback
+        if callback is not None:
+            callback(response)
+
 
     # Perform a post request to the given url. You can give do functions as callbacks (which will return the response)
     def do_post_request(self, url: str, json_data=None) -> Optional[requests.Response]:
