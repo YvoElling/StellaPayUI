@@ -17,6 +17,7 @@ class StartupScreen(Screen):
         # call to user with arguments
         super(StartupScreen, self).__init__(**kwargs)
 
+        # Keep track of when data is loaded
         self.users_loaded = False
         self.categories_loaded = False
         self.products_loaded = False
@@ -28,14 +29,14 @@ class StartupScreen(Screen):
 
         App.get_running_app().loop.call_soon_threadsafe(self.wait_for_data_to_load)
 
+    # Called when all data has loaded
     def finished_loading(self, dt):
-        print(f"Done loading startup screen in {dt} seconds")
-
         self.manager.current = Screens.DEFAULT_SCREEN.value
 
+    # Called when we're waiting for the data to load
     def wait_for_data_to_load(self):
         while not self.users_loaded or not self.products_loaded or not self.categories_loaded:
-            # As long as one of them is not loaded
+            # As long as one of them is not loaded, wait for a bit
             time.sleep(0.5)
 
             if not self.users_loaded:
@@ -49,18 +50,6 @@ class StartupScreen(Screen):
 
         # After everything has been loaded.
         self.ids.loading_text.text = "Data has loaded!"
-
-        # Done loading, so call callback in one second.
-        Clock.schedule_once(self.finished_loading, 1)
-
-
-    def on_users_loaded(self):
-        self.ids.loading_text.text = "Setting up products page..."
-
-        # Load product data
-        self.manager.get_screen(Screens.PRODUCT_SCREEN.value).load_category_data()
-
-        self.ids.loading_text.text = "Ready!"
 
         # Done loading, so call callback in one second.
         Clock.schedule_once(self.finished_loading, 1)

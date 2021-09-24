@@ -17,7 +17,7 @@ class OnlineDataStorage(DataStorage):
         self.cached_product_data: Dict[str, List[Product]] = defaultdict(list)
         self.cached_category_data: List[str] = []
 
-    def get_user_data(self, callback=None) -> None:
+    def get_user_data(self, callback: Callable[[Optional[Dict[str, str]]], None] = None) -> None:
 
         # We're not doing any work when the result is ignored anyway.
         if callback is None:
@@ -52,7 +52,7 @@ class OnlineDataStorage(DataStorage):
             Logger.critical("StellaPayUI: Error: users could not be fetched from the online database")
             callback(None)
 
-    def get_product_data(self, callback: Callable[[Optional[List[Product]]], None] = None) -> None:
+    def get_product_data(self, callback: Callable[[Optional[Dict[str, List[Product]]]], None] = None) -> None:
         # We're not doing any work when the result is ignored anyway.
         if callback is None:
             return
@@ -60,7 +60,7 @@ class OnlineDataStorage(DataStorage):
         if len(self.cached_product_data) > 0:
             Logger.debug("StellaPayUI: Using online (cached) product data")
             # Return cached product data
-            callback(self.cached_product_data.values())
+            callback(self.cached_product_data)
             return
 
         # Check if there is category data loaded. We need that, otherwise we can't load the products.
@@ -96,7 +96,7 @@ class OnlineDataStorage(DataStorage):
 
         # Make sure to call the callback with the proper data. (None if we have no data).
         if len(self.cached_product_data) > 0:
-            callback(self.cached_product_data.values())
+            callback(self.cached_product_data)
         else:
             callback(None)
 

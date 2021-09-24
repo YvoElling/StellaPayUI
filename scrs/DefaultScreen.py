@@ -110,11 +110,11 @@ class DefaultScreen(Screen):
                     SelectUserItem(user_email=user_email, callback=self.selected_active_user, text=user_name))
                 # Add a callback so we know when a user has been selected
 
-        # Create user dialog so we open it later.
-        self.user_select_dialog = MDDialog(
-            type="confirmation",
-            items=self.users_to_select
-        )
+            # Create user dialog so we open it later.
+            self.user_select_dialog = MDDialog(
+                type="confirmation",
+                items=self.users_to_select
+            )
 
     # An active user is selected via the dialog
     def selected_active_user(self, item):

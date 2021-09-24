@@ -35,15 +35,15 @@ class DataController:
         # TODO: Determine whether we should use the online or offline storage
         self.online_data_storage.get_user_data(callback=callback)
 
-    def get_product_data(self, callback: Callable[[Optional[List[Product]]], None] = None) -> None:
+    def get_product_data(self, callback: Callable[[Optional[Dict[str, List[Product]]]], None] = None) -> None:
         """
-        Get a list of all products. Note that you'll need to provide a callback function
+        Get a list of all products (in their categories). Note that you'll need to provide a callback function
         that will be called whenever the data is available. The callback will also be called when no data is available.
 
-        The product data is returned as a list, where each element corresponds to a Product object.
+        The product data is returned as a map, where each key is a category name and the value a list of Product objects.
 
         :param callback: Method called when this method is finished retrieving data. The callback will have one argument
-            that represents a list of products. This might also be None!
+            that represents the map. This might also be None!
 
         :return: Nothing.
         """

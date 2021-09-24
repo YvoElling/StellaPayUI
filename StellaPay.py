@@ -55,9 +55,6 @@ class StellaPay(MDApp):
         # Store user that is logged in (can be none)
         self.active_user: Optional[str] = None
 
-        # Store products for each category
-        self.products_per_category: Dict[str, List[Product]] = {}
-
         # Store a mapping from user name to user email
         self.user_mapping: Dict[str, str] = {}
 
@@ -164,10 +161,21 @@ class StellaPay(MDApp):
         def handle_user_data(user_data):
             Logger.info(f"StellaPayUI: Loaded {len(user_data)} users in {time.time() * 1000 - start} ms.")
 
+            self.user_mapping = user_data
+
             screen_manager.get_screen(Screens.STARTUP_SCREEN.value).users_loaded = True
 
         # Load user data
         self.data_controller.get_user_data(callback=handle_user_data)
+
+        # Callback for loaded product data
+        def handle_product_data(product_data):
+            Logger.info(f"StellaPayUI: Loaded {len(product_data)} products.")
+
+            # Signal to the startup screen that the products have been loaded.
+            screen_manager.get_screen(Screens.STARTUP_SCREEN.value).products_loaded = True
+
+            self.loaded_all_users_and_products()
 
         # Callback for loaded category data
         def handle_category_data(category_data):
@@ -176,19 +184,13 @@ class StellaPay(MDApp):
             # Signal to the startup screen that the categories have been loaded.
             screen_manager.get_screen(Screens.STARTUP_SCREEN.value).categories_loaded = True
 
-            self.data_controller.get_product_data(
-                callback=self.loaded_all_users_and_products)
+            self.data_controller.get_product_data(callback=handle_product_data)
 
         # Get category data (and then retrieve product data)
         self.data_controller.get_category_data(callback=handle_category_data)
 
-    def loaded_all_users_and_products(self, _):
+    def loaded_all_users_and_products(self):
         # This method is called whenever all users, categories and products are loaded.
-
-        # Signal to the startup screen that the products have been loaded.
-        # Signal to the startup screen that the categories have been loaded.
-        screen_manager.get_screen(Screens.STARTUP_SCREEN.value).products_loaded = True
-
         Logger.debug("StellaPayUI: Loaded all data!")
 
         # If we loaded everything correctly, we can tell the startup screen we loaded correctly.

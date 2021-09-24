@@ -1,6 +1,7 @@
 import os
 import threading
 import time
+import traceback
 from asyncio import AbstractEventLoop
 from typing import Dict, List
 
@@ -90,16 +91,19 @@ class ProductScreen(Screen):
 
         Logger.debug("StellaPayUI: Loading category view")
 
-        for category in App.get_running_app().products_per_category.keys():
-            # Create tab display
-            tab = TabDisplay(text=category)
-            self.ids.android_tabs.add_widget(tab)
-            self.tabs.append(tab)
+        def handle_product_data(product_data: Dict[str, List["Product"]]):
+            for category in product_data.keys():
+                # Create tab display
+                tab = TabDisplay(text=category)
+                self.ids.android_tabs.add_widget(tab)
+                self.tabs.append(tab)
 
-        print(f"StellaPayUI: Loaded category data and tabs (no skipping) in {time.time() - start_time} seconds")
+            print(f"StellaPayUI: Loaded category data and tabs (no skipping) in {time.time() - start_time} seconds")
 
-        # Load product items
-        self.load_products()
+            # Load product items
+            self.load_products()
+
+        App.get_running_app().data_controller.get_product_data(callback=handle_product_data)
 
     def on_pre_enter(self, *args):
         # Initialize timeouts
@@ -125,6 +129,11 @@ class ProductScreen(Screen):
 
         start_time = time.time()
 
+        # Check if we have tabs loaded
+        if len(self.tabs) < 1:
+            toast("There are no loaded tabs!")
+            return
+
         if len(self.tabs[0].ids.container.children) > 0:
             Logger.debug("StellaPayUI: Don't load products view again as it's already there..")
             print(f"Loaded products (after skipping) in {time.time() - start_time} seconds")
@@ -132,28 +141,29 @@ class ProductScreen(Screen):
 
         Logger.debug(f"StellaPayUI: Setting up product view")
 
-        for tab in self.tabs:
-            for product in App.get_running_app().products_per_category[tab.text]:
-                # Get fun fact description of database
-                product_description = App.get_running_app().database_manager.get_random_fun_fact(product.get_name())
+        def handle_product_data(product_data: Dict[str, List["Product"]]):
+            for tab in self.tabs:
+                for product in product_data[tab.text]:
+                    # Get fun fact description of database
+                    product_description = App.get_running_app().database_manager.get_random_fun_fact(product.get_name())
 
-                # Add item to the tab
-                tab.ids.container.add_widget(ItemListUX(text=product.get_name(), secondary_text=product_description,
-                                                        secondary_theme_text_color="Custom",
+                    # Add item to the tab
+                    tab.ids.container.add_widget(ItemListUX(text=product.get_name(), secondary_text=product_description,
+                                                            secondary_theme_text_color="Custom",
+                                                            secondary_text_color=[0.509, 0.509, 0.509, 1],
+                                                            price="€" + product.get_price(),
+                                                            shopping_cart=self.shopping_cart))
+
+                # Add last item to the products (for each category) that is empty. This improves readability.
+                tab.ids.container.add_widget(ItemListUX(text="", secondary_text="", secondary_theme_text_color="Custom",
                                                         secondary_text_color=[0.509, 0.509, 0.509, 1],
-                                                        price="€" + product.get_price(),
-                                                        shopping_cart=self.shopping_cart))
+                                                        price=None,
+                                                        shopping_cart=None))
 
-            # Add last item to the products (for each category) that is empty. This improves readability.
-            tab.ids.container.add_widget(ItemListUX(text="", secondary_text="", secondary_theme_text_color="Custom",
-                                                    secondary_text_color=[0.509, 0.509, 0.509, 1],
-                                                    price=None,
-                                                    shopping_cart=None))
+                print(f"Loaded products of category {tab.text} (no skipping) in {time.time() - start_time} seconds")
+            print(f"Loaded all products (no skipping) in {time.time() - start_time} seconds")
 
-            print(f"Loaded products of category {tab.text} (no skipping) in {time.time() - start_time} seconds")
-        print(f"Loaded all products (no skipping) in {time.time() - start_time} seconds")
-
-        return
+        App.get_running_app().data_controller.get_product_data(callback=handle_product_data)
 
     #
     # timeout callback function
@@ -257,6 +267,7 @@ class ProductScreen(Screen):
             json_cart = self.shopping_cart.to_json()
         except Exception as e:
             Logger.warning("StellaPayUI: There was an error while parsing the shopping cart to JSON!")
+            traceback.print_exception(None, e, e.__traceback__)
             toast("Er ging iets fout tijdens het betalen. Probeer het nogmaals.")
             return
 
