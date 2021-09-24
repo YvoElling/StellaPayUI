@@ -65,9 +65,11 @@ class SessionManager:
             Logger.debug("StellaPayUI: Authenticated correctly to backend.")
 
     # Perform a get request to the given url. You can provide a callback to receive the result.
-    def do_get_request(self, url: str, callback: Callable[[Optional[requests.Response]], None] = None) -> None:
+    def do_get_request(self, url: str) -> Optional[requests.Response]:
         try:
             response = self.session.get(url, timeout=5)
+
+            return response
         except (requests.exceptions.ConnectionError, requests.exceptions.Timeout) as e1:
             print("Connection was reset, so reauthenticating...")
 
@@ -77,24 +79,12 @@ class SessionManager:
 
             Logger.critical(f"StellaPayUI: Timeout on get request {e1}")
 
-            # Make sure to call the callback
-            if callback is not None:
-                callback(self.session.get(url))
-
-            return
+            return self.session.get(url)
         except Exception as e2:
             Logger.critical(f"StellaPayUI: A problem with a GET request")
             traceback.print_exception(None, e2, e2.__traceback__)
 
-            # Make sure to call the callback
-            if callback is not None:
-                callback(None)
-
-            return
-
-        # Make sure to call the callback
-        if callback is not None:
-            callback(response)
+            return None
 
 
     # Perform a post request to the given url. You can give do functions as callbacks (which will return the response)

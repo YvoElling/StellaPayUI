@@ -1,6 +1,7 @@
 import datetime
 import os
 import threading
+import time
 from asyncio import AbstractEventLoop
 from collections import OrderedDict
 from typing import Optional, Callable
@@ -85,41 +86,8 @@ class DefaultScreen(Screen):
         self.user_select_dialog.open()
 
     def load_user_data(self, callback: Optional[Callable] = None):
-
-        # if len(App.get_running_app().user_mapping) > 0:
-        #     Logger.debug("StellaPayUI: Not loading user data again")
-        #     return
-        #
-        # user_data = App.get_running_app().session_manager.do_get_request(url=Connections.get_users())
-        #
-        # Logger.debug("StellaPayUI: Loaded user data")
-        #
-        # App.get_running_app().user_mapping = {}
-        #
-        # if user_data and user_data.ok:
-        #     # convert to json
-        #     user_json = user_data.json()
-        #
-        #     print(f"StellaPayUI: Loading user mapping on thread {threading.current_thread().name}")
-        #
-        #     # append json to list and sort the list
-        #     for user in user_json:
-        #         # store all emails adressed in the sheet_menu
-        #         App.get_running_app().user_mapping[user["name"]] = user["email"]
-        #
-        #     # Sort items
-        #     App.get_running_app().user_mapping = OrderedDict(
-        #         sorted(App.get_running_app().user_mapping.items(), key=lambda x: x[0]))
-        #
-        #     # Create dialog and its items on the main thread
-        #     self.create_user_select_dialog(callback=callback)
-        # else:
-        #     Logger.critical("StellaPayUI: Error: addresses could not be fetched from server")
-        #     os._exit(1)
-
         def callback_handle(user_data: typing.Dict[str, str]):
             if user_data is not None:
-                Logger.info(f"StellaPayUI: Retrieved {len(user_data)} users!")
                 # Make sure that system can create selection dialog based on users.
                 self.create_user_select_dialog(user_data)
             else:
@@ -131,8 +99,6 @@ class DefaultScreen(Screen):
 
         # Try to grab user data
         App.get_running_app().data_controller.get_user_data(callback_handle)
-
-
 
     @mainthread
     def create_user_select_dialog(self, user_mapping: typing.Dict[str, str]):
