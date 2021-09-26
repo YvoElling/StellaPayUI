@@ -1,7 +1,6 @@
 import os
 import threading
 import time
-import traceback
 from asyncio import AbstractEventLoop
 from typing import Dict, List
 
@@ -16,7 +15,6 @@ from kivymd.uix.dialog import MDDialog
 
 from ds.ShoppingCart import ShoppingCart, ShoppingCartListener
 from scrs.TabDisplay import TabDisplay
-from utils import Connections
 from utils.Screens import Screens
 from ux.CartDialog import CartDialog
 from ux.ItemListUX import ItemListUX
@@ -141,6 +139,7 @@ class ProductScreen(Screen):
 
         Logger.debug(f"StellaPayUI: Setting up product view")
 
+        @mainthread
         def handle_product_data(product_data: Dict[str, List["Product"]]):
             for tab in self.tabs:
                 for product in product_data[tab.text]:
@@ -259,68 +258,56 @@ class ProductScreen(Screen):
     # Confirms a payment
     #
     def on_confirm_payment(self, dt=None):
-        print("OnClicked")
-        # Serialize the shopping cart
-        json_cart = None
+        Logger.info(f"StellaPayUI: Payment was confirmed by the user.")
 
-        try:
-            json_cart = self.shopping_cart.to_json()
-        except Exception as e:
-            Logger.warning("StellaPayUI: There was an error while parsing the shopping cart to JSON!")
-            traceback.print_exception(None, e, e.__traceback__)
-            toast("Er ging iets fout tijdens het betalen. Probeer het nogmaals.")
-            return
+        @mainthread
+        def handle_transaction_result(success: bool):
+            if success:
+                # Reset instance variables
+                self.end_user_session()
 
-        # use a POST-request to forward the shopping cart
-        response = App.get_running_app().session_manager.do_post_request(url=Connections.create_transaction(),
-                                                                         json_data=json_cart)
+                if self.shopping_cart_dialog is not None:
+                    self.shopping_cart_dialog.dismiss()
 
-        if response and response.ok:
-            # Reset instance variables
-            self.end_user_session()
+                self.timeout_event.cancel()
 
-            if self.shopping_cart_dialog is not None:
-                self.shopping_cart_dialog.dismiss()
+                self.final_dialog = MDDialog(
+                    text="Gelukt! Je aankoop is geregistreerd",
+                    buttons=[
+                        MDRaisedButton(
+                            text="Thanks",
+                            on_release=self.on_thanks
+                        ),
+                    ]
+                )
 
-            self.timeout_event.cancel()
+                self.timeout_event = Clock.schedule_once(self.on_thanks, 5)
+                self.final_dialog.open()
+            else:
+                # Reset instance variables
+                self.end_user_session()
 
-            self.final_dialog = MDDialog(
-                text="Gelukt! Je aankoop is geregistreerd",
-                buttons=[
-                    MDRaisedButton(
-                        text="Thanks",
-                        on_release=self.on_thanks
-                    ),
-                ]
-            )
-            toast("Smakelijk!")
+                if self.shopping_cart_dialog is not None:
+                    self.shopping_cart_dialog.dismiss()
 
-            self.timeout_event = Clock.schedule_once(self.on_thanks, 5)
-            self.final_dialog.open()
-        elif not response.ok:
-            # Reset instance variables
-            self.end_user_session()
+                self.final_dialog = MDDialog(
+                    text="Het is niet gelukt je aankoop te registreren. Herstart de app svp.",
+                    buttons=[
+                        MDRaisedButton(
+                            text="Herstart",
+                            on_release=(
+                                os._exit(1)
+                            )
+                        ),
+                    ]
+                )
+                self.final_dialog.open()
 
-            if self.shopping_cart_dialog is not None:
-                self.shopping_cart_dialog.dismiss()
+        # Make request to create transactions (on separate thread)
+        App.get_running_app().loop.call_soon_threadsafe(
+            App.get_running_app().data_controller.create_transactions, self.shopping_cart, handle_transaction_result)
 
-            self.final_dialog = MDDialog(
-                text="Het is niet gelukt je aankoop te registreren. Herstart de app svp.",
-                buttons=[
-                    MDRaisedButton(
-                        text="Herstart",
-                        on_release=(
-                            os._exit(1)
-                        )
-                    ),
-                ]
-            )
-            self.final_dialog.open()
-        else:
-            Logger.critical("StellaPayUI: Payment could not be made: error: " + response.content)
-            os._exit(1)
-
-    def on_thanks(self, dt=None):
+    def on_thanks(self, _):
         if self.final_dialog is not None:
             self.final_dialog.dismiss()
             self.final_dialog = None

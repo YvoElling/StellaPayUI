@@ -1,14 +1,14 @@
-import os
+import threading
 from asyncio import AbstractEventLoop
 
 from kivy import Logger
 from kivy.app import App
-from kivy.clock import Clock
+from kivy.clock import Clock, mainthread
 from kivy.lang import Builder
 from kivy.uix.screenmanager import Screen
+from kivymd.toast import toast
 from kivymd.uix.bottomsheet import MDListBottomSheet
 
-from utils import Connections
 from utils.Screens import Screens
 
 
@@ -75,23 +75,25 @@ class RegisterUIDScreen(Screen):
             self.register_card_mapping, selected_user_name, selected_user_email)
 
     def register_card_mapping(self, selected_user_name, selected_user_email: str):
-        # Use a POST command to add connect this UID to the user
-        request = App.get_running_app().session_manager.do_post_request(url=Connections.add_user_mapping(),
-                                                                        json_data={'card_id': str(self.nfc_id),
-                                                                                   'email': selected_user_email})
 
-        # If the users was added successfully ( status_code : 200), proceed to WelcomeScreen
-        if request.ok:
-            # Store the active user in the app so other screens can use it.
-            App.get_running_app().active_user = selected_user_name
-            self.manager.current = Screens.WELCOME_SCREEN.value
-        else:
-            # User could not be added succesfully, give error 2.
-            Logger.critical(
-                "StellaPayUI: Error " + str(
-                    request.status_code) + " occurred when trying to add the user: error message: " +
-                request.text)
-            os._exit(1)
+        @mainthread
+        def handle_card_registration(success: bool):
+            Logger.debug(
+                f"StellaPayUI: Received callback of new card registration on {threading.current_thread().name}")
+
+            if success:
+                # Store the active user in the app so other screens can use it.
+                App.get_running_app().active_user = selected_user_name
+                self.manager.current = Screens.WELCOME_SCREEN.value
+            else:
+                toast(
+                    f"Could not register this card to {selected_user_name}. Try selecting your name on the home screen instead.",
+                    duration=5)
+                self.on_cancel()
+
+        # Try to register the card.
+        self.event_loop.call_soon_threadsafe(App.get_running_app().data_controller.register_card_info, self.nfc_id,
+                                             selected_user_email, handle_card_registration)
 
     #
     # Whenever the user wants to show the list of users to register the card to.

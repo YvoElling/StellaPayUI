@@ -1,7 +1,7 @@
 import json
 import os
 import traceback
-from typing import Optional, Callable
+from typing import Optional
 
 import requests
 from kivy import Logger
@@ -10,7 +10,6 @@ from utils import Connections
 
 
 class SessionManager:
-
     AUTHENTICATION_FILE = "authenticate.json"
 
     def __init__(self):
@@ -85,7 +84,6 @@ class SessionManager:
             traceback.print_exception(None, e2, e2.__traceback__)
 
             return None
-
 
     # Perform a post request to the given url. You can give do functions as callbacks (which will return the response)
     def do_post_request(self, url: str, json_data=None) -> Optional[requests.Response]:

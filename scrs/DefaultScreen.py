@@ -1,12 +1,10 @@
 import datetime
-import os
-import threading
+import functools
 import time
+import typing
 from asyncio import AbstractEventLoop
-from collections import OrderedDict
 from typing import Optional, Callable
 
-import typing
 from kivy import Logger
 from kivy.app import App
 from kivy.clock import mainthread
@@ -16,8 +14,7 @@ from kivymd.uix.dialog import MDDialog
 
 from PythonNFCReader.CardListener import CardListener
 from PythonNFCReader.NFCReader import CardConnectionManager
-from data.OnlineDataStorage import OnlineDataStorage
-from utils import Connections
+from ds.NFCCardInfo import NFCCardInfo
 from utils.Screens import Screens
 from ux.SelectUserItem import SelectUserItem
 
@@ -139,6 +136,7 @@ class DefaultScreen(Screen):
         if self.user_select_dialog:
             self.user_select_dialog.dismiss()
 
+    @mainthread
     def nfc_card_presented(self, uid: str):
         Logger.debug("StellaPayUI: Read NFC card with uid" + uid)
 
@@ -151,31 +149,31 @@ class DefaultScreen(Screen):
         # Show the spinner
         self.ids.spinner.active = True
 
-        # Request user info for the specific UID to validate person
-        response = App.get_running_app().session_manager.do_get_request(url=Connections.request_user_info() + uid)
+        start_time = time.time()
 
-        # Check response code to validate whether this user existed already. If so, proceed
-        # to the productScreen, else proceed to the registerUID screen
-        if response and response.ok:
-            # store result in JSON
-            query_json = response.json()
+        # Callback to handle the card info
+        def handle_card_info(card_info: NFCCardInfo):
 
-            # Move to WelcomeScreen
-            self.manager.transition = SlideTransition(direction='left')
+            Logger.debug(f"StellaPayUI: Received card info in {time.time() - start_time} seconds.")
 
-            # store user-mail for payment confirmation later
-            user_mail = query_json["owner"]["email"]
-            user_name = query_json["owner"]["name"]
+            if card_info is None:
+                # User was not found, proceed to registerUID file
+                self.manager.transition = SlideTransition(direction='right')
+                self.manager.get_screen(Screens.REGISTER_UID_SCREEN.value).nfc_id = uid
+                self.manager.current = Screens.REGISTER_UID_SCREEN.value
+            else:
+                # User is found
+                App.get_running_app().active_user = card_info.owner_name
 
-            App.get_running_app().active_user = user_name
+                # Set slide transition correctly.
+                self.manager.transition = SlideTransition(direction='left')
 
-            # Go to the product screen
-            self.manager.current = Screens.PRODUCT_SCREEN.value
-        else:
-            # User was not found, proceed to registerUID file
-            self.manager.transition = SlideTransition(direction='right')
-            self.manager.get_screen(Screens.REGISTER_UID_SCREEN.value).nfc_id = uid
-            self.manager.current = Screens.REGISTER_UID_SCREEN.value
+                # Go to the product screen
+                self.manager.current = Screens.PRODUCT_SCREEN.value
+
+        # Get card info (on separate thread)
+        App.get_running_app().loop.call_soon_threadsafe(
+            functools.partial(App.get_running_app().data_controller.get_card_info, uid, handle_card_info))
 
     def on_select_guest(self):
         self.select_special_user("Gast Account")

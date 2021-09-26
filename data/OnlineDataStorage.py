@@ -1,4 +1,5 @@
 import threading
+import traceback
 from collections import OrderedDict, defaultdict
 from typing import Callable, Optional, List, Dict
 
@@ -6,7 +7,9 @@ from kivy import Logger
 from kivy.app import App
 
 from data.DataStorage import DataStorage
+from ds.NFCCardInfo import NFCCardInfo
 from ds.Product import Product
+from ds.ShoppingCart import ShoppingCart
 from utils import Connections
 
 
@@ -16,6 +19,7 @@ class OnlineDataStorage(DataStorage):
         self.cached_user_data: OrderedDict[str, str] = OrderedDict()
         self.cached_product_data: Dict[str, List[Product]] = defaultdict(list)
         self.cached_category_data: List[str] = []
+        self.cached_card_info: Dict[str, NFCCardInfo] = {}  # Key: card_id, Value: NFCCardInfo
 
     def get_user_data(self, callback: Callable[[Optional[Dict[str, str]]], None] = None) -> None:
 
@@ -129,3 +133,121 @@ class OnlineDataStorage(DataStorage):
         else:
             Logger.critical("StellaPayUI: Error: categories could not be fetched from the online database")
             callback(None)
+
+    def get_card_info(self, card_id=None, callback: Callable[[Optional[NFCCardInfo]], None] = None) -> None:
+
+        if card_id is None:
+            callback(None)
+            return
+
+        # Check if we have cached card info already
+        if card_id in self.cached_card_info:
+            # Return the cached data
+            callback(self.cached_card_info[card_id])
+            return
+
+        # Request data
+        response = App.get_running_app().session_manager.do_get_request(url=Connections.request_user_info() + card_id)
+
+        Logger.debug(f"StellaPayUI: Loading data of card {card_id} data on thread {threading.current_thread().name}")
+
+        # Check response code to validate whether this user existed already. If so, proceed
+        # to the productScreen, else proceed to the registerUID screen
+        if response and response.ok:
+            # store result in JSON
+            card_data = response.json()
+
+            # store user-mail for payment confirmation later
+            user_mail = card_data["owner"]["email"]
+            user_name = card_data["owner"]["name"]
+
+            # Create card info object
+            card_info = NFCCardInfo(card_id=card_id, owner_email=user_mail, owner_name=user_name)
+
+            # Cache card info for later use
+            self.cached_card_info[card_id] = card_info
+
+            # Let callback know it worked out!
+            callback(card_info)
+        else:
+            # User was not found, make sure to call the callback!
+            callback(None)
+
+    def register_card_info(self, card_id: str = None, email: str = None, callback: [[bool], None] = None) -> None:
+        # Check if we have a card id and email
+        if card_id is None or email is None:
+            if callback is not None:
+                callback(False)
+            return
+
+        # Check if they are not empty strings
+        if len(card_id) < 1 or len(email) < 1:
+            if callback is not None:
+                callback(False)
+            return
+
+        # Use a POST command to add connect this UID to the user
+        request = App.get_running_app().session_manager.do_post_request(url=Connections.add_user_mapping(),
+                                                                        json_data={'card_id': card_id,
+                                                                                   'email': email})
+
+        Logger.debug(f"StellaPayUI: Registering new card on {threading.current_thread().name}")
+
+        # If the user was added successfully ( status_code : 200),
+        if request.ok:
+            Logger.info(f"StellaPayUI: Registered new card with id {card_id} for {email}")
+
+            if callback is not None:
+                callback(True)
+            return
+        else:
+            # User could not be added succesfully, give error 2.
+            Logger.warning(f"StellaPayUI: Could not register new card with id {card_id} for {email}, error: "
+                           f"{request.text}")
+
+            if callback is not None:
+                callback(False)
+            return
+
+    def create_transactions(self, shopping_cart: ShoppingCart = None, callback: Callable[[bool], None] = None) -> None:
+        # Check if we have a shopping cart
+        if shopping_cart is None:
+            if callback is not None:
+                callback(False)
+            return
+
+        # Check if the shopping cart is empty. If so, we return true (since all transactions have been registered).
+        if len(shopping_cart.basket) < 1:
+            if callback is not None:
+                callback(True)
+            return
+
+        try:
+            json_cart = shopping_cart.to_json()
+        except Exception as e:
+            Logger.warning("StellaPayUI: There was an error while parsing the shopping cart to JSON!")
+            traceback.print_exception(None, e, e.__traceback__)
+
+            if callback is not None:
+                callback(False)
+            return
+
+        # use a POST-request to forward the shopping cart
+        response = App.get_running_app().session_manager.do_post_request(url=Connections.create_transaction(),
+                                                                         json_data=json_cart)
+
+        # Response was okay.
+        if response and response.ok:
+            Logger.info(f"StellaPayUI: Registered {len(shopping_cart.basket)} transactions to the server.")
+            if callback is not None:
+                callback(True)
+            return
+        elif not response.ok:
+            Logger.warning(f"StellaPayUI: Failed to register {len(shopping_cart.basket)} transactions to the server.")
+            # Response was wrong
+            if callback is not None:
+                callback(False)
+        else:
+            Logger.critical(f"StellaPayUI: Payment could not be made: error: {response.content}")
+            if callback is not None:
+                callback(False)

@@ -4,7 +4,7 @@ import sys
 import threading
 import time
 from asyncio import AbstractEventLoop
-from typing import Optional, Dict, List
+from typing import Optional, Dict
 
 import kivy
 from kivy import Logger
@@ -17,7 +17,6 @@ from kivymd.app import MDApp
 from PythonNFCReader.NFCReader import CardConnectionManager
 from data.DataController import DataController
 from db.DatabaseManager import DatabaseManager
-from ds.Product import Product
 from scrs.ConfirmedScreen import ConfirmedScreen
 from scrs.CreditsScreen import CreditsScreen
 from scrs.DefaultScreen import DefaultScreen
@@ -158,9 +157,11 @@ class StellaPay(MDApp):
 
         start = time.time() * 1000
 
+        # Callback for loaded user data
         def handle_user_data(user_data):
             Logger.info(f"StellaPayUI: Loaded {len(user_data)} users in {time.time() * 1000 - start} ms.")
 
+            # Store the user mapping so other screens can use it.
             self.user_mapping = user_data
 
             screen_manager.get_screen(Screens.STARTUP_SCREEN.value).users_loaded = True
