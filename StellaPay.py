@@ -110,6 +110,9 @@ class StellaPay(MDApp):
         else:
             Window.show_cursor = False
 
+        # Start thread that keeps track of connection status to the server.
+        self.data_controller.start_connection_update_thread(Connections.connection_status())
+
         # Load .kv file
         Builder.load_file('kvs/DefaultScreen.kv')
 
@@ -120,7 +123,9 @@ class StellaPay(MDApp):
 
         Logger.debug("StellaPayUI: Start authentication to backend")
 
-        self.loop.call_soon_threadsafe(self.session_manager.setup_session, self.done_loading_authentication)
+        # self.loop.call_soon_threadsafe(self.session_manager.setup_session, self.done_loading_authentication)
+        self.loop.call_soon_threadsafe(self.data_controller.start_setup_procedure)
+        # self.session_manager.setup_session(self.done_loading_authentication)
 
         # Initialize defaultScreen (to create session cookies for API calls)
         ds_screen = DefaultScreen(name=Screens.DEFAULT_SCREEN.value)

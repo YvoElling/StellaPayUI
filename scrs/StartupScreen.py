@@ -1,8 +1,6 @@
-import time
-
 from kivy import Logger
 from kivy.app import App
-from kivy.clock import Clock, mainthread
+from kivy.clock import Clock
 from kivy.lang import Builder
 from kivy.uix.screenmanager import Screen
 
@@ -35,21 +33,27 @@ class StartupScreen(Screen):
 
     # Called when we're waiting for the data to load
     def wait_for_data_to_load(self):
-        while not self.users_loaded or not self.products_loaded or not self.categories_loaded:
-            # As long as one of them is not loaded, wait for a bit
-            time.sleep(0.5)
 
-            if not self.users_loaded:
-                Logger.debug("StellaPayUI: Waiting for users to load..")
+        all_data_loaded = True
 
-            if not self.products_loaded:
-                Logger.debug("StellaPayUI: Waiting for products to load..")
+        if not self.users_loaded:
+            all_data_loaded = False
+            Logger.debug("StellaPayUI: Waiting for users to load..")
 
-            if not self.categories_loaded:
-                Logger.debug("StellaPayUI: Waiting for categories to load..")
+        if not self.products_loaded:
+            all_data_loaded = False
+            Logger.debug("StellaPayUI: Waiting for products to load..")
 
-        # After everything has been loaded.
-        self.ids.loading_text.text = "Data has loaded!"
+        if not self.categories_loaded:
+            all_data_loaded = False
+            Logger.debug("StellaPayUI: Waiting for categories to load..")
 
-        # Done loading, so call callback in one second.
-        Clock.schedule_once(self.finished_loading, 1)
+        if all_data_loaded:
+            # After everything has been loaded.
+            self.ids.loading_text.text = "Data has loaded!"
+
+            # Done loading, so call callback in one second.
+            Clock.schedule_once(self.finished_loading, 1)
+        else:
+            # Run the check again
+            App.get_running_app().loop.call_later(0.5, self.wait_for_data_to_load)

@@ -32,6 +32,7 @@ class SessionManager:
 
     # This method authenticates to the backend and makes the session ready for use
     def setup_session(self, on_finish=None):
+
         self.session = requests.Session()
 
         self.__setup_authentication()
@@ -40,7 +41,7 @@ class SessionManager:
         if on_finish is not None:
             on_finish()
 
-    def __setup_authentication(self):
+    def __setup_authentication(self) -> bool:
         # Convert authentication.json to json dict
 
         json_credentials = None
@@ -52,16 +53,23 @@ class SessionManager:
                 "StellaPayUI: You need to provide an 'authenticate.json' file for your backend credentials.")
             os._exit(1)
 
+        response = None
+
         # Attempt to log in
-        response = self.session.post(url=Connections.authenticate(), json=json_credentials, timeout=5)
+        try:
+            response = self.session.post(url=Connections.authenticate(), json=json_credentials, timeout=5)
+        except Exception:
+            Logger.critical(f"StellaPayUI: Something went wrong while setting up authentication to the backend server!")
+            return False
 
         # Break control flow if the user cannot identify himself
-        if not response.ok:
+        if response is None or (response and not response.ok):
             Logger.critical(
                 "StellaPayUI: Could not correctly authenticate, error code 8. Check your username and password")
-            os._exit(1)
+            return False
         else:
             Logger.debug("StellaPayUI: Authenticated correctly to backend.")
+            return True
 
     # Perform a get request to the given url. You can provide a callback to receive the result.
     def do_get_request(self, url: str) -> Optional[requests.Response]:
@@ -74,7 +82,9 @@ class SessionManager:
 
             self.session = requests.Session()
 
-            self.__setup_authentication()
+            # Could not reauthenticate to the server
+            if not self.__setup_authentication():
+                return None
 
             Logger.critical(f"StellaPayUI: Timeout on get request {e1}")
 
@@ -95,7 +105,9 @@ class SessionManager:
             print("Connection was reset, so reauthenticating...")
             self.session = requests.Session()
 
-            self.__setup_authentication()
+            # Could not reauthenticate to the server
+            if not self.__setup_authentication():
+                return None
 
             Logger.critical(f"StellaPayUI: Timeout on post request {e1}")
 

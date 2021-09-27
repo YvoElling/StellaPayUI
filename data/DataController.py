@@ -1,9 +1,16 @@
+from threading import Thread
+from time import sleep
 from typing import Callable, Optional, Dict, List
+
+import requests
+from kivy import Logger
+from kivy.app import App
 
 from data.OnlineDataStorage import OnlineDataStorage
 from ds.NFCCardInfo import NFCCardInfo
 from ds.Product import Product
 from ds.ShoppingCart import ShoppingCart
+from utils import Connections
 
 
 class DataController:
@@ -18,6 +25,14 @@ class DataController:
 
     def __init__(self):
         self.online_data_storage = OnlineDataStorage()
+        self.can_use_online_database = False
+
+    def start_connection_update_thread(self, url: str = None):
+        # Create a thread to update connection status
+        self.connection_update_thread = Thread(target=self.__update_connection_status__, args=(url,))
+
+        # Start the thread
+        self.connection_update_thread.start()
 
     def get_user_data(self, callback: Callable[[Optional[Dict[str, str]]], None] = None) -> None:
         """
@@ -34,8 +49,10 @@ class DataController:
         """
 
         # Pass the callback to the appropriate method.
-        # TODO: Determine whether we should use the online or offline storage
-        self.online_data_storage.get_user_data(callback=callback)
+        if self.running_in_online_mode():
+            self.online_data_storage.get_user_data(callback=callback)
+        else:
+            callback({})
 
     def get_product_data(self, callback: Callable[[Optional[Dict[str, List[Product]]]], None] = None) -> None:
         """
@@ -50,8 +67,10 @@ class DataController:
         :return: Nothing.
         """
         # Pass the callback to the appropriate method.
-        # TODO: Determine whether we should use the online or offline storage
-        self.online_data_storage.get_product_data(callback=callback)
+        if self.running_in_online_mode():
+            self.online_data_storage.get_product_data(callback=callback)
+        else:
+            callback({})
 
     def get_category_data(self, callback: Callable[[Optional[List[str]]], None] = None) -> None:
         """
@@ -66,8 +85,10 @@ class DataController:
         :return: Nothing.
         """
         # Pass the callback to the appropriate method.
-        # TODO: Determine whether we should use the online or offline storage
-        self.online_data_storage.get_category_data(callback=callback)
+        if self.running_in_online_mode():
+            self.online_data_storage.get_category_data(callback=callback)
+        else:
+            callback([])
 
     def get_card_info(self, card_id=None, callback: Callable[[Optional[NFCCardInfo]], None] = None) -> None:
         """
@@ -82,8 +103,10 @@ class DataController:
         :return: Nothing.
         """
         # Pass the callback to the appropriate method.
-        # TODO: Determine whether we should use the online or offline storage
-        self.online_data_storage.get_card_info(card_id=card_id, callback=callback)
+        if self.running_in_online_mode():
+            self.online_data_storage.get_card_info(card_id=card_id, callback=callback)
+        else:
+            callback(None)
 
     def register_card_info(self, card_id: str = None, email: str = None, callback: [[bool], None] = None) -> None:
         """
@@ -95,8 +118,10 @@ class DataController:
         :return: Nothing
         """
         # Pass the callback to the appropriate method.
-        # TODO: Determine whether we should use the online or offline storage
-        self.online_data_storage.register_card_info(card_id=card_id, email=email, callback=callback)
+        if self.running_in_online_mode():
+            self.online_data_storage.register_card_info(card_id=card_id, email=email, callback=callback)
+        else:
+            callback(False)
 
     def create_transactions(self, shopping_cart: ShoppingCart = None, callback: Callable[[bool], None] = None) -> None:
         """
@@ -109,5 +134,64 @@ class DataController:
         :return: Nothing
         """
         # Pass the callback to the appropriate method.
-        # TODO: Determine whether we should use the online or offline storage
-        self.online_data_storage.create_transactions(shopping_cart=shopping_cart, callback=callback)
+
+        if self.running_in_online_mode():
+            self.online_data_storage.create_transactions(shopping_cart=shopping_cart, callback=callback)
+        else:
+            callback(False)
+
+    @staticmethod
+    def __is_online_database_reachable__(url: str = Connections.hostname, timeout: int = 5) -> bool:
+        try:
+            req = requests.head(url, timeout=timeout)
+            # HTTP errors are not raised by default, this statement does that
+            req.raise_for_status()
+            return True
+        except requests.HTTPError as e:
+            print("Checking internet connection failed, status code {0}.".format(
+                e.response.status_code))
+        except requests.ConnectionError:
+            # print("No internet connection available.")
+            something_went_wrong = True
+        return False
+
+    def __update_connection_status__(self, url: str = None) -> None:
+        """
+        This method continuously checks whether a connection to the online database is possible. Note that this method
+        should be called only once and another thread as it will block periodically.
+        :return: Nothing
+        """
+        connection_status = DataController.__is_online_database_reachable__(url=url)
+
+        # If we could not connect before, but we did now, let's make sure to tell!
+        if not self.can_use_online_database and connection_status:
+            Logger.debug(f"StellaPayUI: Connected to online database (again)!")
+
+        # If we had connection, but lost it, let's tell that as well.
+        elif self.can_use_online_database and not connection_status:
+            Logger.warning(f"StellaPayUI: Lost connection to the online database!")
+
+        self.can_use_online_database = connection_status
+
+        App.get_running_app().loop.call_later(10, self.__update_connection_status__, url)
+
+    # Get whether we can connect to the backend or not
+    def running_in_online_mode(self) -> bool:
+        return self.can_use_online_database
+
+    # Run the setup procedure, i.e. check whether we can connect to remote server
+    # If we can connect, we start authentication, otherwise we run in offline mode.
+    # Make sure to run this method in a separate thread because it will be blocking.
+    def start_setup_procedure(self):
+        sleep(1)  # Wait one second to be able to connect to the remote backend
+
+        if self.running_in_online_mode():
+            Logger.critical(f"StellaPayUI: Running in ONLINE mode!")
+            # Start up authentication
+            App.get_running_app().loop.call_soon_threadsafe(App.get_running_app().session_manager.setup_session,
+                                                            App.get_running_app().done_loading_authentication)
+        else:
+            # We need to run in offline mode. Do not run authentication to the backend (as it will fail anyway).
+            Logger.critical(f"StellaPayUI: Running in OFFLINE mode!")
+
+            App.get_running_app().loop.call_soon_threadsafe(App.get_running_app().done_loading_authentication)
