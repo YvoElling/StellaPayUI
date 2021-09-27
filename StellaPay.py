@@ -123,9 +123,8 @@ class StellaPay(MDApp):
 
         Logger.debug("StellaPayUI: Start authentication to backend")
 
-        # self.loop.call_soon_threadsafe(self.session_manager.setup_session, self.done_loading_authentication)
-        self.loop.call_soon_threadsafe(self.data_controller.start_setup_procedure)
-        # self.session_manager.setup_session(self.done_loading_authentication)
+        # Start the setup procedure in a bit
+        self.loop.call_later(5, self.data_controller.start_setup_procedure)
 
         # Initialize defaultScreen (to create session cookies for API calls)
         ds_screen = DefaultScreen(name=Screens.DEFAULT_SCREEN.value)

@@ -1,5 +1,4 @@
 from threading import Thread
-from time import sleep
 from typing import Callable, Optional, Dict, List
 
 import requests
@@ -183,8 +182,6 @@ class DataController:
     # If we can connect, we start authentication, otherwise we run in offline mode.
     # Make sure to run this method in a separate thread because it will be blocking.
     def start_setup_procedure(self):
-        sleep(1)  # Wait one second to be able to connect to the remote backend
-
         if self.running_in_online_mode():
             Logger.critical(f"StellaPayUI: Running in ONLINE mode!")
             # Start up authentication
