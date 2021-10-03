@@ -1,11 +1,12 @@
 import threading
 import traceback
-from collections import OrderedDict, defaultdict
+from collections import OrderedDict
 from typing import Callable, Optional, List, Dict
 
 from kivy import Logger
 from kivy.app import App
 
+from data.CachedDataStorage import CachedDataStorage
 from data.DataStorage import DataStorage
 from ds.NFCCardInfo import NFCCardInfo
 from ds.Product import Product
@@ -15,11 +16,8 @@ from utils import Connections
 
 class OnlineDataStorage(DataStorage):
 
-    def __init__(self):
-        self.cached_user_data: OrderedDict[str, str] = OrderedDict()
-        self.cached_product_data: Dict[str, List[Product]] = defaultdict(list)
-        self.cached_category_data: List[str] = []
-        self.cached_card_info: Dict[str, NFCCardInfo] = {}  # Key: card_id, Value: NFCCardInfo
+    def __init__(self, cached_data_storage: CachedDataStorage):
+        self.cached_data_storage = cached_data_storage
 
     def get_user_data(self, callback: Callable[[Optional[Dict[str, str]]], None] = None) -> None:
 
@@ -27,10 +25,10 @@ class OnlineDataStorage(DataStorage):
         if callback is None:
             return
 
-        if len(self.cached_user_data) > 0:
+        if len(self.cached_data_storage.cached_user_data) > 0:
             Logger.debug("StellaPayUI: Using online (cached) user data")
             # Return cached user data
-            callback(self.cached_user_data)
+            callback(self.cached_data_storage.cached_user_data)
             return
 
         Logger.debug(f"StellaPayUI: Loading user mapping on thread {threading.current_thread().name}")
@@ -44,14 +42,15 @@ class OnlineDataStorage(DataStorage):
             # append json to list and sort the list
             for user in user_json:
                 # store all emails adressed in the sheet_menu
-                self.cached_user_data[user["name"]] = user["email"]
+                self.cached_data_storage.cached_user_data[user["name"]] = user["email"]
 
             # Sort items
-            self.cached_user_data = OrderedDict(sorted(self.cached_user_data.items()))
+            self.cached_data_storage.cached_user_data = OrderedDict(
+                sorted(self.cached_data_storage.cached_user_data.items()))
 
             Logger.debug("StellaPayUI: Loaded user data")
 
-            callback(self.cached_user_data)
+            callback(self.cached_data_storage.cached_user_data)
         else:
             Logger.critical("StellaPayUI: Error: users could not be fetched from the online database")
             callback(None)
@@ -61,14 +60,14 @@ class OnlineDataStorage(DataStorage):
         if callback is None:
             return
 
-        if len(self.cached_product_data) > 0:
+        if len(self.cached_data_storage.cached_product_data) > 0:
             Logger.debug("StellaPayUI: Using online (cached) product data")
             # Return cached product data
-            callback(self.cached_product_data)
+            callback(self.cached_data_storage.cached_product_data)
             return
 
         # Check if there is category data loaded. We need that, otherwise we can't load the products.
-        if len(self.cached_category_data) < 1:
+        if len(self.cached_data_storage.cached_category_data) < 1:
             Logger.warning("StellaPayUI: Cannot load product data because there is no (cached) category data!")
             callback(None)
             return
@@ -76,7 +75,7 @@ class OnlineDataStorage(DataStorage):
         Logger.debug(f"StellaPayUI: Loading product data on thread {threading.current_thread().name}")
 
         # Grab products from each category
-        for category in self.cached_category_data:
+        for category in self.cached_data_storage.cached_category_data:
             # Request products from each category
             request = Connections.get_products() + category
             product_data = App.get_running_app().session_manager.do_get_request(request)
@@ -92,15 +91,15 @@ class OnlineDataStorage(DataStorage):
                     # Only add the product to the list if the product must be shown
                     if product['shown']:
                         p = Product().create_from_json(product)
-                        self.cached_product_data[category].append(p)
+                        self.cached_data_storage.cached_product_data[category].append(p)
 
             else:
                 Logger.warning(f"StellaPayUI: Error: could not fetch products for category {category}.")
                 return
 
         # Make sure to call the callback with the proper data. (None if we have no data).
-        if len(self.cached_product_data) > 0:
-            callback(self.cached_product_data)
+        if len(self.cached_data_storage.cached_product_data) > 0:
+            callback(self.cached_data_storage.cached_product_data)
         else:
             callback(None)
 
@@ -109,10 +108,10 @@ class OnlineDataStorage(DataStorage):
         if callback is None:
             return
 
-        if len(self.cached_category_data) > 0:
+        if len(self.cached_data_storage.cached_category_data) > 0:
             Logger.debug("StellaPayUI: Using online (cached) category data")
             # Return cached category data
-            callback(self.cached_category_data)
+            callback(self.cached_data_storage.cached_category_data)
             return
 
         Logger.debug(f"StellaPayUI: Loading category data on thread {threading.current_thread().name}")
@@ -125,11 +124,11 @@ class OnlineDataStorage(DataStorage):
             categories = category_data.json()
 
             for category in categories:
-                self.cached_category_data.append(str(category['name']))
+                self.cached_data_storage.cached_category_data.append(str(category['name']))
 
             Logger.debug("StellaPayUI: Loaded category data")
 
-            callback(self.cached_category_data)
+            callback(self.cached_data_storage.cached_category_data)
         else:
             Logger.critical("StellaPayUI: Error: categories could not be fetched from the online database")
             callback(None)
@@ -141,9 +140,9 @@ class OnlineDataStorage(DataStorage):
             return
 
         # Check if we have cached card info already
-        if card_id in self.cached_card_info:
+        if card_id in self.cached_data_storage.cached_card_info:
             # Return the cached data
-            callback(self.cached_card_info[card_id])
+            callback(self.cached_data_storage.cached_card_info[card_id])
             return
 
         # Request data
@@ -165,7 +164,7 @@ class OnlineDataStorage(DataStorage):
             card_info = NFCCardInfo(card_id=card_id, owner_email=user_mail, owner_name=user_name)
 
             # Cache card info for later use
-            self.cached_card_info[card_id] = card_info
+            self.cached_data_storage.cached_card_info[card_id] = card_info
 
             # Let callback know it worked out!
             callback(card_info)

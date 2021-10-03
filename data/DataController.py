@@ -5,6 +5,8 @@ import requests
 from kivy import Logger
 from kivy.app import App
 
+from data.CachedDataStorage import CachedDataStorage
+from data.OfflineDataStorage import OfflineDataStorage
 from data.OnlineDataStorage import OnlineDataStorage
 from ds.NFCCardInfo import NFCCardInfo
 from ds.Product import Product
@@ -23,7 +25,9 @@ class DataController:
     """
 
     def __init__(self):
-        self.online_data_storage = OnlineDataStorage()
+        self.cached_data_storage = CachedDataStorage()
+        self.online_data_storage = OnlineDataStorage(self.cached_data_storage)
+        self.offline_data_storage = OfflineDataStorage(self.cached_data_storage)
         self.can_use_online_database = False
 
     def start_connection_update_thread(self, url: str = None):
@@ -51,7 +55,7 @@ class DataController:
         if self.running_in_online_mode():
             self.online_data_storage.get_user_data(callback=callback)
         else:
-            callback({})
+            self.offline_data_storage.get_user_data(callback=callback)
 
     def get_product_data(self, callback: Callable[[Optional[Dict[str, List[Product]]]], None] = None) -> None:
         """
@@ -69,7 +73,7 @@ class DataController:
         if self.running_in_online_mode():
             self.online_data_storage.get_product_data(callback=callback)
         else:
-            callback({})
+            self.offline_data_storage.get_product_data(callback=callback)
 
     def get_category_data(self, callback: Callable[[Optional[List[str]]], None] = None) -> None:
         """
@@ -87,7 +91,7 @@ class DataController:
         if self.running_in_online_mode():
             self.online_data_storage.get_category_data(callback=callback)
         else:
-            callback([])
+            self.offline_data_storage.get_category_data(callback=callback)
 
     def get_card_info(self, card_id=None, callback: Callable[[Optional[NFCCardInfo]], None] = None) -> None:
         """
@@ -105,9 +109,10 @@ class DataController:
         if self.running_in_online_mode():
             self.online_data_storage.get_card_info(card_id=card_id, callback=callback)
         else:
-            callback(None)
+            self.offline_data_storage.get_card_info(card_id=card_id, callback=callback)
 
-    def register_card_info(self, card_id: str = None, email: str = None, callback: [[bool], None] = None) -> None:
+    def register_card_info(self, card_id: str = None, email: str = None,
+                           callback: Callable[[bool], None] = None) -> None:
         """
         Register a new card for a particular user.
         :param card_id: Id of the card to register
@@ -120,7 +125,7 @@ class DataController:
         if self.running_in_online_mode():
             self.online_data_storage.register_card_info(card_id=card_id, email=email, callback=callback)
         else:
-            callback(False)
+            self.offline_data_storage.register_card_info(card_id=card_id, email=email, callback=callback)
 
     def create_transactions(self, shopping_cart: ShoppingCart = None, callback: Callable[[bool], None] = None) -> None:
         """
@@ -137,7 +142,7 @@ class DataController:
         if self.running_in_online_mode():
             self.online_data_storage.create_transactions(shopping_cart=shopping_cart, callback=callback)
         else:
-            callback(False)
+            self.offline_data_storage.create_transactions(shopping_cart=shopping_cart, callback=callback)
 
     @staticmethod
     def __is_online_database_reachable__(url: str = Connections.hostname, timeout: int = 5) -> bool:
@@ -174,6 +179,16 @@ class DataController:
 
         App.get_running_app().loop.call_later(10, self.__update_connection_status__, url)
 
+    def __update_offline_storage__(self) -> None:
+        """
+        This method runs in a different thread and runs the updater of the offline storage periodically.
+        """
+        # Update JSON file with what's currently in the cache.
+        self.offline_data_storage.update_file_from_cache()
+
+        # Make sure to run another call in a few minutes again
+        App.get_running_app().loop.call_later(5 * 60, self.__update_offline_storage__)
+
     # Get whether we can connect to the backend or not
     def running_in_online_mode(self) -> bool:
         return self.can_use_online_database
@@ -192,3 +207,6 @@ class DataController:
             Logger.critical(f"StellaPayUI: Running in OFFLINE mode!")
 
             App.get_running_app().loop.call_soon_threadsafe(App.get_running_app().done_loading_authentication)
+
+        # Thread to keep updating the offline storage files with data from the caching manager
+        App.get_running_app().loop.call_later(60, self.__update_offline_storage__)
