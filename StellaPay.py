@@ -58,7 +58,7 @@ class StellaPay(MDApp):
         self.user_mapping: Dict[str, str] = {}
 
         # Create a data controller that is used to access data of users and products.
-        self.data_controller = DataController()
+        self.data_controller: DataController = DataController()
 
         StellaPay.build_version = subprocess.check_output(['git', 'rev-parse', '--short', 'HEAD']).strip()
         Logger.debug(f"StellaPayUI: Running build {self.build_version}")

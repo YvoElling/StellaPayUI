@@ -14,6 +14,7 @@ from kivymd.uix.dialog import MDDialog
 
 from PythonNFCReader.CardListener import CardListener
 from PythonNFCReader.NFCReader import CardConnectionManager
+from data.ConnectionListener import ConnectionListener
 from ds.NFCCardInfo import NFCCardInfo
 from utils.Screens import Screens
 from ux.SelectUserItem import SelectUserItem
@@ -28,12 +29,30 @@ class DefaultScreen(Screen):
         def card_is_presented(self, uid=None) -> None:
             self.default_screen.nfc_card_presented(uid)
 
+    class ConnectionChangeListener(ConnectionListener):
+        # Listener that waits for input events about the change in connection status
+
+        def __init__(self, default_screen: "DefaultScreen"):
+            self.default_screen = default_screen
+
+        def on_connection_change(self, connection_status: bool):
+            # We received an event that indicates that the connection status has changed!
+
+            current_text = self.default_screen.ids.copyright.text
+
+            # Set new text depending on connection status
+            if connection_status:
+                self.default_screen.ids.copyright.text = current_text.replace("offline mode", "online mode")
+            else:
+                self.default_screen.ids.copyright.text = current_text.replace("online mode", "offline mode")
+
     def __init__(self, **kwargs):
         # Call to super (Screen class)
 
         super(DefaultScreen, self).__init__(**kwargs)
 
         self.nfc_listener = DefaultScreen.NFCListener(self)
+        self.connection_change_listener = DefaultScreen.ConnectionChangeListener(self)
 
         # Create a session to maintain cookie data for this instance
         self.event_loop: AbstractEventLoop = App.get_running_app().loop
@@ -47,6 +66,13 @@ class DefaultScreen(Screen):
         # Add extra information to footer text
         self.ids.copyright.text = self.ids.copyright.text.replace("%year%", str(datetime.datetime.now().year)) \
             .replace("%date%", str(datetime.datetime.now().strftime("%Y/%m/%d @ %H:%M:%S")))
+
+        # Add whether we are running in offline or online mode
+        self.ids.copyright.text = self.ids.copyright.text.replace("%connection_mode%",
+                                                                  "online mode" if App.get_running_app().data_controller.running_in_online_mode() else "offline mode")
+
+        # Register listener
+        App.get_running_app().data_controller.register_connection_listener(self.connection_change_listener)
 
     def register_card_listener(self, card_connection_manager: "CardConnectionManager"):
         card_connection_manager.register_listener(self.nfc_listener)

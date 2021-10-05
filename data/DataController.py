@@ -6,6 +6,7 @@ from kivy import Logger
 from kivy.app import App
 
 from data.CachedDataStorage import CachedDataStorage
+from data.ConnectionListener import ConnectionListener
 from data.OfflineDataStorage import OfflineDataStorage
 from data.OnlineDataStorage import OnlineDataStorage
 from ds.NFCCardInfo import NFCCardInfo
@@ -29,6 +30,9 @@ class DataController:
         self.online_data_storage = OnlineDataStorage(self.cached_data_storage)
         self.offline_data_storage = OfflineDataStorage(self.cached_data_storage)
         self.can_use_online_database = False
+
+        # Listeners that want to know about a change in connection
+        self.on_connection_change_listeners: List[ConnectionListener] = []
 
     def start_connection_update_thread(self, url: str = None):
         # Create a thread to update connection status
@@ -164,7 +168,6 @@ class DataController:
         """
         This method continuously checks whether a connection to the online database is possible. Note that this method
         should be called only once and another thread as it will block periodically.
-        :return: Nothing
         """
         connection_status = DataController.__is_online_database_reachable__(url=url)
 
@@ -172,9 +175,17 @@ class DataController:
         if not self.can_use_online_database and connection_status:
             Logger.debug(f"StellaPayUI: Connected to online database (again)!")
 
+            # Notify all listeners
+            for listener in self.on_connection_change_listeners:
+                listener.on_connection_change(True)
+
         # If we had connection, but lost it, let's tell that as well.
         elif self.can_use_online_database and not connection_status:
             Logger.warning(f"StellaPayUI: Lost connection to the online database!")
+
+            # Notify all listeners
+            for listener in self.on_connection_change_listeners:
+                listener.on_connection_change(False)
 
         self.can_use_online_database = connection_status
 
@@ -212,3 +223,10 @@ class DataController:
 
         # Thread to keep updating the offline storage files with data from the caching manager
         App.get_running_app().loop.call_later(60, self.__update_offline_storage__)
+
+    def register_connection_listener(self, connection_listener: ConnectionListener) -> None:
+        """
+        Register a listener that will be notified when a connection to the backend could be made, or was lost.
+        :param connection_listener: Listener to be notified
+        """
+        self.on_connection_change_listeners.append(connection_listener)
