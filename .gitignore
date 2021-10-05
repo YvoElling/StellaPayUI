@@ -139,3 +139,4 @@ stellapay.ini
 # Ignore database
 *.db
 /cached_data.json
+/pending_data.json

@@ -172,7 +172,8 @@ class OnlineDataStorage(DataStorage):
             # User was not found, make sure to call the callback!
             callback(None)
 
-    def register_card_info(self, card_id: str = None, email: str = None, callback: [[bool], None] = None) -> None:
+    def register_card_info(self, card_id: str = None, email: str = None, owner: str = None,
+                           callback: [[bool], None] = None) -> None:
         # Check if we have a card id and email
         if card_id is None or email is None:
             if callback is not None:
@@ -201,7 +202,7 @@ class OnlineDataStorage(DataStorage):
             return
         else:
             # User could not be added succesfully, give error 2.
-            Logger.warning(f"StellaPayUI: Could not register new card with id {card_id} for {email}, error: "
+            Logger.warning(f"StellaPayUI: Could not register new card with id {card_id} for {owner}, error: "
                            f"{request.text}")
 
             if callback is not None:

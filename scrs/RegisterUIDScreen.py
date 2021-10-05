@@ -93,7 +93,7 @@ class RegisterUIDScreen(Screen):
 
         # Try to register the card.
         self.event_loop.call_soon_threadsafe(App.get_running_app().data_controller.register_card_info, self.nfc_id,
-                                             selected_user_email, handle_card_registration)
+                                             selected_user_email, selected_user_name, handle_card_registration)
 
     #
     # Whenever the user wants to show the list of users to register the card to.

@@ -111,21 +111,22 @@ class DataController:
         else:
             self.offline_data_storage.get_card_info(card_id=card_id, callback=callback)
 
-    def register_card_info(self, card_id: str = None, email: str = None,
+    def register_card_info(self, card_id: str = None, email: str = None, owner: str = None,
                            callback: Callable[[bool], None] = None) -> None:
         """
         Register a new card for a particular user.
         :param card_id: Id of the card to register
         :param email: E-mail address of the user that you want to match this card with.
+        :param owner: Name of the owner of the card
         :param callback: Method called when this method is finished. The callback will have one argument (boolean)
             that indicates whether the card has been registered (true) or not (false).
         :return: Nothing
         """
         # Pass the callback to the appropriate method.
         if self.running_in_online_mode():
-            self.online_data_storage.register_card_info(card_id=card_id, email=email, callback=callback)
+            self.online_data_storage.register_card_info(card_id=card_id, email=email, owner=owner, callback=callback)
         else:
-            self.offline_data_storage.register_card_info(card_id=card_id, email=email, callback=callback)
+            self.offline_data_storage.register_card_info(card_id=card_id, email=email, owner=owner, callback=callback)
 
     def create_transactions(self, shopping_cart: ShoppingCart = None, callback: Callable[[bool], None] = None) -> None:
         """
@@ -182,6 +183,7 @@ class DataController:
     def __update_offline_storage__(self) -> None:
         """
         This method runs in a different thread and runs the updater of the offline storage periodically.
+        It also makes sure to write any pending data to the backend if there is a connection
         """
         # Update JSON file with what's currently in the cache.
         self.offline_data_storage.update_file_from_cache()

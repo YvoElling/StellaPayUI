@@ -68,11 +68,13 @@ class DataStorage:
         """
         raise NotImplementedError
 
-    def register_card_info(self, card_id: str = None, email: str = None, callback: [[bool], None] = None) -> None:
+    def register_card_info(self, card_id: str = None, email: str = None, owner: str = None,
+                           callback: [[bool], None] = None) -> None:
         """
         Register a new card for a particular user.
         :param card_id: Id of the card that you want to register
         :param email: E-mail address of the user that you want to match this card with.
+        :param owner: Name of the owner of the card
         :param callback: Method called when this method is finished. The callback will have one argument (boolean)
             that indicates whether the card has been registered (true) or not (false).
         :return: Nothing
