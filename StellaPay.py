@@ -17,6 +17,7 @@ from kivymd.app import MDApp
 from PythonNFCReader.NFCReader import CardConnectionManager
 from data.DataController import DataController
 from db.DatabaseManager import DatabaseManager
+from ds.NFCCardInfo import NFCCardInfo
 from scrs.ConfirmedScreen import ConfirmedScreen
 from scrs.CreditsScreen import CreditsScreen
 from scrs.DefaultScreen import DefaultScreen
@@ -163,6 +164,11 @@ class StellaPay(MDApp):
 
         # Callback for loaded user data
         def handle_user_data(user_data):
+            if user_data is None:
+                Logger.critical("StellaPayUI: Could not retrieve users from the server!")
+                sys.exit(1)
+                return
+
             Logger.info(f"StellaPayUI: Loaded {len(user_data)} users in {time.time() * 1000 - start} ms.")
 
             # Store the user mapping so other screens can use it.
@@ -193,6 +199,13 @@ class StellaPay(MDApp):
 
         # Get category data (and then retrieve product data)
         self.data_controller.get_category_data(callback=handle_category_data)
+
+        # Callback to handle the card info
+        def handle_card_info(card_info: NFCCardInfo):
+            Logger.info(f"StellaPayUI: Loaded card info.")
+
+        # Get card info (on separate thread)
+        self.data_controller.get_card_info("test", callback=handle_card_info)
 
     def loaded_all_users_and_products(self):
         # This method is called whenever all users, categories and products are loaded.
