@@ -63,7 +63,7 @@ class SessionManager:
             return False
 
         # Break control flow if the user cannot identify himself
-        if response is None or (response and not response.ok):
+        if response is None or (response is not None and not response.ok):
             Logger.critical(
                 "StellaPayUI: Could not correctly authenticate, error code 8. Check your username and password")
             return False
