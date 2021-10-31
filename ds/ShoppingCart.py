@@ -107,3 +107,47 @@ class ShoppingCart:
             })
 
         return json_output
+
+    @staticmethod
+    def from_json(json_data) -> "ShoppingCart":
+        shopping_cart = ShoppingCart()
+
+        # If there is no JSON data, return an empty shopping car
+        if json_data is None:
+            return shopping_cart
+
+        # If there are no products, we return an empty card again
+        if "products" not in json_data:
+            return shopping_cart
+
+        for product in json_data["products"]:
+
+            if product is None:
+                continue
+
+            email_address = product.get("email", None)
+            product_name = product.get("product_name", None)
+            amount = product.get("amount", 0)
+
+            # This means it is not a valid product
+            if email_address is None or product_name is None:
+                continue
+
+            # We don't care about products that have not at least one item
+            if amount < 1:
+                continue
+
+            # Find the names that match this email-address
+            names_matching_email = [name for name, email in App.get_running_app().user_mapping.items() if
+                                    email == email_address]
+
+            # We don't know who made the purchase
+            if len(names_matching_email) < 1:
+                continue
+
+            product_to_register = Purchase(names_matching_email[0], product_name, amount)
+
+            # Add product to caart
+            shopping_cart.add_to_cart(product_to_register)
+
+        return shopping_cart

@@ -41,7 +41,7 @@ class OnlineDataStorage(DataStorage):
 
             # append json to list and sort the list
             for user in user_json:
-                # store all emails adressed in the sheet_menu
+                # store all emails addressed in the sheet_menu
                 self.cached_data_storage.cached_user_data[user["name"]] = user["email"]
 
             # Sort items
@@ -145,31 +145,35 @@ class OnlineDataStorage(DataStorage):
             callback(self.cached_data_storage.cached_card_info[card_id])
             return
 
-        # Request data
-        response = App.get_running_app().session_manager.do_get_request(url=Connections.request_user_info() + card_id)
+        Logger.debug(f"StellaPayUI: Loading card data on thread {threading.current_thread().name}")
 
-        Logger.debug(f"StellaPayUI: Loading data of card {card_id} data on thread {threading.current_thread().name}")
+        # Do request to the correct URL
+        cards_data = App.get_running_app().session_manager.do_get_request(url=Connections.get_all_cards())
 
-        # Check response code to validate whether this user existed already. If so, proceed
-        # to the productScreen, else proceed to the registerUID screen
-        if response and response.ok:
-            # store result in JSON
-            card_data = response.json()
+        # Check if we have valid card data
+        if cards_data and cards_data.ok:
+            # convert to json
+            cards = cards_data.json()
 
-            # store user-mail for payment confirmation later
-            user_mail = card_data["owner"]["email"]
-            user_name = card_data["owner"]["name"]
+            # Loop over every card and store the information in the cache
+            for card in cards:
+                # store user-mail for payment confirmation later
+                user_mail = card["owner"]["email"]
+                user_name = card["owner"]["name"]
+                card_data_id = card["card_id"]
 
-            # Create card info object
-            card_info = NFCCardInfo(card_id=card_id, owner_email=user_mail, owner_name=user_name)
+                # Create card info object
+                card_info = NFCCardInfo(card_id=card_data_id, owner_email=user_mail, owner_name=user_name)
 
-            # Cache card info for later use
-            self.cached_data_storage.cached_card_info[card_id] = card_info
+                # Cache card info for later use
+                self.cached_data_storage.cached_card_info[card_data_id] = card_info
 
-            # Let callback know it worked out!
-            callback(card_info)
+            Logger.debug("StellaPayUI: Loaded cards data")
+
+            # Return the loaded card data to the user
+            callback(self.cached_data_storage.cached_card_info[card_id])
         else:
-            # User was not found, make sure to call the callback!
+            Logger.critical("StellaPayUI: Error: cards could not be fetched from the online database")
             callback(None)
 
     def register_card_info(self, card_id: str = None, email: str = None, owner: str = None,

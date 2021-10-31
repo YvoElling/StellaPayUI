@@ -1,3 +1,4 @@
+import json
 from threading import Thread
 from typing import Callable, Optional, Dict, List
 
@@ -199,8 +200,94 @@ class DataController:
         # Update JSON file with what's currently in the cache.
         self.offline_data_storage.update_file_from_cache()
 
+        # After updating the offline storage, let's check if we can send pending data
+        self.__send_pending_data_to_online_server__()
+
         # Make sure to run another call in a few minutes again
         App.get_running_app().loop.call_later(5 * 60, self.__update_offline_storage__)
+
+    def __send_pending_data_to_online_server__(self) -> None:
+        """
+        This method will look in the pending data file to see if there are entries that need to registered at the online
+        server. If that is the case, the entries will be registered and subsequently removed from the pending data.
+
+        This mechanism makes sure that any transactions that were performed when the device was offline are still
+        transmitted to the server eventually.
+        """
+
+        # Check if we have an internet connection
+        if not self.can_use_online_database:
+            return
+
+        Logger.debug(f"StellaPayUI: Searching for pending transactions to register at the online server.")
+
+        # JSON data that were going to write to the pending data.
+        json_data_to_write = None
+
+        with open(OfflineDataStorage.PENDING_DATA_FILE_NAME, "r") as pending_data_file:
+            pending_data_json = json.load(pending_data_file)  # Load cached data into memory
+            Logger.debug(f"StellaPayUI: Loaded pending data file")
+
+            # If we cannot read the file, let's stop right here.
+            if pending_data_json is None:
+                return
+
+            # We have transaction data to send
+            if "transactions" in pending_data_json:
+                # Create json object that mimics the format we need to be able to read it as a shopping cart
+                adjusted_json_data = {"products": []}
+
+                # Add the transactions to the products
+                adjusted_json_data["products"].extend(pending_data_json["transactions"])
+
+                # Make a shopping cart from the products
+                shopping_cart = ShoppingCart.from_json(adjusted_json_data)
+
+                # If we have a valid shopping cart and it's not empty
+                if shopping_cart is not None and len(shopping_cart.basket) > 0:
+                    # We send it to the online server
+                    self.create_transactions(shopping_cart, lambda success: Logger.debug(
+                        f"StellaPayUI: Registered {len(shopping_cart.basket)} new transactions from pending data: {success}"))
+
+            # Remove all transactions from the pending data
+            pending_data_json["transactions"] = []
+
+            # Store which card_ids were successfully registered
+            cards_registered_successfully = []
+
+            # We have card data to send
+            if "cards" in pending_data_json:
+                for card_id in pending_data_json["cards"]:
+                    card_info = pending_data_json["cards"][card_id]
+
+                    # Ignore this invalid card
+                    if card_info is None:
+                        continue
+
+                    # Ignore a card that has no email attached to it
+                    if "email" not in card_info:
+                        continue
+
+                    # Register card
+                    self.register_card_info(card_id=card_id, email=card_info["email"], owner=None,
+                                            callback=lambda success: cards_registered_successfully.append(
+                                                card_id if success else None))
+
+            # Determine which cards were validly registered (and hence can be removed from the pending data)
+            valid_cards = list(filter((lambda card: card is not None), cards_registered_successfully))
+
+            # Remove cards that were successfully added.
+            for valid_card_id in valid_cards:
+                pending_data_json["cards"].pop(valid_card_id, None)
+
+            Logger.debug(f"StellaPayUI: Registered {len(valid_cards)} cards from pending data")
+
+            # Make sure to copy the pending data to a new JSON object so we can use it outside the 'with' statement.
+            json_data_to_write = pending_data_json
+
+        # Finally write the new JSON data to the pending data file
+        with open(OfflineDataStorage.PENDING_DATA_FILE_NAME, 'w') as data_file:
+            json.dump(json_data_to_write, data_file, indent=4)
 
     # Get whether we can connect to the backend or not
     def running_in_online_mode(self) -> bool:
