@@ -6,7 +6,7 @@ asn1crypto==0.24.0
 atomicwrites==1.4.0
 attrs==19.3.0
 awscli==1.18.90
-Babel==2.8.0
+Babel==2.9.1
 backcall==0.1.0
 beautifulsoup4==4.6.0
 behave==1.2.6
