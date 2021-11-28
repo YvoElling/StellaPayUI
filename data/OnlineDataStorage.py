@@ -171,7 +171,7 @@ class OnlineDataStorage(DataStorage):
             Logger.debug("StellaPayUI: Loaded cards data")
 
             # Return the loaded card data to the user
-            callback(self.cached_data_storage.cached_card_info[card_id])
+            callback(self.cached_data_storage.cached_card_info.get(card_id, None))
         else:
             Logger.critical("StellaPayUI: Error: cards could not be fetched from the online database")
             callback(None)
