@@ -59,6 +59,7 @@ class DefaultScreen(Screen):
 
         # Store the dialog that we use to select an active user
         self.user_select_dialog: MDDialog = None
+        self.user_select_dialog_opened: bool = False
 
         # Store a list of users we want to be able to select
         self.users_to_select = []
@@ -89,8 +90,10 @@ class DefaultScreen(Screen):
         self.event_loop.call_soon_threadsafe(self.load_user_data)
 
     def to_credits(self):
-        self.manager.transition = SlideTransition(direction='left')
-        self.manager.current = Screens.CREDITS_SCREEN.value
+        # Only show credits when user select dialog is not showing
+        if not self.user_select_dialog_opened:
+            self.manager.transition = SlideTransition(direction='left')
+            self.manager.current = Screens.CREDITS_SCREEN.value
 
     #
     # gets called when the 'NFC kaart vergeten button' is pressed
@@ -102,11 +105,16 @@ class DefaultScreen(Screen):
             # If not, create a dialog once.
             self.user_select_dialog = MDDialog(
                 type="confirmation",
-                items=self.users_to_select
+                items=self.users_to_select,
+                on_dismiss=self.on_user_select_dialog_close,
             )
 
         # Open the dialog once it's been created.
         self.user_select_dialog.open()
+        self.user_select_dialog_opened = True
+
+    def on_user_select_dialog_close(self, event):
+        self.user_select_dialog_opened = False
 
     def load_user_data(self, callback: Optional[Callable] = None):
         def callback_handle(user_data: typing.Dict[str, str]):
@@ -136,7 +144,8 @@ class DefaultScreen(Screen):
             # Create user dialog so we open it later.
             self.user_select_dialog = MDDialog(
                 type="confirmation",
-                items=self.users_to_select
+                items=self.users_to_select,
+                on_dismiss=self.on_user_select_dialog_close,
             )
 
     # An active user is selected via the dialog
