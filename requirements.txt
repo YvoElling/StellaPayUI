@@ -113,7 +113,7 @@ pep517==0.6.0
 pexpect==4.8.0
 piccata==2.0.1
 pickleshare==0.7.5
-Pillow==8.3.2
+Pillow==9.0.0
 pluggy==0.13.1
 ply==3.11
 prometheus-client==0.7.1
