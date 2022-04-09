@@ -201,6 +201,9 @@ class OfflineDataStorage(DataStorage):
                 callback(False)
             return
 
+        # Make sure to reload pending data (if it has been updated in the mean time)
+        self.reload_pending_data()
+
         # Check if we have a cards section. If not, create it.
         if "cards" not in self.pending_json_data:
             self.pending_json_data["cards"] = {}
@@ -251,6 +254,9 @@ class OfflineDataStorage(DataStorage):
             if callback is not None:
                 callback(False)
             return
+
+        # Make sure to reload pending data (if it has been updated in the mean time)
+        self.reload_pending_data()
 
         # Check if we have a transactions section. If not, create it.
         if "transactions" not in self.pending_json_data:
@@ -385,3 +391,6 @@ class OfflineDataStorage(DataStorage):
 
         # Return empty dict since the file contains no data
         return {}
+
+    def reload_pending_data(self):
+        self.pending_json_data = self.__get_json_data_from_file__(OfflineDataStorage.PENDING_DATA_FILE_NAME)
