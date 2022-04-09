@@ -1,9 +1,10 @@
 import time
+from functools import partial
 from typing import List
 
 from kivy import Logger
 from kivy.app import App
-from kivy.clock import mainthread
+from kivy.clock import mainthread, Clock
 from kivy.lang import Builder
 from kivymd.uix.button import MDFlatButton, MDRaisedButton
 from kivymd.uix.dialog import MDDialog
@@ -45,6 +46,8 @@ class ItemListUX(TwoLineAvatarIconListItem):
 
         # Disable ripple effect
         self.ripple_scale = 0
+
+        self.eligible_users_to_select = None
 
         # Create dialog if it wasn't created before.
         if price is not None and shopping_cart is not None:
@@ -100,40 +103,11 @@ class ItemListUX(TwoLineAvatarIconListItem):
 
     @mainthread
     def load_dialog_screen(self):
-        start_time = time.time()
-
         if ItemListUX.purchaser_list_dialog is None:
-
             if len(ItemListUX.purchaser_list_children) < 1:
-                for user_name, user_email in App.get_running_app().user_mapping.items():
-                    ItemListUX.purchaser_list_children.append(
-                        PurchaserItem(text=user_name, secondary_text=" ", secondary_theme_text_color="Custom",
-                                      secondary_text_color=[0.509, 0.509, 0.509, 1])
-                    )
+                self.add_users_to_dialog(0)
 
-            Logger.debug(f"Creating purchasing items took {time.time() - start_time} seconds")
 
-            ItemListUX.purchaser_list_dialog = SelectPurchaserDialog(
-                shopping_cart=self.shopping_cart,
-                type="confirmation",
-                title="Selecteer hoeveelheid voor anderen",
-                height="500px",
-                width="720px",
-                items=ItemListUX.purchaser_list_children,
-                buttons=[
-                    MDRaisedButton(
-                        text="Selecteer",
-                        on_release=self.on_ok
-                    ),
-                ],
-            )
-
-            Logger.debug(f"Creating additional itemlistux took {time.time() - start_time} seconds")
-
-            # Make sure to provide the purchaser item class with a reference to the dialog we will open
-            PurchaserItem.purchaser_dialog = ItemListUX.purchaser_list_dialog
-
-            Logger.debug(f"Loaded dialog screen of item-ux view in {time.time() - start_time} seconds")
 
     # Because we are using a single dialog, we need to refresh its contents when we open and close it.
     # This method does exactly that.
@@ -156,3 +130,44 @@ class ItemListUX(TwoLineAvatarIconListItem):
             # If we did not find a match, set the current count to zero.
             if not is_in_shopping_cart:
                 purchaser_item.set_item_count(0)
+
+    def add_users_to_dialog(self, _):
+
+        if self.eligible_users_to_select is None:
+            self.eligible_users_to_select = list(App.get_running_app().user_mapping.keys())
+
+        if len(self.eligible_users_to_select) > 0:
+            ItemListUX.purchaser_list_children.append(
+                PurchaserItem(text=self.eligible_users_to_select.pop(), secondary_text=" ", secondary_theme_text_color="Custom",
+                              secondary_text_color=[0.509, 0.509, 0.509, 1])
+            )
+
+            Clock.schedule_once(self.add_users_to_dialog, 0)
+            return
+        else:
+            Logger.debug(f"Finished creating purchaser objects")
+            # All users are loaded
+
+            ItemListUX.purchaser_list_dialog = SelectPurchaserDialog(
+                shopping_cart=self.shopping_cart,
+                type="confirmation",
+                title="Selecteer hoeveelheid voor anderen",
+                height="500px",
+                width="720px",
+                items=ItemListUX.purchaser_list_children,
+                buttons=[
+                    MDRaisedButton(
+                        text="Selecteer",
+                        on_release=self.on_ok
+                    ),
+                ],
+            )
+
+            # Logger.debug(f"Creating additional itemlistux took {time.time() - start_time} seconds")
+
+            # Make sure to provide the purchaser item class with a reference to the dialog we will open
+            PurchaserItem.purchaser_dialog = ItemListUX.purchaser_list_dialog
+
+            # Logger.debug(f"Loaded dialog screen of item-ux view in {time.time() - start_time} seconds")
+
+

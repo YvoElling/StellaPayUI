@@ -11,7 +11,6 @@ class PurchaserItem(OneLineAvatarIconListItem):
 
     # Set local member variables and forwards **kwargs to super class
     def __init__(self, **kwargs):
-        start_time = time.time()
         super(PurchaserItem, self).__init__(**kwargs)
 
         # Disable ripple effect
