@@ -15,6 +15,7 @@ from kivy.lang import Builder
 from kivy.uix.screenmanager import ScreenManager
 from kivymd.app import MDApp
 
+import utils.ConfigurationOptions as config
 from PythonNFCReader.NFCReader import CardConnectionManager
 from data.DataController import DataController
 from db.DatabaseManager import DatabaseManager
@@ -27,7 +28,7 @@ from scrs.ProfileScreen import ProfileScreen
 from scrs.RegisterUIDScreen import RegisterUIDScreen
 from scrs.StartupScreen import StartupScreen
 from scrs.WelcomeScreen import WelcomeScreen
-from utils import Connections, ConfigurationOptions
+from utils import Connections
 from utils.Screens import Screens
 from utils.SessionManager import SessionManager
 
@@ -83,9 +84,9 @@ class StellaPay(MDApp):
         # Define the config type (so IDE understand the type)
         self.config: ConfigParser
 
-        configuration_option: ConfigurationOptions.ConfigurationOption
+        configuration_option: config.ConfigurationOption
         # Set default config options (if they do not exist)
-        for configuration_option in ConfigurationOptions.ConfigurationOption:
+        for configuration_option in config.ConfigurationOption:
             # Create the section if it does not exist yet.
             self.config.adddefaultsection(configuration_option.section_name)
             # Set the configuration option
@@ -96,17 +97,16 @@ class StellaPay(MDApp):
         self.config.write()
 
         # Set size of the window
-        Window.size = (int(self.config.get('device', 'width')), int(self.config.get('device', 'height')))
-        Logger.info(
-            f"StellaPayUI: Window height {self.config.get('device', 'height')} and width {self.config.get('device', 'width')}.")
+        window_width = int(self.get_config_option(config.ConfigurationOption.DEVICE_WIDTH))
+        window_height = int(self.get_config_option(config.ConfigurationOption.DEVICE_HEIGHT))
+        Window.size = (window_width, window_height)
+        Logger.info(f"StellaPayUI: Window height {window_height} and width {window_width}.")
 
         # Don't run in borderless mode when we're running on Linux (it doesn't seem to work so well).
         Window.borderless = False if sys.platform.startswith("linux") else True
 
-        hostname = None
-
         try:
-            hostname = self.config.get('server', 'hostname')
+            hostname = self.get_config_option(config.ConfigurationOption.HOSTNAME_OF_BACKEND)
 
             Logger.info(f"StellaPayUI: Hostname for server: {hostname}")
 
@@ -115,17 +115,15 @@ class StellaPay(MDApp):
             Logger.warning("StellaPayUI: Using default hostname, since none was provided")
             pass
 
-        if self.config.get('device', 'fullscreen') == 'True':
+        if bool(self.get_config_option(config.ConfigurationOption.DEVICE_SHOW_FULLSCREEN)):
             Logger.info(f"StellaPayUI: Running in fullscreen mode!")
             Window.fullscreen = True
         else:
             Logger.info(f"StellaPayUI: Running in windowed mode!")
             Window.fullscreen = False
 
-        if self.config.get('device', 'show_cursor') == 'True':
-            Window.show_cursor = True
-        else:
-            Window.show_cursor = False
+        # Show the cursor if that's requested in the config file
+        Window.show_cursor = bool(self.get_config_option(config.ConfigurationOption.DEVICE_SHOW_CURSOR))
 
         # Start thread that keeps track of connection status to the server.
         self.data_controller.start_connection_update_thread(Connections.connection_status())
@@ -142,7 +140,7 @@ class StellaPay(MDApp):
 
         # Start the setup procedure in a bit
         self.loop.call_later(
-            int(self.get_config_option(ConfigurationOptions.ConfigurationOption.TIME_TO_WAIT_BEFORE_AUTHENTICATING)),
+            int(self.get_config_option(config.ConfigurationOption.TIME_TO_WAIT_BEFORE_AUTHENTICATING)),
             self.data_controller.start_setup_procedure)
 
         # Initialize defaultScreen (to create session cookies for API calls)
@@ -266,7 +264,7 @@ class StellaPay(MDApp):
 
         return self.config.getdefault(section_name, config_option_name, default_value)
 
-    def get_config_option(self, config_option: ConfigurationOptions.ConfigurationOption):
+    def get_config_option(self, config_option: config.ConfigurationOption):
         if config_option is None:
             return None
         return self.__get_config_option(config_option.section_name, config_option.config_name,
