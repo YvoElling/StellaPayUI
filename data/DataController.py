@@ -236,8 +236,8 @@ class DataController:
 
         with open(OfflineDataStorage.PENDING_DATA_FILE_NAME, "r") as pending_data_file:
             try:
+                Logger.debug(f"StellaPayUI: Loaded pending transactions and cards")
                 pending_data_json = json.load(pending_data_file)  # Load cached data into memory
-                Logger.debug(f"StellaPayUI: Loaded pending data file")
             except JSONDecodeError:
                 Logger.critical(f"StellaPayUI: Could not read JSON from {OfflineDataStorage.PENDING_DATA_FILE_NAME}")
                 pending_data_json = None
@@ -246,8 +246,11 @@ class DataController:
             if pending_data_json is None:
                 return
 
+            registered_pending_transactions_successfully = False
+
             # We have transaction data to send
             if "transactions" in pending_data_json:
+
                 # Create json object that mimics the format we need to be able to read it as a shopping cart
                 adjusted_json_data = {"products": []}
 
@@ -259,12 +262,31 @@ class DataController:
 
                 # If we have a valid shopping cart and it's not empty
                 if shopping_cart is not None and len(shopping_cart.basket) > 0:
-                    # We send it to the online server
-                    self.create_transactions(shopping_cart, lambda success: Logger.debug(
-                        f"StellaPayUI: Registered {len(shopping_cart.basket)} new transactions from pending data: {success}"))
 
-            # Remove all transactions from the pending data
-            pending_data_json["transactions"] = []
+                    def handle_transactions_callback(success: bool):
+                        # We want to alter the variable outside of this function, so we define it to be non-local
+                        nonlocal registered_pending_transactions_successfully
+                        registered_pending_transactions_successfully = success
+
+                    # We send it to the online server and handle the callback
+                    self.create_transactions(shopping_cart, handle_transactions_callback)
+
+                    # Check result
+                    if registered_pending_transactions_successfully:
+                        Logger.debug(
+                            f"StellaPayUI: Registered {len(shopping_cart.basket)} new transactions from pending transactions")
+                    else:
+                        Logger.debug(f"StellaPayUI: Failed to register transactions from pending transactions")
+
+                else:
+                    Logger.debug(f"StellaPayUI: There were no pending transactions.")
+            else:
+                Logger.debug(f"StellaPayUI: There were no pending transactions.")
+
+            # Only reset the pending data if the transactions were transmitted successfully to the backend
+            if registered_pending_transactions_successfully:
+                # Remove all transactions from the pending data
+                pending_data_json["transactions"] = []
 
             # Store which card_ids were successfully registered
             cards_registered_successfully = []
