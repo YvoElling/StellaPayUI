@@ -115,7 +115,7 @@ class StellaPay(MDApp):
             Logger.warning("StellaPayUI: Using default hostname, since none was provided")
             pass
 
-        if bool(self.get_config_option(config.ConfigurationOption.DEVICE_SHOW_FULLSCREEN)):
+        if self.get_config_option(config.ConfigurationOption.DEVICE_SHOW_FULLSCREEN) == "True":
             Logger.info(f"StellaPayUI: Running in fullscreen mode!")
             Window.fullscreen = True
         else:
@@ -123,7 +123,7 @@ class StellaPay(MDApp):
             Window.fullscreen = False
 
         # Show the cursor if that's requested in the config file
-        Window.show_cursor = bool(self.get_config_option(config.ConfigurationOption.DEVICE_SHOW_CURSOR))
+        Window.show_cursor = self.get_config_option(config.ConfigurationOption.DEVICE_SHOW_CURSOR) == "True"
 
         # Start thread that keeps track of connection status to the server.
         self.data_controller.start_connection_update_thread(Connections.connection_status())
