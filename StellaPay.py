@@ -32,11 +32,6 @@ from utils import Connections
 from utils.Screens import Screens
 from utils.SessionManager import SessionManager
 
-kivy.require('1.11.1')
-
-screen_manager = ScreenManager()
-
-
 class StellaPay(MDApp):
     build_version = None
 
@@ -270,4 +265,7 @@ class StellaPay(MDApp):
 
 
 if __name__ == '__main__':
+    kivy.require('1.11.1')
+
+    screen_manager = ScreenManager()
     StellaPay().run()
