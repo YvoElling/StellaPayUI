@@ -3,6 +3,7 @@ import os
 import threading
 import traceback
 from collections import OrderedDict
+from json import JSONDecodeError
 from typing import Callable, Optional, List, Dict, Any
 
 from kivy import Logger
@@ -374,6 +375,8 @@ class OfflineDataStorage(DataStorage):
                     json_data = {}
 
                 return json_data
+        except JSONDecodeError as error:
+            Logger.critical(f"StellaPayUI: Could not load json of {file_path}. Returning empty json data.")
         except FileNotFoundError as error:
             Logger.critical(f"StellaPayUI: Could not find {file_path}. Creating one.")
         except Exception as e:

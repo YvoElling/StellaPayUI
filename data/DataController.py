@@ -1,4 +1,5 @@
 import json
+from json import JSONDecodeError
 from threading import Thread
 from typing import Callable, Optional, Dict, List
 
@@ -162,7 +163,7 @@ class DataController:
                 e.response.status_code))
         except requests.ConnectionError:
             # print("No internet connection available.")
-            something_went_wrong = True
+            pass
         return False
 
     def __update_connection_status__(self, url: str = None) -> None:
@@ -225,8 +226,12 @@ class DataController:
         json_data_to_write = None
 
         with open(OfflineDataStorage.PENDING_DATA_FILE_NAME, "r") as pending_data_file:
-            pending_data_json = json.load(pending_data_file)  # Load cached data into memory
-            Logger.debug(f"StellaPayUI: Loaded pending data file")
+            try:
+                pending_data_json = json.load(pending_data_file)  # Load cached data into memory
+                Logger.debug(f"StellaPayUI: Loaded pending data file")
+            except JSONDecodeError:
+                Logger.critical(f"StellaPayUI: Could not read JSON from {OfflineDataStorage.PENDING_DATA_FILE_NAME}")
+                pending_data_json = None
 
             # If we cannot read the file, let's stop right here.
             if pending_data_json is None:
