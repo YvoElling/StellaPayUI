@@ -125,9 +125,6 @@ class StellaPay(MDApp):
         # Show the cursor if that's requested in the config file
         Window.show_cursor = self.get_config_option(config.ConfigurationOption.DEVICE_SHOW_CURSOR) == "True"
 
-        # Start thread that keeps track of connection status to the server.
-        self.data_controller.start_connection_update_thread(Connections.connection_status())
-
         # Load .kv file
         Builder.load_file('kvs/DefaultScreen.kv')
 
@@ -137,6 +134,9 @@ class StellaPay(MDApp):
         self.event_loop_thread.start()
 
         Logger.debug("StellaPayUI: Start authentication to backend")
+
+        # Start thread that keeps track of connection status to the server.
+        self.data_controller.start_connection_update_thread(Connections.connection_status())
 
         # Start the setup procedure in a bit
         self.loop.call_later(
