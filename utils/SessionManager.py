@@ -73,6 +73,15 @@ class SessionManager:
 
     # Perform a get request to the given url. You can provide a callback to receive the result.
     def do_get_request(self, url: str) -> Optional[requests.Response]:
+        if self.session is None:
+            Logger.warning(f"StellaPayUI: No session was found, so initializing a session.")
+            self.session = requests.Session()
+
+            # Could not reauthenticate to the server
+            if not self.__setup_authentication():
+                Logger.critical(f"StellaPayUI: Could not authenticate in new session!")
+                return None
+
         try:
             response = self.session.get(url, timeout=5)
 
@@ -97,6 +106,16 @@ class SessionManager:
 
     # Perform a post request to the given url. You can give do functions as callbacks (which will return the response)
     def do_post_request(self, url: str, json_data=None) -> Optional[requests.Response]:
+
+        if self.session is None:
+            Logger.warning(f"StellaPayUI: No session was found, so initializing a session.")
+            self.session = requests.Session()
+
+            # Could not reauthenticate to the server
+            if not self.__setup_authentication():
+                Logger.critical(f"StellaPayUI: Could not authenticate in new session!")
+                return None
+
         try:
             response = self.session.post(url, json=json_data, timeout=5)
 
