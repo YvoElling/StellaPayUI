@@ -1,6 +1,7 @@
 import time
 from typing import List
 
+from kivy import Logger
 from kivy.app import App
 from kivy.clock import mainthread
 from kivy.lang import Builder
@@ -110,7 +111,7 @@ class ItemListUX(TwoLineAvatarIconListItem):
                                       secondary_text_color=[0.509, 0.509, 0.509, 1])
                     )
 
-            print(f"Creating purchasing items took {time.time() - start_time} seconds")
+            Logger.debug(f"Creating purchasing items took {time.time() - start_time} seconds")
 
             ItemListUX.purchaser_list_dialog = SelectPurchaserDialog(
                 shopping_cart=self.shopping_cart,
@@ -127,12 +128,12 @@ class ItemListUX(TwoLineAvatarIconListItem):
                 ],
             )
 
-            print(f"Creating additional itemlistux took {time.time() - start_time} seconds")
+            Logger.debug(f"Creating additional itemlistux took {time.time() - start_time} seconds")
 
             # Make sure to provide the purchaser item class with a reference to the dialog we will open
             PurchaserItem.purchaser_dialog = ItemListUX.purchaser_list_dialog
 
-            print(f"Loaded dialog screen of item-ux view in {time.time() - start_time} seconds")
+            Logger.debug(f"Loaded dialog screen of item-ux view in {time.time() - start_time} seconds")
 
     # Because we are using a single dialog, we need to refresh its contents when we open and close it.
     # This method does exactly that.

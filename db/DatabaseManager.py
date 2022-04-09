@@ -23,7 +23,6 @@ class DatabaseManager:
         # Create all tables and add the the database file
         try:
             conn = sqlite3.connect('db/static_fun_fact_database.db')
-            print(sqlite3.version)
 
             # # SQLite command to create table with two fields, namely product and fun_fact
             static_fun_facts_table = "CREATE TABLE IF NOT EXISTS static_fun_facts(" \

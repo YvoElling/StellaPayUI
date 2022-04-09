@@ -73,14 +73,14 @@ class ProductScreen(Screen):
     @mainthread
     def load_category_data(self):
 
-        print(f"StellaPayUI: Loading category data on thread {threading.current_thread().name}")
+        Logger.debug(f"StellaPayUI: Loading category data on thread {threading.current_thread().name}")
 
         start_time = time.time()
 
         if len(self.tabs) > 0:
             Logger.debug("StellaPayUI: Don't load tabs as we already have that information.")
 
-            print(f"StellaPayUI: Loaded category data and tabs (after skipping) in {time.time() - start_time} seconds")
+            Logger.debug(f"StellaPayUI: Loaded category data and tabs (after skipping) in {time.time() - start_time} seconds")
 
             # Load product items (because we still need to reload them)
             self.load_products()
@@ -96,7 +96,7 @@ class ProductScreen(Screen):
                 self.ids.android_tabs.add_widget(tab)
                 self.tabs.append(tab)
 
-            print(f"StellaPayUI: Loaded category data and tabs (no skipping) in {time.time() - start_time} seconds")
+            Logger.debug(f"StellaPayUI: Loaded category data and tabs (no skipping) in {time.time() - start_time} seconds")
 
             # Load product items
             self.load_products()
@@ -123,7 +123,7 @@ class ProductScreen(Screen):
     @mainthread
     def load_products(self):
 
-        print(f"Loading product data on thread {threading.current_thread().name}")
+        Logger.debug(f"StellaPayUI: Loading product data on thread {threading.current_thread().name}")
 
         start_time = time.time()
 
@@ -134,7 +134,7 @@ class ProductScreen(Screen):
 
         if len(self.tabs[0].ids.container.children) > 0:
             Logger.debug("StellaPayUI: Don't load products view again as it's already there..")
-            print(f"Loaded products (after skipping) in {time.time() - start_time} seconds")
+            Logger.debug(f"Loaded products (after skipping) in {time.time() - start_time} seconds")
             return
 
         Logger.debug(f"StellaPayUI: Setting up product view")
@@ -159,8 +159,8 @@ class ProductScreen(Screen):
                                                         price=None,
                                                         shopping_cart=None))
 
-                print(f"Loaded products of category {tab.text} (no skipping) in {time.time() - start_time} seconds")
-            print(f"Loaded all products (no skipping) in {time.time() - start_time} seconds")
+                Logger.debug(f"Loaded products of category {tab.text} (no skipping) in {time.time() - start_time} seconds")
+            Logger.debug(f"Loaded all products (no skipping) in {time.time() - start_time} seconds")
 
         App.get_running_app().data_controller.get_product_data(callback=handle_product_data)
 

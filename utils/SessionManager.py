@@ -78,7 +78,7 @@ class SessionManager:
 
             return response
         except (requests.exceptions.ConnectionError, requests.exceptions.Timeout) as e1:
-            print("Connection was reset, so reauthenticating...")
+            Logger.debug("StellaPayUI: Connection was reset, so reauthenticating...")
 
             self.session = requests.Session()
 
@@ -102,7 +102,7 @@ class SessionManager:
 
             return response
         except (requests.exceptions.ConnectionError, requests.exceptions.Timeout) as e1:
-            print("Connection was reset, so reauthenticating...")
+            Logger.debug("StellaPayUI: Connection was reset, so reauthenticating...")
             self.session = requests.Session()
 
             # Could not reauthenticate to the server
@@ -113,5 +113,6 @@ class SessionManager:
 
             return self.session.post(url, json=json_data)
         except Exception as e2:
-            Logger.critical(f"StellaPayUI: A problem with a POST request {e2}")
+            Logger.critical(f"StellaPayUI: A problem with a POST request:")
+            traceback.print_exception(None, e2, e2.__traceback__)
             return None
