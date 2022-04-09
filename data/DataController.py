@@ -14,7 +14,7 @@ from data.OnlineDataStorage import OnlineDataStorage
 from ds.NFCCardInfo import NFCCardInfo
 from ds.Product import Product
 from ds.ShoppingCart import ShoppingCart
-from utils import Connections
+from utils import Connections, ConfigurationOptions
 
 
 class DataController:
@@ -159,8 +159,7 @@ class DataController:
             req.raise_for_status()
             return True
         except requests.HTTPError as e:
-            print("Checking internet connection failed, status code {0}.".format(
-                e.response.status_code))
+            Logger.debug(f"StellaPayUI: Checking internet connection failed, status code {e.response.status_code}.")
         except requests.ConnectionError:
             # print("No internet connection available.")
             pass
@@ -191,7 +190,12 @@ class DataController:
 
         self.can_use_online_database = connection_status
 
-        App.get_running_app().loop.call_later(10, self.__update_connection_status__, url)
+        from StellaPay import StellaPay
+        time_until_next_check = int(StellaPay.get_app().get_config_option(
+            ConfigurationOptions.ConfigurationOption.TIME_BETWEEN_CHECKING_INTERNET_STATUS))
+
+        # Make sure to run another call soon
+        App.get_running_app().loop.call_later(time_until_next_check, self.__update_connection_status__, url)
 
     def __update_offline_storage__(self) -> None:
         """
@@ -204,8 +208,13 @@ class DataController:
         # After updating the offline storage, let's check if we can send pending data
         self.__send_pending_data_to_online_server__()
 
+        from StellaPay import StellaPay
+
+        time_until_we_appear_again = int(StellaPay.get_app().get_config_option(
+            ConfigurationOptions.ConfigurationOption.TIME_BETWEEN_UPDATING_OFFLINE_STORAGE))
+
         # Make sure to run another call in a few minutes again
-        App.get_running_app().loop.call_later(5 * 60, self.__update_offline_storage__)
+        App.get_running_app().loop.call_later(time_until_we_appear_again, self.__update_offline_storage__)
 
     def __send_pending_data_to_online_server__(self) -> None:
         """

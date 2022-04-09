@@ -4,11 +4,12 @@ import sys
 import threading
 import time
 from asyncio import AbstractEventLoop
-from typing import Optional, Dict
+from typing import Optional, Dict, Any
 
 import kivy
 from kivy import Logger
 from kivy.app import App
+from kivy.config import ConfigParser
 from kivy.core.window import Window
 from kivy.lang import Builder
 from kivy.uix.screenmanager import ScreenManager
@@ -26,7 +27,7 @@ from scrs.ProfileScreen import ProfileScreen
 from scrs.RegisterUIDScreen import RegisterUIDScreen
 from scrs.StartupScreen import StartupScreen
 from scrs.WelcomeScreen import WelcomeScreen
-from utils import Connections
+from utils import Connections, ConfigurationOptions
 from utils.Screens import Screens
 from utils.SessionManager import SessionManager
 
@@ -79,6 +80,21 @@ class StellaPay(MDApp):
         # Set background image to match color of STE logo
         Window.clearcolor = (0.12549, 0.12549, 0.12549, 0)
 
+        # Define the config type (so IDE understand the type)
+        self.config: ConfigParser
+
+        configuration_option: ConfigurationOptions.ConfigurationOption
+        # Set default config options (if they do not exist)
+        for configuration_option in ConfigurationOptions.ConfigurationOption:
+            # Create the section if it does not exist yet.
+            self.config.adddefaultsection(configuration_option.section_name)
+            # Set the configuration option
+            self.config.setdefault(configuration_option.section_name, configuration_option.config_name,
+                                   configuration_option.default_value)
+
+        # Update config (if needed)
+        self.config.write()
+
         # Set size of the window
         Window.size = (int(self.config.get('device', 'width')), int(self.config.get('device', 'height')))
         Logger.info(
@@ -125,7 +141,9 @@ class StellaPay(MDApp):
         Logger.debug("StellaPayUI: Start authentication to backend")
 
         # Start the setup procedure in a bit
-        self.loop.call_later(1, self.data_controller.start_setup_procedure)
+        self.loop.call_later(
+            int(self.get_config_option(ConfigurationOptions.ConfigurationOption.TIME_TO_WAIT_BEFORE_AUTHENTICATING)),
+            self.data_controller.start_setup_procedure)
 
         # Initialize defaultScreen (to create session cookies for API calls)
         ds_screen = DefaultScreen(name=Screens.DEFAULT_SCREEN.value)
@@ -235,6 +253,24 @@ class StellaPay(MDApp):
     @staticmethod
     def get_app() -> "StellaPay":
         return App.get_running_app()
+
+    def __get_config_option(self, section_name, config_option_name, default_value=None) -> Any:
+        """
+        Get a configuration option as defined in the *.ini file. Each config option is defined in a section, and has its
+        own name. You can also provide a default value if the value is not defined.
+        :param section_name: Name of the section
+        :param config_option_name: Name of the config option
+        :param default_value: Default value to return if the option is not defined. None by default
+        :return: the value of a config option
+        """
+
+        return self.config.getdefault(section_name, config_option_name, default_value)
+
+    def get_config_option(self, config_option: ConfigurationOptions.ConfigurationOption):
+        if config_option is None:
+            return None
+        return self.__get_config_option(config_option.section_name, config_option.config_name,
+                                        config_option.default_value)
 
 
 if __name__ == '__main__':

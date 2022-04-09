@@ -246,7 +246,7 @@ class OnlineDataStorage(DataStorage):
             if callback is not None:
                 callback(True)
             return
-        elif not response.ok:
+        elif response is None or not response.ok:
             Logger.warning(f"StellaPayUI: Failed to register {len(shopping_cart.basket)} transactions to the server.")
             # Response was wrong
             if callback is not None:
