@@ -1,5 +1,4 @@
-Kivy==2.0.0
-kivymd==0.104.2
-pyscard==2.0.2
-requests==2.26.0
-smartcard==0.3
+smartcard~=0.3
+Kivy~=2.1.0
+requests~=2.27.1
+kivymd~=0.104.2
