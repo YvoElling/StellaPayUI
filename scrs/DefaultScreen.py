@@ -18,6 +18,7 @@ from data.ConnectionListener import ConnectionListener
 from ds.NFCCardInfo import NFCCardInfo
 from utils.Screens import Screens
 from ux.SelectUserItem import SelectUserItem
+from widgets.UserPickerDialog import UserPickerDialog
 
 
 class DefaultScreen(Screen):
@@ -58,7 +59,7 @@ class DefaultScreen(Screen):
         self.event_loop: AbstractEventLoop = App.get_running_app().loop
 
         # Store the dialog that we use to select an active user
-        self.user_select_dialog: MDDialog = None
+        self.user_select_dialog: UserPickerDialog = None
         self.user_select_dialog_opened: bool = False
 
         # Store a list of users we want to be able to select
@@ -100,18 +101,15 @@ class DefaultScreen(Screen):
     # Shows a dialog to select a user.
     #
     def on_no_nfc(self):
-        # Check if the dialog has been opened before (or whether the data has been loaded properly)
-        if not self.user_select_dialog or len(self.user_select_dialog.items) < 1:
-            # If not, create a dialog once.
-            self.user_select_dialog = MDDialog(
-                type="confirmation",
-                items=self.users_to_select,
-                on_dismiss=self.on_user_select_dialog_close,
-            )
+        self.user_select_dialog = UserPickerDialog()
+        self.user_select_dialog.bind(
+            selected_user=lambda _, selected_user: self.selected_active_user(selected_user))
 
-        # Open the dialog once it's been created.
-        self.user_select_dialog.open()
-        self.user_select_dialog_opened = True
+        self.user_select_dialog.show_user_selector()
+
+        # # Open the dialog once it's been created.
+        # self.user_select_dialog.open()
+        # self.user_select_dialog_opened = True
 
     def on_user_select_dialog_close(self, event):
         self.user_select_dialog_opened = False
@@ -120,7 +118,8 @@ class DefaultScreen(Screen):
         def callback_handle(user_data: typing.Dict[str, str]):
             if user_data is not None:
                 # Make sure that system can create selection dialog based on users.
-                self.create_user_select_dialog(user_data)
+                # self.create_user_select_dialog(user_data)
+                print(f"Users loaded")
             else:
                 Logger.warning(f"StellaPayUI: Could not retrieve users!")
 
@@ -149,16 +148,18 @@ class DefaultScreen(Screen):
             )
 
     # An active user is selected via the dialog
-    def selected_active_user(self, item):
-        # Close the user dialog
-        self.user_select_dialog.dismiss()
+    def selected_active_user(self, selected_user_name: Optional[str]):
+        # Close the dialog screen
+        self.user_select_dialog.close_dialog()
 
-        # Set member variables, these are required for making a purchase later
-        user_name = item.text
+        # Check if a user was actually selected
+        if selected_user_name is None:
+            Logger.debug("StellaPayUI: No user selected!")
+            return
 
         self.manager.transition = SlideTransition(direction='left')
 
-        App.get_running_app().active_user = user_name
+        App.get_running_app().active_user = selected_user_name
 
         # Go to the next screen
         self.manager.current = Screens.PRODUCT_SCREEN.value
@@ -169,7 +170,7 @@ class DefaultScreen(Screen):
 
         # Dismiss the dialog if it was open
         if self.user_select_dialog:
-            self.user_select_dialog.dismiss()
+            self.user_select_dialog.close_dialog()
 
     @mainthread
     def nfc_card_presented(self, uid: str):
@@ -221,7 +222,7 @@ class DefaultScreen(Screen):
 
     def select_special_user(self, user: str):
         # Close the user dialog
-        self.user_select_dialog.dismiss()
+        self.user_select_dialog.close_dialog()
 
         self.manager.transition = SlideTransition(direction='left')
 
