@@ -9,7 +9,7 @@ from typing import Optional, Dict, Any
 import kivy
 from kivy import Logger
 from kivy.app import App
-from kivy.config import ConfigParser
+from kivy.config import ConfigParser, Config
 from kivy.core.window import Window
 from kivy.lang import Builder
 from kivy.uix.screenmanager import ScreenManager
@@ -31,6 +31,7 @@ from scrs.WelcomeScreen import WelcomeScreen
 from utils import Connections
 from utils.Screens import Screens
 from utils.SessionManager import SessionManager
+
 
 class StellaPay(MDApp):
     build_version = None
@@ -97,6 +98,10 @@ class StellaPay(MDApp):
 
         # Don't run in borderless mode when we're running on Linux (it doesn't seem to work so well).
         Window.borderless = False if sys.platform.startswith("linux") else True
+
+        # Set keyboard mode so we have a proper keyboard on screen
+        Config.set("kivy", "keyboard_mode", self.get_config_option(config.ConfigurationOption.KEYBOARD_MODE_ON_SCREEN))
+        Config.write()
 
         try:
             hostname = self.get_config_option(config.ConfigurationOption.HOSTNAME_OF_BACKEND)

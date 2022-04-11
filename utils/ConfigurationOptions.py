@@ -21,10 +21,9 @@ class ConfigurationOption(Enum):
     DEVICE_SHOW_FULLSCREEN = "device", "fullscreen", False
     DEVICE_SHOW_CURSOR = "device", "show_cursor", False
 
+    KEYBOARD_MODE_ON_SCREEN = "device", "keyboard_mode", "systemanddock"
+
     def __init__(self, section_name: str, config_name: str, default_value: Any):
         self.section_name = section_name
         self.config_name = config_name
         self.default_value = default_value
-
-
-
