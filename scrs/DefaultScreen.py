@@ -59,9 +59,7 @@ class DefaultScreen(Screen):
         self.event_loop: AbstractEventLoop = App.get_running_app().loop
 
         # Store the dialog that we use to select an active user
-        self.user_select_dialog: UserPickerDialog = UserPickerDialog()
-        self.user_select_dialog.bind(
-            selected_user=lambda _, selected_user: self.selected_active_user(selected_user))
+        self.user_select_dialog: UserPickerDialog = None
         self.user_select_dialog_opened: bool = False
 
         # Store a list of users we want to be able to select
@@ -88,6 +86,10 @@ class DefaultScreen(Screen):
         # Reset active user, because we are back at this screen.
         App.get_running_app().active_user = None
         self.ids.spinner.active = False
+
+        self.user_select_dialog = UserPickerDialog()
+        self.user_select_dialog.bind(
+            selected_user=lambda _, selected_user: self.selected_active_user(selected_user))
 
         # Start loading user data.
         self.event_loop.call_soon_threadsafe(self.load_user_data)
