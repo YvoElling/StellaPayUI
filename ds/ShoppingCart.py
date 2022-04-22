@@ -43,6 +43,30 @@ class ShoppingCart:
 
         self.notify_listener()
 
+    def set_product_amount_in_cart(self, purchase: Purchase) -> None:
+        """
+        Set the amount for a specific product and user in the shopping cart. If the purchase doesn't exist yet,
+        it will be added.
+        :param purchase: Purchase information to set. If the amount is less than zero, the item will be removed from the
+         shopping cart (if present).
+        :return: Nothing
+        """
+        existing_purchase_item = self.__find_duplicate(purchase)
+
+        # If it doesn't exist yet, add it to the car (if the amount is at least 1)
+        if existing_purchase_item is None and purchase.amount > 0:
+            self.add_to_cart(purchase)
+        elif existing_purchase_item is not None:
+
+            if purchase.amount <= 0:
+                # We want to remove the existing purchase from the shopping cart
+                self.basket.remove(existing_purchase_item)
+            else:
+                # We merely want to update the amount of current listing in the shopping car
+                existing_purchase_item.amount = purchase.amount
+
+            self.notify_listener()
+
     #
     # Remove from shoppingcart
     #
@@ -62,8 +86,23 @@ class ShoppingCart:
 
         self.notify_listener()
 
+    def get_amount_of_product(self, purchase: Purchase) -> int:
+        """
+        Get the amount of a product that is in this shopping cart for a specific user
+        :param purchase: Purchase to look for (note that the amount is ignored)
+        :return: the total amount of the given product for the given user in this shopping cart
+        """
+        existing_purchase = self.__find_duplicate(purchase)
+        if existing_purchase is None:
+            return 0
+        return existing_purchase.amount
+
     # Look for a duplicate purchase.
     def __find_duplicate(self, purchase: Purchase) -> Optional[Purchase]:
+        # Check for edge cases
+        if purchase is None:
+            return None
+
         # Iterate over all purchases currently stored in the shopping cart
         for p in self.basket:
             # if the mail and product name matches, then we know there was an change of count
@@ -75,7 +114,7 @@ class ShoppingCart:
     #
     # get shopping cart data
     #
-    def get_shopping_cart(self):
+    def get_shopping_cart(self) -> List[Purchase]:
         return self.basket
 
     #

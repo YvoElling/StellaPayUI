@@ -18,7 +18,7 @@ from data.ConnectionListener import ConnectionListener
 from ds.NFCCardInfo import NFCCardInfo
 from utils.Screens import Screens
 from ux.SelectUserItem import SelectUserItem
-from widgets.UserPickerDialog import UserPickerDialog
+from ux.UserPickerDialog import UserPickerDialog
 
 
 class DefaultScreen(Screen):
@@ -116,11 +116,7 @@ class DefaultScreen(Screen):
 
     def load_user_data(self, callback: Optional[Callable] = None):
         def callback_handle(user_data: typing.Dict[str, str]):
-            if user_data is not None:
-                # Make sure that system can create selection dialog based on users.
-                # self.create_user_select_dialog(user_data)
-                print(f"Users loaded")
-            else:
+            if user_data is None:
                 Logger.warning(f"StellaPayUI: Could not retrieve users!")
 
             # Make sure to call the original callback when we're done.

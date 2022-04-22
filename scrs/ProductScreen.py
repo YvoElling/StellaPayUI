@@ -13,11 +13,12 @@ from kivymd.toast import toast
 from kivymd.uix.button import MDFlatButton, MDRaisedButton
 from kivymd.uix.dialog import MDDialog
 
+from ds.Purchase import Purchase
 from ds.ShoppingCart import ShoppingCart, ShoppingCartListener
 from scrs.TabDisplay import TabDisplay
 from utils.Screens import Screens
 from ux.CartDialog import CartDialog
-from ux.ItemListUX import ItemListUX
+from ux.ProductListItem import ProductListItem
 from ux.ShoppingCartItem import ShoppingCartItem
 
 
@@ -27,13 +28,36 @@ class OnChangeShoppingCartListener(ShoppingCartListener):
         self.product_screen = product_screen
 
     def on_change(self):
-        #self.product_screen.ids.buy_button.disabled = len(ProductScreen.shopping_cart.get_shopping_cart()) == 0
         self.product_screen.ids.shopping_cart_button.disabled = len(
             ProductScreen.shopping_cart.get_shopping_cart()) == 0
 
+        active_user = App.get_running_app().active_user
+
+        # Loop over all purchases in the shopping cart and see if there are any for the active user
+        for purchase in ProductScreen.shopping_cart.get_shopping_cart():
+            if purchase.purchaser_name == active_user:
+                # We want to ensure that the ProductListItem corresponding to this purchase is showing the correct value
+
+                found_matching_product_list_item = False
+
+                # Loop over all ProductListItem objects and update them if applicable
+                for tab in self.product_screen.tabs:
+
+                    if found_matching_product_list_item:
+                        break
+
+                    for product_list_item in tab.ids.container.children:
+                        # If this ProductListItem is the one responsible for showing the count on the screen
+                        if product_list_item.text == purchase.product_name:
+                            # Set the text of the 'count' label to what is stored in the shopping cart
+                            product_list_item.ids.count.text = str(purchase.amount)
+
+                            found_matching_product_list_item = True
+                            break
+
 
 class ProductScreen(Screen):
-    product_items_per_category: Dict[str, List[ItemListUX]] = {}
+    product_items_per_category: Dict[str, List[ProductListItem]] = {}
 
     tabs = []
 
@@ -57,6 +81,12 @@ class ProductScreen(Screen):
 
         self.shopping_cart_listener = OnChangeShoppingCartListener(self)
         self.shopping_cart.add_listener(self.shopping_cart_listener)
+
+        # Set class variables for the product list item class so it can function properly
+        ProductListItem.product_screen = self
+        ProductListItem.on_product_added_callback = self.on_add_product
+        ProductListItem.on_product_removed_callback = self.on_remove_product
+        ProductListItem.on_product_set_callback = self.on_set_product
 
     # Start timeout counter
     def on_start_timeout(self):
@@ -147,19 +177,20 @@ class ProductScreen(Screen):
                     product_description = App.get_running_app().database_manager.get_random_fun_fact(product.get_name())
 
                     # Add item to the tab
-                    tab.ids.container.add_widget(ItemListUX(text=product.get_name(), secondary_text=product_description,
-                                                            secondary_theme_text_color="Custom",
-                                                            secondary_text_color=[0.509, 0.509, 0.509, 1],
-                                                            price="€" + product.get_price(),
-                                                            shopping_cart=self.shopping_cart))
+                    tab.ids.container.add_widget(
+                        ProductListItem(text=product.get_name(), secondary_text=product_description,
+                                        secondary_theme_text_color="Custom",
+                                        secondary_text_color=[0.509, 0.509, 0.509, 1],
+                                        price="€" + product.get_price()))
 
                 # Add last item to the products (for each category) that is empty. This improves readability.
-                tab.ids.container.add_widget(ItemListUX(text="", secondary_text="", secondary_theme_text_color="Custom",
-                                                        secondary_text_color=[0.509, 0.509, 0.509, 1],
-                                                        price=None,
-                                                        shopping_cart=None))
+                tab.ids.container.add_widget(
+                    ProductListItem(text="", secondary_text="", secondary_theme_text_color="Custom",
+                                    secondary_text_color=[0.509, 0.509, 0.509, 1],
+                                    price=None))
 
-                Logger.debug(f"Loaded products of category {tab.text} (no skipping) in {time.time() - start_time} seconds")
+                Logger.debug(
+                    f"Loaded products of category {tab.text} (no skipping) in {time.time() - start_time} seconds")
             Logger.debug(f"Loaded all products (no skipping) in {time.time() - start_time} seconds")
 
         App.get_running_app().data_controller.get_product_data(callback=handle_product_data)
@@ -173,8 +204,8 @@ class ProductScreen(Screen):
         # If the dialogs are instantiated, dismiss them before timeouts
         if self.shopping_cart_dialog:
             self.shopping_cart_dialog.dismiss()
-        if ItemListUX.purchaser_list_dialog:
-            ItemListUX.purchaser_list_dialog.dismiss()
+        if ProductListItem.purchaser_list_dialog:
+            ProductListItem.purchaser_list_dialog.dismiss()
 
         self.manager.current = Screens.DEFAULT_SCREEN.value
 
@@ -324,3 +355,30 @@ class ProductScreen(Screen):
         for tab in self.tabs:
             for product_item in tab.ids.container.children:
                 product_item.clear_item()
+
+    def on_add_product(self, user_name: str, product_name: str, amount: int):
+        Logger.debug(f"StellaPayUI: Adding {amount}x {product_name} of {user_name} to shopping cart!")
+
+        # Create purchase object
+        purchase = Purchase(user_name, product_name, amount)
+
+        # Add purchase to shopping cart
+        self.shopping_cart.add_to_cart(purchase)
+
+    def on_remove_product(self, user_name: str, product_name: str, amount: int):
+        Logger.debug(f"StellaPayUI: Removing {amount}x {product_name} of {user_name} from shopping cart!")
+
+        # Create purchase object
+        purchase = Purchase(user_name, product_name, amount)
+
+        # Remove purchase from shopping cart
+        self.shopping_cart.remove_from_cart(purchase)
+
+    def on_set_product(self, user_name: str, product_name: str, amount: int):
+        Logger.debug(f"StellaPayUI: Setting {amount}x {product_name} of {user_name} in shopping cart!")
+
+        # Create purchase object
+        purchase = Purchase(user_name, product_name, amount)
+
+        # Set product in shopping cart to exact amount
+        self.shopping_cart.set_product_amount_in_cart(purchase)
