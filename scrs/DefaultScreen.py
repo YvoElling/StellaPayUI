@@ -184,6 +184,7 @@ class DefaultScreen(Screen):
         start_time = time.time()
 
         # Callback to handle the card info
+        @mainthread
         def handle_card_info(card_info: NFCCardInfo):
 
             Logger.debug(f"StellaPayUI: Received card info in {time.time() - start_time} seconds.")
