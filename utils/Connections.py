@@ -21,6 +21,10 @@ def create_transaction() -> str:
     return get_hostname() + "transactions/create"
 
 
+def get_all_transactions() -> str:
+    return get_hostname() + "transactions/all"
+
+
 def request_user_info() -> str:
     return get_hostname() + "identification/request-user/"
 

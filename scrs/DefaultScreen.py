@@ -44,8 +44,14 @@ class DefaultScreen(Screen):
             # Set new text depending on connection status
             if connection_status:
                 self.default_screen.ids.copyright.text = current_text.replace("offline mode", "online mode")
+                # Update the icon and the color of the wifi status indicator to 'online'
+                self.default_screen.ids.connection_state.md_bg_color = App.get_running_app().theme_cls.green_button
+                self.default_screen.ids.connection_state.icon = "wifi-strength-4"
             else:
                 self.default_screen.ids.copyright.text = current_text.replace("online mode", "offline mode")
+                # Update the icon and the color to 'offline'
+                self.default_screen.ids.connection_state.md_bg_color = App.get_running_app().theme_cls.red_button
+                self.default_screen.ids.connection_state.icon = "wifi-alert"
 
     def __init__(self, **kwargs):
         # Call to super (Screen class)
