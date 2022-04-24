@@ -13,12 +13,12 @@ from kivymd.toast import toast
 from kivymd.uix.button import MDFlatButton, MDRaisedButton
 from kivymd.uix.dialog import MDDialog
 
+from ds.Purchase import Purchase
 from ds.ShoppingCart import ShoppingCart, ShoppingCartListener
 from scrs.TabDisplay import TabDisplay
-from utils import Connections
 from utils.Screens import Screens
 from ux.CartDialog import CartDialog
-from ux.ItemListUX import ItemListUX
+from ux.ProductListItem import ProductListItem
 from ux.ShoppingCartItem import ShoppingCartItem
 
 
@@ -28,13 +28,36 @@ class OnChangeShoppingCartListener(ShoppingCartListener):
         self.product_screen = product_screen
 
     def on_change(self):
-        #self.product_screen.ids.buy_button.disabled = len(ProductScreen.shopping_cart.get_shopping_cart()) == 0
         self.product_screen.ids.shopping_cart_button.disabled = len(
             ProductScreen.shopping_cart.get_shopping_cart()) == 0
 
+        active_user = App.get_running_app().active_user
+
+        # Loop over all purchases in the shopping cart and see if there are any for the active user
+        for purchase in ProductScreen.shopping_cart.get_shopping_cart():
+            if purchase.purchaser_name == active_user:
+                # We want to ensure that the ProductListItem corresponding to this purchase is showing the correct value
+
+                found_matching_product_list_item = False
+
+                # Loop over all ProductListItem objects and update them if applicable
+                for tab in self.product_screen.tabs:
+
+                    if found_matching_product_list_item:
+                        break
+
+                    for product_list_item in tab.ids.container.children:
+                        # If this ProductListItem is the one responsible for showing the count on the screen
+                        if product_list_item.text == purchase.product_name:
+                            # Set the text of the 'count' label to what is stored in the shopping cart
+                            product_list_item.ids.count.text = str(purchase.amount)
+
+                            found_matching_product_list_item = True
+                            break
+
 
 class ProductScreen(Screen):
-    product_items_per_category: Dict[str, List[ItemListUX]] = {}
+    product_items_per_category: Dict[str, List[ProductListItem]] = {}
 
     tabs = []
 
@@ -59,6 +82,12 @@ class ProductScreen(Screen):
         self.shopping_cart_listener = OnChangeShoppingCartListener(self)
         self.shopping_cart.add_listener(self.shopping_cart_listener)
 
+        # Set class variables for the product list item class so it can function properly
+        ProductListItem.product_screen = self
+        ProductListItem.on_product_added_callback = self.on_add_product
+        ProductListItem.on_product_removed_callback = self.on_remove_product
+        ProductListItem.on_product_set_callback = self.on_set_product
+
     # Start timeout counter
     def on_start_timeout(self):
         self.timeout_event = Clock.schedule_once(self.on_timeout, self.timeout_time)
@@ -74,14 +103,14 @@ class ProductScreen(Screen):
     @mainthread
     def load_category_data(self):
 
-        print(f"StellaPayUI: Loading category data on thread {threading.current_thread().name}")
+        Logger.debug(f"StellaPayUI: Loading category data on thread {threading.current_thread().name}")
 
         start_time = time.time()
 
         if len(self.tabs) > 0:
             Logger.debug("StellaPayUI: Don't load tabs as we already have that information.")
 
-            print(f"StellaPayUI: Loaded category data and tabs (after skipping) in {time.time() - start_time} seconds")
+            Logger.debug(f"StellaPayUI: Loaded category data and tabs (after skipping) in {time.time() - start_time} seconds")
 
             # Load product items (because we still need to reload them)
             self.load_products()
@@ -90,16 +119,19 @@ class ProductScreen(Screen):
 
         Logger.debug("StellaPayUI: Loading category view")
 
-        for category in App.get_running_app().products_per_category.keys():
-            # Create tab display
-            tab = TabDisplay(text=category)
-            self.ids.android_tabs.add_widget(tab)
-            self.tabs.append(tab)
+        def handle_product_data(product_data: Dict[str, List["Product"]]):
+            for category in product_data.keys():
+                # Create tab display
+                tab = TabDisplay(text=category)
+                self.ids.android_tabs.add_widget(tab)
+                self.tabs.append(tab)
 
-        print(f"StellaPayUI: Loaded category data and tabs (no skipping) in {time.time() - start_time} seconds")
+            Logger.debug(f"StellaPayUI: Loaded category data and tabs (no skipping) in {time.time() - start_time} seconds")
 
-        # Load product items
-        self.load_products()
+            # Load product items
+            self.load_products()
+
+        App.get_running_app().data_controller.get_product_data(callback=handle_product_data)
 
     def on_pre_enter(self, *args):
         # Initialize timeouts
@@ -121,39 +153,47 @@ class ProductScreen(Screen):
     @mainthread
     def load_products(self):
 
-        print(f"Loading product data on thread {threading.current_thread().name}")
+        Logger.debug(f"StellaPayUI: Loading product data on thread {threading.current_thread().name}")
 
         start_time = time.time()
 
+        # Check if we have tabs loaded
+        if len(self.tabs) < 1:
+            toast("There are no loaded tabs!")
+            return
+
         if len(self.tabs[0].ids.container.children) > 0:
             Logger.debug("StellaPayUI: Don't load products view again as it's already there..")
-            print(f"Loaded products (after skipping) in {time.time() - start_time} seconds")
+            Logger.debug(f"Loaded products (after skipping) in {time.time() - start_time} seconds")
             return
 
         Logger.debug(f"StellaPayUI: Setting up product view")
 
-        for tab in self.tabs:
-            for product in App.get_running_app().products_per_category[tab.text]:
-                # Get fun fact description of database
-                product_description = App.get_running_app().database_manager.get_random_fun_fact(product.get_name())
+        @mainthread
+        def handle_product_data(product_data: Dict[str, List["Product"]]):
+            for tab in self.tabs:
+                for product in product_data[tab.text]:
+                    # Get fun fact description of database
+                    product_description = App.get_running_app().database_manager.get_random_fun_fact(product.get_name())
 
-                # Add item to the tab
-                tab.ids.container.add_widget(ItemListUX(text=product.get_name(), secondary_text=product_description,
-                                                        secondary_theme_text_color="Custom",
-                                                        secondary_text_color=[0.509, 0.509, 0.509, 1],
-                                                        price="€" + product.get_price(),
-                                                        shopping_cart=self.shopping_cart))
+                    # Add item to the tab
+                    tab.ids.container.add_widget(
+                        ProductListItem(text=product.get_name(), secondary_text=product_description,
+                                        secondary_theme_text_color="Custom",
+                                        secondary_text_color=[0.509, 0.509, 0.509, 1],
+                                        price="€" + product.get_price()))
 
-            # Add last item to the products (for each category) that is empty. This improves readability.
-            tab.ids.container.add_widget(ItemListUX(text="", secondary_text="", secondary_theme_text_color="Custom",
-                                                    secondary_text_color=[0.509, 0.509, 0.509, 1],
-                                                    price=None,
-                                                    shopping_cart=None))
+                # Add last item to the products (for each category) that is empty. This improves readability.
+                tab.ids.container.add_widget(
+                    ProductListItem(text="", secondary_text="", secondary_theme_text_color="Custom",
+                                    secondary_text_color=[0.509, 0.509, 0.509, 1],
+                                    price=None))
 
-            print(f"Loaded products of category {tab.text} (no skipping) in {time.time() - start_time} seconds")
-        print(f"Loaded all products (no skipping) in {time.time() - start_time} seconds")
+                Logger.debug(
+                    f"Loaded products of category {tab.text} (no skipping) in {time.time() - start_time} seconds")
+            Logger.debug(f"Loaded all products (no skipping) in {time.time() - start_time} seconds")
 
-        return
+        App.get_running_app().data_controller.get_product_data(callback=handle_product_data)
 
     #
     # timeout callback function
@@ -164,8 +204,8 @@ class ProductScreen(Screen):
         # If the dialogs are instantiated, dismiss them before timeouts
         if self.shopping_cart_dialog:
             self.shopping_cart_dialog.dismiss()
-        if ItemListUX.purchaser_list_dialog:
-            ItemListUX.purchaser_list_dialog.dismiss()
+        if ProductListItem.purchaser_list_dialog:
+            ProductListItem.purchaser_list_dialog.dismiss()
 
         self.manager.current = Screens.DEFAULT_SCREEN.value
 
@@ -249,67 +289,56 @@ class ProductScreen(Screen):
     # Confirms a payment
     #
     def on_confirm_payment(self, dt=None):
-        print("OnClicked")
-        # Serialize the shopping cart
-        json_cart = None
+        Logger.info(f"StellaPayUI: Payment was confirmed by the user.")
 
-        try:
-            json_cart = self.shopping_cart.to_json()
-        except Exception as e:
-            Logger.warning("StellaPayUI: There was an error while parsing the shopping cart to JSON!")
-            toast("Er ging iets fout tijdens het betalen. Probeer het nogmaals.")
-            return
+        @mainthread
+        def handle_transaction_result(success: bool):
+            if success:
+                # Reset instance variables
+                self.end_user_session()
 
-        # use a POST-request to forward the shopping cart
-        response = App.get_running_app().session_manager.do_post_request(url=Connections.create_transaction(),
-                                                                         json_data=json_cart)
+                if self.shopping_cart_dialog is not None:
+                    self.shopping_cart_dialog.dismiss()
 
-        if response and response.ok:
-            # Reset instance variables
-            self.end_user_session()
+                self.timeout_event.cancel()
 
-            if self.shopping_cart_dialog is not None:
-                self.shopping_cart_dialog.dismiss()
+                self.final_dialog = MDDialog(
+                    text="Gelukt! Je aankoop is geregistreerd",
+                    buttons=[
+                        MDRaisedButton(
+                            text="Thanks",
+                            on_release=self.on_thanks
+                        ),
+                    ]
+                )
 
-            self.timeout_event.cancel()
+                self.timeout_event = Clock.schedule_once(self.on_thanks, 5)
+                self.final_dialog.open()
+            else:
+                # Reset instance variables
+                self.end_user_session()
 
-            self.final_dialog = MDDialog(
-                text="Gelukt! Je aankoop is geregistreerd",
-                buttons=[
-                    MDRaisedButton(
-                        text="Thanks",
-                        on_release=self.on_thanks
-                    ),
-                ]
-            )
-            toast("Smakelijk!")
+                if self.shopping_cart_dialog is not None:
+                    self.shopping_cart_dialog.dismiss()
 
-            self.timeout_event = Clock.schedule_once(self.on_thanks, 5)
-            self.final_dialog.open()
-        elif not response.ok:
-            # Reset instance variables
-            self.end_user_session()
+                self.final_dialog = MDDialog(
+                    text="Het is niet gelukt je aankoop te registreren. Herstart de app svp.",
+                    buttons=[
+                        MDRaisedButton(
+                            text="Herstart",
+                            on_release=(
+                                os._exit(1)
+                            )
+                        ),
+                    ]
+                )
+                self.final_dialog.open()
 
-            if self.shopping_cart_dialog is not None:
-                self.shopping_cart_dialog.dismiss()
+        # Make request to create transactions (on separate thread)
+        App.get_running_app().loop.call_soon_threadsafe(
+            App.get_running_app().data_controller.create_transactions, self.shopping_cart, handle_transaction_result)
 
-            self.final_dialog = MDDialog(
-                text="Het is niet gelukt je aankoop te registreren. Herstart de app svp.",
-                buttons=[
-                    MDRaisedButton(
-                        text="Herstart",
-                        on_release=(
-                            os._exit(1)
-                        )
-                    ),
-                ]
-            )
-            self.final_dialog.open()
-        else:
-            Logger.critical("StellaPayUI: Payment could not be made: error: " + response.content)
-            os._exit(1)
-
-    def on_thanks(self, dt=None):
+    def on_thanks(self, _):
         if self.final_dialog is not None:
             self.final_dialog.dismiss()
             self.final_dialog = None
@@ -326,3 +355,30 @@ class ProductScreen(Screen):
         for tab in self.tabs:
             for product_item in tab.ids.container.children:
                 product_item.clear_item()
+
+    def on_add_product(self, user_name: str, product_name: str, amount: int):
+        Logger.debug(f"StellaPayUI: Adding {amount}x {product_name} of {user_name} to shopping cart!")
+
+        # Create purchase object
+        purchase = Purchase(user_name, product_name, amount)
+
+        # Add purchase to shopping cart
+        self.shopping_cart.add_to_cart(purchase)
+
+    def on_remove_product(self, user_name: str, product_name: str, amount: int):
+        Logger.debug(f"StellaPayUI: Removing {amount}x {product_name} of {user_name} from shopping cart!")
+
+        # Create purchase object
+        purchase = Purchase(user_name, product_name, amount)
+
+        # Remove purchase from shopping cart
+        self.shopping_cart.remove_from_cart(purchase)
+
+    def on_set_product(self, user_name: str, product_name: str, amount: int):
+        Logger.debug(f"StellaPayUI: Setting {amount}x {product_name} of {user_name} in shopping cart!")
+
+        # Create purchase object
+        purchase = Purchase(user_name, product_name, amount)
+
+        # Set product in shopping cart to exact amount
+        self.shopping_cart.set_product_amount_in_cart(purchase)
