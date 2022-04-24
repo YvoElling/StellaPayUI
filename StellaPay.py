@@ -1,22 +1,25 @@
 import asyncio
-import os
 import subprocess
 import sys
 import threading
+import time
 from asyncio import AbstractEventLoop
-from typing import Optional, Dict, List
+from typing import Optional, Dict, Any
 
 import kivy
 from kivy import Logger
 from kivy.app import App
+from kivy.config import ConfigParser, Config
 from kivy.core.window import Window
 from kivy.lang import Builder
 from kivy.uix.screenmanager import ScreenManager
 from kivymd.app import MDApp
 
+import utils.ConfigurationOptions as config
 from PythonNFCReader.NFCReader import CardConnectionManager
+from data.DataController import DataController
 from db.DatabaseManager import DatabaseManager
-from ds.Product import Product
+from ds.NFCCardInfo import NFCCardInfo
 from scrs.ConfirmedScreen import ConfirmedScreen
 from scrs.CreditsScreen import CreditsScreen
 from scrs.DefaultScreen import DefaultScreen
@@ -28,12 +31,6 @@ from scrs.WelcomeScreen import WelcomeScreen
 from utils import Connections
 from utils.Screens import Screens
 from utils.SessionManager import SessionManager
-
-# os.environ['KIVY_WINDOW'] = 'egl_rpi'
-
-kivy.require('1.11.1')
-
-screen_manager = ScreenManager()
 
 
 class StellaPay(MDApp):
@@ -54,14 +51,14 @@ class StellaPay(MDApp):
         # Store user that is logged in (can be none)
         self.active_user: Optional[str] = None
 
-        # Store products for each category
-        self.products_per_category: Dict[str, List[Product]] = {}
-
         # Store a mapping from user name to user email
         self.user_mapping: Dict[str, str] = {}
 
+        # Create a data controller that is used to access data of users and products.
+        self.data_controller: DataController = DataController()
+
         StellaPay.build_version = subprocess.check_output(['git', 'rev-parse', '--short', 'HEAD']).strip()
-        print(f"Running build {self.build_version}")
+        Logger.debug(f"StellaPayUI: Running build {self.build_version}")
 
     def build(self):
         self.theme_cls.theme_style = "Dark"
@@ -78,18 +75,36 @@ class StellaPay(MDApp):
         # Set background image to match color of STE logo
         Window.clearcolor = (0.12549, 0.12549, 0.12549, 0)
 
+        # Define the config type (so IDE understand the type)
+        self.config: ConfigParser
+
+        configuration_option: config.ConfigurationOption
+        # Set default config options (if they do not exist)
+        for configuration_option in config.ConfigurationOption:
+            # Create the section if it does not exist yet.
+            self.config.adddefaultsection(configuration_option.section_name)
+            # Set the configuration option
+            self.config.setdefault(configuration_option.section_name, configuration_option.config_name,
+                                   configuration_option.default_value)
+
+        # Update config (if needed)
+        self.config.write()
+
         # Set size of the window
-        Window.size = (int(self.config.get('device', 'width')), int(self.config.get('device', 'height')))
-        Logger.info(
-            f"StellaPayUI: Window height {self.config.get('device', 'height')} and width {self.config.get('device', 'width')}.")
+        window_width = int(self.get_config_option(config.ConfigurationOption.DEVICE_WIDTH))
+        window_height = int(self.get_config_option(config.ConfigurationOption.DEVICE_HEIGHT))
+        Window.size = (window_width, window_height)
+        Logger.info(f"StellaPayUI: Window height {window_height} and width {window_width}.")
 
         # Don't run in borderless mode when we're running on Linux (it doesn't seem to work so well).
         Window.borderless = False if sys.platform.startswith("linux") else True
 
-        hostname = None
+        # Set keyboard mode so we have a proper keyboard on screen
+        Config.set("kivy", "keyboard_mode", self.get_config_option(config.ConfigurationOption.KEYBOARD_MODE_ON_SCREEN))
+        Config.write()
 
         try:
-            hostname = self.config.get('server', 'hostname')
+            hostname = self.get_config_option(config.ConfigurationOption.HOSTNAME_OF_BACKEND)
 
             Logger.info(f"StellaPayUI: Hostname for server: {hostname}")
 
@@ -98,17 +113,15 @@ class StellaPay(MDApp):
             Logger.warning("StellaPayUI: Using default hostname, since none was provided")
             pass
 
-        if self.config.get('device', 'fullscreen') == 'True':
+        if self.get_config_option(config.ConfigurationOption.DEVICE_SHOW_FULLSCREEN) == "True":
             Logger.info(f"StellaPayUI: Running in fullscreen mode!")
             Window.fullscreen = True
         else:
             Logger.info(f"StellaPayUI: Running in windowed mode!")
             Window.fullscreen = False
 
-        if self.config.get('device', 'show_cursor') == 'True':
-            Window.show_cursor = True
-        else:
-            Window.show_cursor = False
+        # Show the cursor if that's requested in the config file
+        Window.show_cursor = self.get_config_option(config.ConfigurationOption.DEVICE_SHOW_CURSOR) == "True"
 
         # Load .kv file
         Builder.load_file('kvs/DefaultScreen.kv')
@@ -120,7 +133,13 @@ class StellaPay(MDApp):
 
         Logger.debug("StellaPayUI: Start authentication to backend")
 
-        self.loop.call_soon_threadsafe(self.session_manager.setup_session, self.load_categories_and_products)
+        # Start thread that keeps track of connection status to the server.
+        self.data_controller.start_connection_update_thread(Connections.connection_status())
+
+        # Start the setup procedure in a bit
+        self.loop.call_later(
+            int(self.get_config_option(config.ConfigurationOption.TIME_TO_WAIT_BEFORE_AUTHENTICATING)),
+            self.data_controller.start_setup_procedure)
 
         # Initialize defaultScreen (to create session cookies for API calls)
         ds_screen = DefaultScreen(name=Screens.DEFAULT_SCREEN.value)
@@ -151,53 +170,63 @@ class StellaPay(MDApp):
         asyncio.set_event_loop(loop)
         loop.run_forever()
 
-    def load_categories_and_products(self):
-        # Get all categories names
-        response = App.get_running_app().session_manager.do_get_request(url=Connections.get_categories())
+    def done_loading_authentication(self):
+        # The session to the server has been authenticated, so now we can start loading users and products
+        # First load the users, then the categories and products
 
-        Logger.debug("StellaPayUI: Loading product categories")
+        start = time.time() * 1000
 
-        # Check status response
-        if response and response.ok:
+        # Callback for loaded user data
+        def handle_user_data(user_data):
+            if user_data is None:
+                Logger.critical("StellaPayUI: Could not retrieve users from the server!")
+                sys.exit(1)
+                return
 
-            categories = response.json()
+            Logger.info(f"StellaPayUI: Loaded {len(user_data)} users in {time.time() * 1000 - start} ms.")
 
-            Logger.debug(f"StellaPayUI: Retrieved {len(categories)} categories")
+            # Store the user mapping so other screens can use it.
+            self.user_mapping = user_data
 
-            # Load tab for each category
-            for cat in categories:
-                # Request products from category tab_text
-                request = Connections.get_products() + cat['name']
-                response = App.get_running_app().session_manager.do_get_request(request)
+            screen_manager.get_screen(Screens.STARTUP_SCREEN.value).users_loaded = True
 
-                Logger.debug(f"StellaPayUI: Loading products for category '{cat['name']}'")
+        # Load user data
+        self.data_controller.get_user_data(callback=handle_user_data)
 
-                # Evaluate server response
-                if response and response.ok:
-                    # convert response to json
-                    products_json = response.json()
+        # Callback for loaded product data
+        def handle_product_data(product_data):
+            Logger.info(f"StellaPayUI: Loaded {len(product_data)} products.")
 
-                    self.products_per_category[cat['name']] = []
+            # Signal to the startup screen that the products have been loaded.
+            screen_manager.get_screen(Screens.STARTUP_SCREEN.value).products_loaded = True
 
-                    Logger.debug(f"StellaPayUI: Retrieved {len(products_json)} products for category '{cat['name']}'")
+            self.loaded_all_users_and_products()
 
-                    # Create a product object for all
-                    for product in products_json:
-                        # Only add the product to the list if the product must be shown
-                        if product['shown']:
-                            p = Product().create_from_json(product)
-                            self.products_per_category[cat['name']].append(p)
-                else:
-                    # Error in retrieving products from server
-                    Logger.critical("StellaPayUI: Products could not be retrieved: " + response.text)
-                    os._exit(1)
+        # Callback for loaded category data
+        def handle_category_data(category_data):
+            Logger.info(f"StellaPayUI: Loaded {len(category_data)} categories.")
 
-            # If we loaded everything correctly, we can tell the startup screen we loaded correctly.
-            screen_manager.get_screen(Screens.STARTUP_SCREEN.value).on_products_loaded()
-        else:
-            # Error
-            Logger.critical("StellaPayUI: Categories could not be retrieved: " + response.text)
-            os._exit(1)
+            # Signal to the startup screen that the categories have been loaded.
+            screen_manager.get_screen(Screens.STARTUP_SCREEN.value).categories_loaded = True
+
+            self.data_controller.get_product_data(callback=handle_product_data)
+
+        # Get category data (and then retrieve product data)
+        self.data_controller.get_category_data(callback=handle_category_data)
+
+        # Callback to handle the card info
+        def handle_card_info(card_info: NFCCardInfo):
+            Logger.info(f"StellaPayUI: Loaded card info.")
+
+        # Get card info (on separate thread)
+        self.data_controller.get_card_info("test", callback=handle_card_info)
+
+    def loaded_all_users_and_products(self):
+        # This method is called whenever all users, categories and products are loaded.
+        Logger.debug("StellaPayUI: Loaded all data!")
+
+        # If we loaded everything correctly, we can tell the startup screen we loaded correctly.
+        # screen_manager.get_screen(Screens.STARTUP_SCREEN.value).on_products_loaded()
 
     def build_config(self, config):
         config.setdefaults('device', {
@@ -217,6 +246,31 @@ class StellaPay(MDApp):
     def get_git_revisions_hash(self):
         return subprocess.check_output(['git', 'rev-parse', 'HEAD'])
 
+    @staticmethod
+    def get_app() -> "StellaPay":
+        return App.get_running_app()
+
+    def __get_config_option(self, section_name, config_option_name, default_value=None) -> Any:
+        """
+        Get a configuration option as defined in the *.ini file. Each config option is defined in a section, and has its
+        own name. You can also provide a default value if the value is not defined.
+        :param section_name: Name of the section
+        :param config_option_name: Name of the config option
+        :param default_value: Default value to return if the option is not defined. None by default
+        :return: the value of a config option
+        """
+
+        return self.config.getdefault(section_name, config_option_name, default_value)
+
+    def get_config_option(self, config_option: config.ConfigurationOption):
+        if config_option is None:
+            return None
+        return self.__get_config_option(config_option.section_name, config_option.config_name,
+                                        config_option.default_value)
+
 
 if __name__ == '__main__':
+    kivy.require('1.11.1')
+
+    screen_manager = ScreenManager()
     StellaPay().run()

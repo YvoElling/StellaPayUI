@@ -32,6 +32,14 @@ def get_users() -> str:
 def add_user_mapping() -> str:
     return get_hostname() + "identification/add-card-mapping"
 
+
+def connection_status() -> str:
+    return get_hostname() + "admin"
+
+
+def get_all_cards() -> str:
+    return get_hostname() + "identification/cards"
+
 # class BackendURLs:
 #     AUTHENTICATE = hostname + "authenticate"
 #     GET_CATEGORIES = hostname + "categories"
