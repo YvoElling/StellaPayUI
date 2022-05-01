@@ -201,13 +201,14 @@ class DefaultScreen(Screen):
                 break
 
             mail_address = user_dict["email"]
+            name = App.get_running_app().get_user_by_email(mail_address)
             if mail_address in ignored_addresses:
                 continue
-            if mail_address in user_names:
+            if name in user_names:
                 continue
             else:
                 user_names.append(
-                    App.get_running_app().get_user_by_email(mail_address)
+                    name
                 )
 
         return user_names
