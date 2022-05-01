@@ -6,60 +6,105 @@
         icon: 'img/STEmediumnobg.png'
         user_font_size: "450sp"
         size_hint: None, None
-        pos_hint: {"center_x":0.5,"center_y":0.7}
+        pos_hint: {"center_x":0.27,"center_y":0.63}
         on_release: root.to_credits()
 
     Label:
         id: stella_pay
         text: "[b]STELLA PAY[/b]"
         font_size: '53sp'
-        pos_hint: {"center_x":0.5,"center_y":0.375}
+        pos_hint: {"center_x":0.27,"center_y":0.2}
         font_name: 'fonts/orbitron/Orbitron-Bold.ttf'
         markup: True
 
+    MDIconButton:
+        id: connection_state
+        user_font_size: "25sp"
+        md_bg_color: app.theme_cls.purple_button
+        icon: "wifi-off"
+        pos_hint: {"center_x": 0.13,"center_y":0.79}
+
     MDFillRoundFlatButton:
-        text: "Strepen maar!"
-        font_size: '35sp'
-        pos_hint: {"center_x":0.5,"center_y":0.225}
-        size_hint: (None, 0.075) # Only increase size on Y part (because X part is done by KivyMD)
+        text: "Selecteer gebruiker"
+        font_size: '32sp'
+        pos_hint: {"center_x":0.7,"center_y":0.78}
+        size_hint: (0.3, 0.075) # Only increase size on Y part (because X part is done by KivyMD)
         text_color: 1, 1, 1, 1
         on_press: root.on_no_nfc()
         opacity: 0 if spinner.active else 1
+
+    Label:
+        id: title_text_recent_users
+        text: "Welkom! Je bent de eerste hier vandaag"
+        pos_hint: {"center_x":0.7,"center_y":0.71}
+        text_color: 0, 0, 1, 1
+        font_size: '23sp'
+        markup: True
+
+    MDTextButton:
+        id: recent_user_zero
+        text: ""
+        text_color: 0, 0, 1, 1
+        pos_hint: {"center_x":0.7,"center_y":0.59}
+        size_hint: (0.3, 0)
+        font_size: '25sp'
+        on_press: root.select_recent_user(recent_user_zero.text)
+        halign: "center"
+
+    MDTextButton:
+        id: recent_user_one
+        text: ""
+        text_color: 0, 0, 1, 1
+        pos_hint: {"center_x":0.7,"center_y":0.51}
+        size_hint: (0.3, 0)
+        font_size: '25sp'
+        on_press: root.select_recent_user(recent_user_one.text)
+        halign: "center"
+
+    MDTextButton:
+        id: recent_user_two
+        text: ""
+        text_color: 0, 0, 1, 1
+        pos_hint: {"center_x":0.7,"center_y":0.43}
+        size_hint: (0.3, 0)
+        font_size: '25sp'
+        on_press: root.select_recent_user(recent_user_two.text)
+        halign: "center"
 
     MDIconButton:
         icon: "account-clock"
         text: "test"
         user_font_size: "64sp"
-        pos_hint: {"center_x":0.93,"center_y":0.7}
+        pos_hint: {"center_x":0.58,"center_y":0.24}
         on_press: root.on_select_guest()
 
     MDLabel:
         text: "Gasten"
-        pos_hint: {"x":0.90,"center_y":0.64}
+        pos_hint: {"x":0.55,"center_y":0.165}
         font_style: "H6"
         theme_text_color: "Primary"
 
     MDIconButton:
         icon: "tools"
         user_font_size: "64sp"
-        pos_hint: {"center_x":0.93,"center_y":0.5}
+        pos_hint: {"center_x":0.7,"center_y":0.24}
         on_press: root.on_select_onderhoud()
 
     MDLabel:
         text: "Onderhoud"
-        pos_hint: {"x":0.89,"center_y":0.44}
+        pos_hint: {"x":0.665,"center_y":0.165}
         font_style: "H6"
         theme_text_color: "Primary"
 
     MDIconButton:
         icon: "account-supervisor-circle"
         user_font_size: "64sp"
-        pos_hint: {"center_x":0.93,"center_y":0.3}
+        pos_hint: {"center_x":0.82,"center_y":0.24}
         on_press: root.on_select_beheer()
 
     MDLabel:
         text: "Beheer"
-        pos_hint: {"x":0.905,"center_y":0.24}
+        pos_hint: {"x":0.795,"center_y":0.165}
         font_style: "H6"
         theme_text_color: "Primary"
 

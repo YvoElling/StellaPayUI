@@ -1,5 +1,6 @@
 import datetime
 import functools
+import json
 import time
 import typing
 from asyncio import AbstractEventLoop
@@ -16,7 +17,9 @@ from PythonNFCReader.CardListener import CardListener
 from PythonNFCReader.NFCReader import CardConnectionManager
 from data.ConnectionListener import ConnectionListener
 from ds.NFCCardInfo import NFCCardInfo
+from utils import Connections
 from utils.Screens import Screens
+from utils.SessionManager import SessionManager
 from ux.SelectUserItem import SelectUserItem
 from ux.UserPickerDialog import UserPickerDialog
 
@@ -44,8 +47,28 @@ class DefaultScreen(Screen):
             # Set new text depending on connection status
             if connection_status:
                 self.default_screen.ids.copyright.text = current_text.replace("offline mode", "online mode")
+                # Update the icon and the color of the wifi status indicator to 'online'
+                self.default_screen.ids.connection_state.md_bg_color = App.get_running_app().theme_cls.green_button
+                self.default_screen.ids.connection_state.icon = "wifi-strength-4"
             else:
                 self.default_screen.ids.copyright.text = current_text.replace("online mode", "offline mode")
+                # Update the icon and the color to 'offline'
+                self.default_screen.ids.connection_state.md_bg_color = App.get_running_app().theme_cls.red_button
+                self.default_screen.ids.connection_state.icon = "wifi-alert"
+
+    def set_connectivity_icon(self, connection: bool):
+        current_text = self.ids.copyright.text
+
+        if connection:
+            self.ids.copyright.text = current_text.replace("offline mode", "online mode")
+            # Update the icon and the color of the wifi status indicator to 'online'
+            self.ids.connection_state.md_bg_color = App.get_running_app().theme_cls.green_button
+            self.ids.connection_state.icon = "wifi-strength-4"
+        else:
+            self.ids.copyright.text = current_text.replace("online mode", "offline mode")
+            # Update the icon and the color to 'offline'
+            self.ids.connection_state.md_bg_color = App.get_running_app().theme_cls.red_button
+            self.ids.connection_state.icon = "wifi-alert"
 
     def __init__(self, **kwargs):
         # Call to super (Screen class)
@@ -73,6 +96,9 @@ class DefaultScreen(Screen):
         self.ids.copyright.text = self.ids.copyright.text.replace("%connection_mode%",
                                                                   "online mode" if App.get_running_app().data_controller.running_in_online_mode() else "offline mode")
 
+        connection_state = App.get_running_app().data_controller.running_in_online_mode()
+        self.set_connectivity_icon(connection_state)
+
         # Register listener
         App.get_running_app().data_controller.register_connection_listener(self.connection_change_listener)
 
@@ -94,11 +120,98 @@ class DefaultScreen(Screen):
         # Start loading user data.
         self.event_loop.call_soon_threadsafe(self.load_user_data)
 
+    def on_pre_enter(self, *args):
+        # Get today, and set time to midnight.
+        today = datetime.datetime.today().replace(hour=0, minute=0, second=0, microsecond=0)
+        self.event_loop.call_soon_threadsafe(
+            functools.partial(self.get_most_recent_users, today))
+
     def to_credits(self):
         # Only show credits when user select dialog is not showing
         if not self.user_select_dialog_opened:
             self.manager.transition = SlideTransition(direction='left')
             self.manager.current = Screens.CREDITS_SCREEN.value
+
+    @mainthread
+    def set_recent_user(self, name: str, index: int):
+
+        if index == 0:
+            self.ids.recent_user_zero.text = name
+            self.ids.recent_user_zero.size_hint = (0.3, 0.075)
+        elif index == 1:
+            self.ids.recent_user_one.text = name
+            self.ids.recent_user_one.size_hint = (0.3, 0.075)
+        elif index == 2:
+            self.ids.recent_user_two.text = name
+            self.ids.recent_user_two.size_hint = (0.3, 0.075)
+
+    def clear_recent_user(self, index: int):
+        if index == 0:
+            self.ids.recent_user_zero.text = ""
+            self.ids.recent_user_zero.size_hint = (0.3, 0)
+        elif index == 1:
+            self.ids.recent_user_one.text = ""
+            self.ids.recent_user_one.size_hint = (0.3, 0)
+        elif index == 2:
+            self.ids.recent_user_two.text = ""
+            self.ids.recent_user_two.size_hint = (0.3, 0)
+
+    def set_recent_users(self, names: typing.List[str]):
+        if len(names) > 0:
+            self.ids.title_text_recent_users.text = "[b]Of kies een recente gebruiker:[/b]"
+        else:
+            self.ids.title_text_recent_users.text = "Welkom! Je bent de eerste hier vandaag"
+
+        for index, name in enumerate(names):
+            self.set_recent_user(name, index)
+
+        clear_index = min(len(names), 3)
+        for i in range(clear_index, 3):
+            self.clear_recent_user(i)
+
+    def get_most_recent_users(self, today: datetime.datetime):
+        response = App.get_running_app().session_manager.do_post_request(
+            url=Connections.get_all_transactions(),
+            json_data={
+                "begin_date": today.strftime("%Y/%m/%d %H:%M:%S")
+            }
+        )
+
+        if response is None or not response.ok:
+            return
+
+        try:
+            body = json.loads(response.content)
+        except:
+            Logger.warning("StellaPayUI: Failed to parse most recent users query")
+            return
+
+        names = self.get_most_recent_names(body)
+        self.set_recent_users(names)
+
+    def get_most_recent_names(self, body: typing.List[typing.Dict]):
+        ignored_addresses = ["onderhoud@solarteameindhoven.nl",
+                             "beheer@solarteameindhoven.nl",
+                             "info@solarteameindhoven.nl"]
+
+        user_names = []
+
+        for user_dict in reversed(body):
+            if len(user_names) >= 3:
+                break
+
+            mail_address = user_dict["email"]
+            name = App.get_running_app().get_user_by_email(mail_address)
+            if mail_address in ignored_addresses:
+                continue
+            if name in user_names:
+                continue
+            else:
+                user_names.append(
+                    name
+                )
+
+        return user_names
 
     #
     # gets called when the 'NFC kaart vergeten button' is pressed
@@ -110,6 +223,9 @@ class DefaultScreen(Screen):
         # # Open the dialog once it's been created.
         # self.user_select_dialog.open()
         # self.user_select_dialog_opened = True
+
+    def select_recent_user(self, obj):
+        self.selected_active_user(obj)
 
     def on_user_select_dialog_close(self, event):
         self.user_select_dialog_opened = False
@@ -146,7 +262,8 @@ class DefaultScreen(Screen):
     # An active user is selected via the dialog
     def selected_active_user(self, selected_user_name: Optional[str]):
         # Close the dialog screen
-        self.user_select_dialog.close_dialog()
+        if self.user_select_dialog is not None:
+            self.user_select_dialog.close_dialog()
 
         # Check if a user was actually selected
         if selected_user_name is None:
