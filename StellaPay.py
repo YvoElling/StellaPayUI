@@ -166,6 +166,13 @@ class StellaPay(MDApp):
 
         return screen_manager
 
+    def get_user_by_email(self, email: str) -> Optional[str]:
+        try:
+            key = list(self.user_mapping.keys())[list(self.user_mapping.values()).index(email)]
+            return key
+        except:
+            return None
+
     def run_event_loop(self, loop):
         asyncio.set_event_loop(loop)
         loop.run_forever()
