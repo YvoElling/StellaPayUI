@@ -33,27 +33,22 @@ class OnChangeShoppingCartListener(ShoppingCartListener):
 
         active_user = App.get_running_app().active_user
 
-        # Loop over all purchases in the shopping cart and see if there are any for the active user
-        for purchase in ProductScreen.shopping_cart.get_shopping_cart():
-            if purchase.purchaser_name == active_user:
-                # We want to ensure that the ProductListItem corresponding to this purchase is showing the correct value
+        # Loop over all items that can be bought and update their counts on screen (based on what is in the basket)
+        for tab in self.product_screen.tabs:
+            for product_item in tab.ids.container.children:
+                # Find a matching purchase in the shopping cart (by the active user)
+                matching_purchase = next((
+                    purchase for purchase in ProductScreen.shopping_cart.get_shopping_cart()
+                    if purchase.product_name == product_item.text
+                       and purchase.purchaser_name == active_user
+                ), None)
 
-                found_matching_product_list_item = False
-
-                # Loop over all ProductListItem objects and update them if applicable
-                for tab in self.product_screen.tabs:
-
-                    if found_matching_product_list_item:
-                        break
-
-                    for product_list_item in tab.ids.container.children:
-                        # If this ProductListItem is the one responsible for showing the count on the screen
-                        if product_list_item.text == purchase.product_name:
-                            # Set the text of the 'count' label to what is stored in the shopping cart
-                            product_list_item.ids.count.text = str(purchase.amount)
-
-                            found_matching_product_list_item = True
-                            break
+                # If this item is not in the shopping cart, we can set the count to zero (as it is not being bought)
+                if matching_purchase is None:
+                    product_item.ids.count.text = "0"
+                else:
+                    # Otherwise, we set it to the count of the shopping car
+                    product_item.ids.count.text = str(matching_purchase.amount)
 
 
 class ProductScreen(Screen):
@@ -110,7 +105,8 @@ class ProductScreen(Screen):
         if len(self.tabs) > 0:
             Logger.debug("StellaPayUI: Don't load tabs as we already have that information.")
 
-            Logger.debug(f"StellaPayUI: Loaded category data and tabs (after skipping) in {time.time() - start_time} seconds")
+            Logger.debug(
+                f"StellaPayUI: Loaded category data and tabs (after skipping) in {time.time() - start_time} seconds")
 
             # Load product items (because we still need to reload them)
             self.load_products()
@@ -126,7 +122,8 @@ class ProductScreen(Screen):
                 self.ids.android_tabs.add_widget(tab)
                 self.tabs.append(tab)
 
-            Logger.debug(f"StellaPayUI: Loaded category data and tabs (no skipping) in {time.time() - start_time} seconds")
+            Logger.debug(
+                f"StellaPayUI: Loaded category data and tabs (no skipping) in {time.time() - start_time} seconds")
 
             # Load product items
             self.load_products()
@@ -343,8 +340,9 @@ class ProductScreen(Screen):
             self.final_dialog.dismiss()
             self.final_dialog = None
 
-        # Return to the default screen for a new user to log in
-        self.manager.current = Screens.DEFAULT_SCREEN.value
+        if self.manager.current == Screens.PRODUCT_SCREEN.value:
+            # Return to the default screen for a new user to log in
+            self.manager.current = Screens.DEFAULT_SCREEN.value
 
     # This method ought to be called when the user session is finished
     def end_user_session(self):
