@@ -212,6 +212,10 @@ class ProductScreen(Screen):
     def on_leave(self, *args):
         self.timeout_event.cancel()
 
+        if self.final_dialog is not None:
+            self.final_dialog.dismiss()
+            self.final_dialog = None
+
     # Called when the user wants to leave this active session.
     def on_leave_product_screen_button(self):
         self.end_user_session()
@@ -290,12 +294,13 @@ class ProductScreen(Screen):
 
         @mainthread
         def handle_transaction_result(success: bool):
-            if success:
-                # Reset instance variables
-                self.end_user_session()
+            # Reset instance variables
+            self.end_user_session()
 
-                if self.shopping_cart_dialog is not None:
-                    self.shopping_cart_dialog.dismiss()
+            if self.shopping_cart_dialog is not None:
+                self.shopping_cart_dialog.dismiss()
+
+            if success:
 
                 self.timeout_event.cancel()
 
@@ -312,11 +317,6 @@ class ProductScreen(Screen):
                 self.timeout_event = Clock.schedule_once(self.on_thanks, 5)
                 self.final_dialog.open()
             else:
-                # Reset instance variables
-                self.end_user_session()
-
-                if self.shopping_cart_dialog is not None:
-                    self.shopping_cart_dialog.dismiss()
 
                 self.final_dialog = MDDialog(
                     text="Het is niet gelukt je aankoop te registreren. Herstart de app svp.",
@@ -336,10 +336,6 @@ class ProductScreen(Screen):
             App.get_running_app().data_controller.create_transactions, self.shopping_cart, handle_transaction_result)
 
     def on_thanks(self, _):
-        if self.final_dialog is not None:
-            self.final_dialog.dismiss()
-            self.final_dialog = None
-
         if self.manager.current == Screens.PRODUCT_SCREEN.value:
             # Return to the default screen for a new user to log in
             self.manager.current = Screens.DEFAULT_SCREEN.value
