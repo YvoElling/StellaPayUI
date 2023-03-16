@@ -31,6 +31,7 @@ from scrs.WelcomeScreen import WelcomeScreen
 from utils import Connections
 from utils.Screens import Screens
 from utils.SessionManager import SessionManager
+from utils.async_requests.AsyncResult import AsyncResult
 
 
 class StellaPay(MDApp):
@@ -195,26 +196,38 @@ class StellaPay(MDApp):
             # Store the user mapping so other screens can use it.
             self.user_mapping = user_data
 
-            screen_manager.get_screen(Screens.STARTUP_SCREEN.value).users_loaded = True
+            screen_manager.get_screen(Screens.STARTUP_SCREEN.value).users_loaded = AsyncResult(True, data=True)
 
         # Load user data
         self.data_controller.get_user_data(callback=handle_user_data)
 
         # Callback for loaded product data
         def handle_product_data(product_data):
+
+            if product_data is None:
+                Logger.error(f"StellaPayUI: Something went wrong when fetching product data!")
+                screen_manager.get_screen(Screens.STARTUP_SCREEN.value).products_loaded = AsyncResult(False)
+                return
+
             Logger.info(f"StellaPayUI: Loaded {len(product_data)} products.")
 
             # Signal to the startup screen that the products have been loaded.
-            screen_manager.get_screen(Screens.STARTUP_SCREEN.value).products_loaded = True
+            screen_manager.get_screen(Screens.STARTUP_SCREEN.value).products_loaded = AsyncResult(True, data=True)
 
             self.loaded_all_users_and_products()
 
         # Callback for loaded category data
         def handle_category_data(category_data):
+
+            if category_data is None:
+                Logger.error(f"StellaPayUI: Something went wrong when fetching category data!")
+                screen_manager.get_screen(Screens.STARTUP_SCREEN.value).categories_loaded = AsyncResult(False)
+                return
+
             Logger.info(f"StellaPayUI: Loaded {len(category_data)} categories.")
 
             # Signal to the startup screen that the categories have been loaded.
-            screen_manager.get_screen(Screens.STARTUP_SCREEN.value).categories_loaded = True
+            screen_manager.get_screen(Screens.STARTUP_SCREEN.value).categories_loaded = AsyncResult(True, data=True)
 
             self.data_controller.get_product_data(callback=handle_product_data)
 
