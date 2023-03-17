@@ -10,10 +10,13 @@ Builder.load_file('kvs/UserPickerContent.kv')
 
 
 class UserPickerContent(BoxLayout):
+    picked_user = StringProperty()
 
     def __init__(self, **kwargs):
         super(UserPickerContent, self).__init__(**kwargs)
         self.eligible_users_to_select = list(App.get_running_app().user_mapping.keys())
+
+        self.last_click_registered = datetime.datetime.now()
 
     def on_text_updated(self, typed_text: str):
         # Update the recycle view to only show persons that match the typed text.
@@ -27,6 +30,30 @@ class UserPickerContent(BoxLayout):
                     "viewclass": "OneLineIconListItem",
                     "text": user_name,
                 })
+
+        # Make sure to add listeners so we get alerted whenever a child is clicked.
+        for shown_user_element in self.ids.matched_users.children[0].children:
+            shown_user_element.bind(on_touch_up=self.on_child_clicked)
+
+    def on_child_clicked(self, view, touch_event):
+
+        # Check if the user clicked this child
+        if not view.collide_point(*touch_event.pos):
+            return
+
+        # For some reason the touch listener is triggered twice. We ignore any triggers that
+        # are within 1 second of each other.
+
+        now = datetime.datetime.now()
+        time_since_last_click = (now - self.last_click_registered).total_seconds()
+
+        if time_since_last_click < 1.0:
+            return
+
+        self.last_click_registered = now
+
+        # Update the user that was picked
+        self.picked_user = view.text
 
 
 class UserPickerDialog(MDDialog):
@@ -49,34 +76,12 @@ class UserPickerDialog(MDDialog):
 
         super(UserPickerDialog, self).__init__(**kwargs)
 
-        # Bind pressing on a button to on_user_selected function
-        self.content_cls.ids.select_user_button.bind(on_release=self._on_user_selected)
+        # Listen to when a user is picked or the cancel button is pressed
+        self.content_cls.bind(picked_user=self._on_user_picked)
         self.content_cls.ids.cancel_button.bind(on_release=self._on_cancelled_user_selection)
 
-    # This method is called when the user presses the 'Pick user' button
-    def _on_user_selected(self, _):
-
-        most_recent_time_touched: datetime.datetime = None
-        last_user_clicked: str = None
-
-        # This is a bit of hack:
-        # We loop through all shown names on the screen and search for touch events
-        # We grab the name that has been touched most recently and select it as most likely candidate
-        for shown_user in self.content_cls.ids.matched_users.children[0].children:
-            if shown_user.last_touch is not None:
-                # Convert the timestamp from UNIX timestamp to a datetime object
-                time_at_touch = datetime.datetime.fromtimestamp(shown_user.last_touch.time_end)
-                name_clicked = shown_user.text
-
-                # Keep track of the most recent timestamp
-                if most_recent_time_touched is None or most_recent_time_touched < time_at_touch:
-                    most_recent_time_touched = time_at_touch
-                    last_user_clicked = name_clicked
-
-        # Update the property to let anyone listening know we found (or not) a user
-        self.selected_user = last_user_clicked
-
-        return True
+    def _on_user_picked(self, _, user: str):
+        self.selected_user = user
 
     # This method is called whenever the user presses the 'cancel' button
     def _on_cancelled_user_selection(self, _) -> bool:
