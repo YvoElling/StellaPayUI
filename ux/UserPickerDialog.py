@@ -37,7 +37,7 @@ class UserPickerContent(BoxLayout):
 
     def on_child_clicked(self, view, touch_event):
 
-        # Check if the user clicked this child
+        # Check if the user clicked this child or not
         if not view.collide_point(*touch_event.pos):
             return
 
