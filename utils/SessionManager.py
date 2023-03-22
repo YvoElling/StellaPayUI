@@ -40,8 +40,6 @@ class SessionManager:
         return await self._setup_authentication_async()
 
     async def _setup_authentication_async(self) -> bool:
-        json_credentials = None
-
         # Convert authentication.json to json dict
         try:
             json_credentials = self.parse_to_json(SessionManager.AUTHENTICATION_FILE)
