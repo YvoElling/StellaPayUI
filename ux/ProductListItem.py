@@ -46,7 +46,7 @@ class ProductListItem(TwoLineAvatarIconListItem):
 
         # Create dialog if it wasn't created before.
         if price is not None:
-            App.get_running_app().loop.call_soon_threadsafe(self.load_dialog_screen)
+            self.load_dialog_screen()
 
     def on_add_product(self):
         # Let caller know that we want to add an item to the shopping cart

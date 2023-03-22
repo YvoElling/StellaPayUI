@@ -1,3 +1,4 @@
+import asyncio
 import threading
 from asyncio import AbstractEventLoop
 
@@ -58,6 +59,7 @@ class RegisterUIDScreen(Screen):
         self.on_enter()
 
     # Return to default screen when cancelled
+    @mainthread
     def on_cancel(self):
         self.manager.current = Screens.DEFAULT_SCREEN.value
 
@@ -71,29 +73,36 @@ class RegisterUIDScreen(Screen):
         selected_user_name = self.ids.chosen_user.text
         selected_user_email = App.get_running_app().user_mapping[selected_user_name]
 
-        App.get_running_app().loop.call_soon_threadsafe(
-            self.register_card_mapping, selected_user_name, selected_user_email)
+        asyncio.run_coroutine_threadsafe(self.register_card_mapping(selected_user_name, selected_user_email),
+                                         loop=App.get_running_app().loop)
 
-    def register_card_mapping(self, selected_user_name, selected_user_email: str):
+    async def register_card_mapping(self, selected_user_name, selected_user_email: str):
 
-        @mainthread
-        def handle_card_registration(success: bool):
-            Logger.debug(
-                f"StellaPayUI: Received callback of new card registration on {threading.current_thread().name}")
+        card_registered = await App.get_running_app() \
+            .data_controller.register_card_info(card_id=self.nfc_id, email=selected_user_email,
+                                                owner=selected_user_name)
 
-            if success:
-                # Store the active user in the app so other screens can use it.
-                App.get_running_app().active_user = selected_user_name
-                self.manager.current = Screens.WELCOME_SCREEN.value
-            else:
-                toast(
-                    f"Could not register this card to {selected_user_name}. Try selecting your name on the home screen instead.",
-                    duration=5)
-                self.on_cancel()
+        if card_registered:
+            self.card_registration_succeeded(selected_user_name)
+        else:
+            self.card_registration_failed(selected_user_name)
 
-        # Try to register the card.
-        self.event_loop.call_soon_threadsafe(App.get_running_app().data_controller.register_card_info, self.nfc_id,
-                                             selected_user_email, selected_user_name, handle_card_registration)
+        Logger.debug(
+            f"StellaPayUI: ({threading.current_thread().name}) "
+            f"Registration of card '{self.nfc_id}' successful: {card_registered}")
+
+    @mainthread
+    def card_registration_succeeded(self, user: str):
+        # Store the active user in the app so other screens can use it.
+        App.get_running_app().active_user = user
+        self.manager.current = Screens.WELCOME_SCREEN.value
+
+    @mainthread
+    def card_registration_failed(self, user: str):
+        toast(
+            f"Could not register this card to {user}. Try selecting your name on the home screen instead.",
+            duration=5)
+        self.on_cancel()
 
     #
     # Whenever the user wants to show the list of users to register the card to.
@@ -123,4 +132,3 @@ class RegisterUIDScreen(Screen):
 
         # Hide name of selected user
         self.ids.chosen_user.text = ""
-

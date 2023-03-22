@@ -1,10 +1,11 @@
+import asyncio
 import datetime
-import functools
 import json
+import threading
 import time
 import typing
 from asyncio import AbstractEventLoop
-from typing import Optional, Callable
+from typing import Optional, List
 
 from kivy import Logger
 from kivy.app import App
@@ -16,17 +17,14 @@ from kivymd.uix.dialog import MDDialog
 from PythonNFCReader.CardListener import CardListener
 from PythonNFCReader.NFCReader import CardConnectionManager
 from data.ConnectionListener import ConnectionListener
-from ds.NFCCardInfo import NFCCardInfo
 from utils import Connections
 from utils.Screens import Screens
-from utils.SessionManager import SessionManager
 from ux.SelectUserItem import SelectUserItem
 from ux.UserPickerDialog import UserPickerDialog
 
 
 class DefaultScreen(Screen):
     class NFCListener(CardListener):
-
         def __init__(self, default_screen: "DefaultScreen"):
             self.default_screen = default_screen
 
@@ -89,12 +87,15 @@ class DefaultScreen(Screen):
         self.users_to_select = []
 
         # Add extra information to footer text
-        self.ids.copyright.text = self.ids.copyright.text.replace("%year%", str(datetime.datetime.now().year)) \
-            .replace("%date%", str(datetime.datetime.now().strftime("%Y/%m/%d @ %H:%M:%S")))
+        self.ids.copyright.text = self.ids.copyright.text.replace("%year%", str(datetime.datetime.now().year)).replace(
+            "%date%", str(datetime.datetime.now().strftime("%Y/%m/%d @ %H:%M:%S"))
+        )
 
         # Add whether we are running in offline or online mode
-        self.ids.copyright.text = self.ids.copyright.text.replace("%connection_mode%",
-                                                                  "online mode" if App.get_running_app().data_controller.running_in_online_mode() else "offline mode")
+        self.ids.copyright.text = self.ids.copyright.text.replace(
+            "%connection_mode%",
+            "online mode" if App.get_running_app().data_controller.running_in_online_mode() else "offline mode",
+        )
 
         connection_state = App.get_running_app().data_controller.running_in_online_mode()
         self.set_connectivity_icon(connection_state)
@@ -113,23 +114,22 @@ class DefaultScreen(Screen):
         App.get_running_app().active_user = None
         self.ids.spinner.active = False
 
-        self.user_select_dialog = UserPickerDialog()
-        self.user_select_dialog.bind(
-            selected_user=lambda _, selected_user: self.selected_active_user(selected_user))
+        self.user_select_dialog = UserPickerDialog(App.get_running_app().user_mapping.keys())
+        self.user_select_dialog.bind(selected_user=lambda _, selected_user: self.selected_active_user(selected_user))
 
         # Start loading user data.
-        self.event_loop.call_soon_threadsafe(self.load_user_data)
+        asyncio.run_coroutine_threadsafe(self.load_user_data(), loop=App.get_running_app().loop)
 
     def on_pre_enter(self, *args):
         # Get today, and set time to midnight.
         today = datetime.datetime.today().replace(hour=0, minute=0, second=0, microsecond=0)
-        self.event_loop.call_soon_threadsafe(
-            functools.partial(self.get_most_recent_users, today))
+
+        asyncio.run_coroutine_threadsafe(self.get_most_recent_users(today), loop=App.get_running_app().loop)
 
     def to_credits(self):
         # Only show credits when user select dialog is not showing
         if not self.user_select_dialog_opened:
-            self.manager.transition = SlideTransition(direction='left')
+            self.manager.transition = SlideTransition(direction="left")
             self.manager.current = Screens.CREDITS_SCREEN.value
 
     @mainthread
@@ -156,7 +156,8 @@ class DefaultScreen(Screen):
             self.ids.recent_user_two.text = ""
             self.ids.recent_user_two.size_hint = (0.3, 0)
 
-    def set_recent_users(self, names: typing.List[str]):
+    @mainthread
+    def set_recent_users(self, names: List[str]):
         if len(names) > 0:
             self.ids.title_text_recent_users.text = "[b]Of kies een recente gebruiker:[/b]"
         else:
@@ -169,12 +170,11 @@ class DefaultScreen(Screen):
         for i in range(clear_index, 3):
             self.clear_recent_user(i)
 
-    def get_most_recent_users(self, today: datetime.datetime):
-        response = App.get_running_app().session_manager.do_post_request(
-            url=Connections.get_all_transactions(),
-            json_data={
-                "begin_date": today.strftime("%Y/%m/%d %H:%M:%S")
-            }
+    async def get_most_recent_users(self, today: datetime.datetime):
+        Logger.debug(f"StellaPayUI: Loading recent users on {threading.current_thread().name}")
+
+        response = await App.get_running_app().session_manager.do_post_request_async(
+            url=Connections.get_all_transactions(), json_data={"begin_date": today.strftime("%Y/%m/%d %H:%M:%S")}
         )
 
         if response is None or not response.ok:
@@ -190,9 +190,11 @@ class DefaultScreen(Screen):
         self.set_recent_users(names)
 
     def get_most_recent_names(self, body: typing.List[typing.Dict]):
-        ignored_addresses = ["onderhoud@solarteameindhoven.nl",
-                             "beheer@solarteameindhoven.nl",
-                             "info@solarteameindhoven.nl"]
+        ignored_addresses = [
+            "onderhoud@solarteameindhoven.nl",
+            "beheer@solarteameindhoven.nl",
+            "info@solarteameindhoven.nl",
+        ]
 
         user_names = []
 
@@ -207,9 +209,7 @@ class DefaultScreen(Screen):
             if name in user_names:
                 continue
             else:
-                user_names.append(
-                    name
-                )
+                user_names.append(name)
 
         return user_names
 
@@ -230,17 +230,13 @@ class DefaultScreen(Screen):
     def on_user_select_dialog_close(self, event):
         self.user_select_dialog_opened = False
 
-    def load_user_data(self, callback: Optional[Callable] = None):
-        def callback_handle(user_data: typing.Dict[str, str]):
-            if user_data is None:
-                Logger.warning(f"StellaPayUI: Could not retrieve users!")
-
-            # Make sure to call the original callback when we're done.
-            if callback is not None:
-                callback()
+    async def load_user_data(self):
 
         # Try to grab user data
-        App.get_running_app().data_controller.get_user_data(callback_handle)
+        user_data = await App.get_running_app().data_controller.get_user_data()
+
+        if user_data is None:
+            Logger.warning(f"StellaPayUI: Could not retrieve users!")
 
     @mainthread
     def create_user_select_dialog(self, user_mapping: typing.Dict[str, str]):
@@ -249,7 +245,8 @@ class DefaultScreen(Screen):
             for user_name, user_email in user_mapping.items():
                 # store all users in a list of items that we will open with a dialog
                 self.users_to_select.append(
-                    SelectUserItem(user_email=user_email, callback=self.selected_active_user, text=user_name))
+                    SelectUserItem(user_email=user_email, callback=self.selected_active_user, text=user_name)
+                )
                 # Add a callback so we know when a user has been selected
 
             # Create user dialog so we open it later.
@@ -270,7 +267,7 @@ class DefaultScreen(Screen):
             Logger.debug("StellaPayUI: No user selected!")
             return
 
-        self.manager.transition = SlideTransition(direction='left')
+        self.manager.transition = SlideTransition(direction="left")
 
         App.get_running_app().active_user = selected_user_name
 
@@ -298,32 +295,35 @@ class DefaultScreen(Screen):
         # Show the spinner
         self.ids.spinner.active = True
 
+        # Get card info (on separate thread)
+        asyncio.run_coroutine_threadsafe(self.identify_presented_card(uid), loop=App.get_running_app().loop)
+
+    async def identify_presented_card(self, uid: str):
+
+        Logger.debug(f"StellaPayUI: Looking up card info of '{uid}'.")
+
         start_time = time.time()
 
-        # Callback to handle the card info
-        @mainthread
-        def handle_card_info(card_info: NFCCardInfo):
+        card_info = await App.get_running_app().data_controller.get_card_info(uid)
 
-            Logger.debug(f"StellaPayUI: Received card info in {time.time() - start_time} seconds.")
+        Logger.debug(f"StellaPayUI: Received card info in {time.time() - start_time} seconds.")
 
-            if card_info is None:
-                # User was not found, proceed to registerUID file
-                self.manager.transition = SlideTransition(direction='right')
-                self.manager.get_screen(Screens.REGISTER_UID_SCREEN.value).nfc_id = uid
-                self.manager.current = Screens.REGISTER_UID_SCREEN.value
-            else:
-                # User is found
-                App.get_running_app().active_user = card_info.owner_name
+        if card_info is None:
+            Logger.debug(f"StellaPayUI: Did not find info for card '{uid}'.")
+            # User was not found, proceed to registerUID file
+            self.manager.transition = SlideTransition(direction="right")
+            self.manager.get_screen(Screens.REGISTER_UID_SCREEN.value).nfc_id = uid
+            self.manager.current = Screens.REGISTER_UID_SCREEN.value
+        else:
+            Logger.debug(f"StellaPayUI: Card '{uid}' belongs to {card_info.owner_name}.")
+            # User is found
+            App.get_running_app().active_user = card_info.owner_name
 
-                # Set slide transition correctly.
-                self.manager.transition = SlideTransition(direction='left')
+            # Set slide transition correctly.
+            self.manager.transition = SlideTransition(direction="left")
 
-                # Go to the product screen
-                self.manager.current = Screens.PRODUCT_SCREEN.value
-
-        # Get card info (on separate thread)
-        App.get_running_app().loop.call_soon_threadsafe(
-            functools.partial(App.get_running_app().data_controller.get_card_info, uid, handle_card_info))
+            # Go to the product screen
+            self.manager.current = Screens.PRODUCT_SCREEN.value
 
     def on_select_guest(self):
         self.select_special_user("Gast Account")
@@ -338,7 +338,7 @@ class DefaultScreen(Screen):
         # Close the user dialog
         self.user_select_dialog.close_dialog()
 
-        self.manager.transition = SlideTransition(direction='left')
+        self.manager.transition = SlideTransition(direction="left")
 
         App.get_running_app().active_user = user
 

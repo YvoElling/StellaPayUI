@@ -4,12 +4,13 @@ import threading
 import traceback
 from collections import OrderedDict
 from json import JSONDecodeError
-from typing import Callable, Optional, List, Dict, Any
+from typing import Optional, List, Dict, Any
 
 from kivy import Logger
 
 from data.CachedDataStorage import CachedDataStorage
 from data.DataStorage import DataStorage
+from data.user.user_data import UserData
 from ds.NFCCardInfo import NFCCardInfo
 from ds.Product import Product
 from ds.ShoppingCart import ShoppingCart
@@ -33,18 +34,15 @@ class OfflineDataStorage(DataStorage):
         # Load pending data file into memory
         self.pending_json_data = self.__get_json_data_from_file__(OfflineDataStorage.PENDING_DATA_FILE_NAME)
 
-    def get_user_data(self, callback: Callable[[Optional[Dict[str, str]]], None] = None) -> None:
-
-        # We're not doing any work when the result is ignored anyway.
-        if callback is None:
-            return
-
+    async def get_user_data(self) -> List[UserData]:
         # Check if we have a cached version of this somewhere
         if len(self.cached_data_storage.cached_user_data) > 0:
             Logger.debug("StellaPayUI: Using offline (cached) user data")
             # Return cached user data
-            callback(self.cached_data_storage.cached_user_data)
-            return
+            return [
+                UserData(real_name=user_name, email_address=user_email)
+                for user_name, user_email in self.cached_data_storage.cached_user_data.items()
+            ]
 
         Logger.debug(f"StellaPayUI: Loading user mapping on thread {threading.current_thread().name}")
 
@@ -56,27 +54,26 @@ class OfflineDataStorage(DataStorage):
 
             # Sort items
             self.cached_data_storage.cached_user_data = OrderedDict(
-                sorted(self.cached_data_storage.cached_user_data.items()))
+                sorted(self.cached_data_storage.cached_user_data.items())
+            )
 
             Logger.debug("StellaPayUI: Loaded user data")
 
-            callback(self.cached_data_storage.cached_user_data)
+            return [
+                UserData(real_name=user_name, email_address=user_email)
+                for user_name, user_email in self.cached_data_storage.cached_user_data.items()
+            ]
         except Exception as e:
             Logger.critical(f"StellaPayUI: A problem with retrieving offline user data!")
             traceback.print_exception(None, e, e.__traceback__)
 
-            callback(None)
+            return []
 
-    def get_product_data(self, callback: Callable[[Optional[Dict[str, List[Product]]]], None] = None) -> None:
-        # We're not doing any work when the result is ignored anyway.
-        if callback is None:
-            return
-
+    async def get_product_data(self) -> Dict[str, List[Product]]:
         if len(self.cached_data_storage.cached_product_data) > 0:
             Logger.debug("StellaPayUI: Using online (cached) product data")
             # Return cached product data
-            callback(self.cached_data_storage.cached_product_data)
-            return
+            return self.cached_data_storage.cached_product_data
 
         Logger.debug(f"StellaPayUI: Loading product data on thread {threading.current_thread().name}")
 
@@ -92,28 +89,24 @@ class OfflineDataStorage(DataStorage):
                 price = product_data["price"]
 
                 # Add product to cache
-                self.cached_data_storage.cached_product_data[category_name] \
-                    .append(Product().create_from_json(json={"name": product, "price": price, "shown": shown}))
+                self.cached_data_storage.cached_product_data[category_name].append(
+                    Product().create_from_json(json={"name": product, "price": price, "shown": shown})
+                )
 
             Logger.debug(f"StellaPayUI: Retrieved {len(products)} products from offline storage")
 
-            callback(self.cached_data_storage.cached_product_data)
+            return self.cached_data_storage.cached_product_data
         except Exception as e:
             Logger.critical(f"StellaPayUI: A problem with retrieving offline product data!")
             traceback.print_exception(None, e, e.__traceback__)
 
-            callback(None)
+            return dict()
 
-    def get_category_data(self, callback: Callable[[Optional[List[str]]], None] = None) -> None:
-        # We're not doing any work when the result is ignored anyway.
-        if callback is None:
-            return
-
+    async def get_category_data(self) -> List[str]:
         if len(self.cached_data_storage.cached_category_data) > 0:
             Logger.debug("StellaPayUI: Using offline (cached) category data")
             # Return cached category data
-            callback(self.cached_data_storage.cached_category_data)
-            return
+            return self.cached_data_storage.cached_category_data
 
         Logger.debug(f"StellaPayUI: Loading category data on thread {threading.current_thread().name}")
 
@@ -128,24 +121,21 @@ class OfflineDataStorage(DataStorage):
 
             Logger.debug(f"StellaPayUI: Retrieved {len(categories)} categories from offline storage")
 
-            callback(self.cached_data_storage.cached_category_data)
+            return self.cached_data_storage.cached_category_data
         except Exception as e:
             Logger.critical(f"StellaPayUI: A problem with retrieving offline category data!")
             traceback.print_exception(None, e, e.__traceback__)
 
-            callback(None)
+            return []
 
-    def get_card_info(self, card_id=None, callback: Callable[[Optional[NFCCardInfo]], None] = None) -> None:
-
+    async def get_card_info(self, card_id) -> Optional[NFCCardInfo]:
         if card_id is None:
-            callback(None)
-            return
+            return None
 
         # Check if we have cached card info already
         if card_id in self.cached_data_storage.cached_card_info:
             # Return the cached data
-            callback(self.cached_data_storage.cached_card_info[card_id])
-            return
+            return self.cached_data_storage.cached_card_info[card_id]
 
         Logger.debug(f"StellaPayUI: Loading data of card {card_id} data on thread {threading.current_thread().name}")
 
@@ -155,8 +145,7 @@ class OfflineDataStorage(DataStorage):
             cards = self.cached_json_data["cards"]
 
             if len(cards) < 1:
-                callback(None)
-                return
+                return None
 
             # Load cards data
             for card, card_data in cards.items():
@@ -174,34 +163,27 @@ class OfflineDataStorage(DataStorage):
             # Since we've loaded all cards, now check if the one we're looking for is present
             if card_id in self.cached_data_storage.cached_card_info:
                 # Return the cached data
-                callback(self.cached_data_storage.cached_card_info[card_id])
-                return
+                return self.cached_data_storage.cached_card_info[card_id]
             else:
                 # We couldn't find the card
-                callback(None)
-                return
+                return None
 
         except Exception as e:
             Logger.critical(f"StellaPayUI: A problem with retrieving offline card data!")
             traceback.print_exception(None, e, e.__traceback__)
 
-            callback(None)
+            return None
 
-    def register_card_info(self, card_id: str = None, email: str = None, owner: str = None,
-                           callback: Callable[[bool], None] = None) -> None:
+    async def register_card_info(self, card_id: str = None, email: str = None, owner: str = None) -> bool:
         # Check if we have a card id and email
         if card_id is None or email is None:
-            if callback is not None:
-                callback(False)
-            return
+            return False
 
         # Check if they are not empty strings
         if len(card_id) < 1 or len(email) < 1:
-            if callback is not None:
-                callback(False)
-            return
+            return False
 
-        # Make sure to reload pending data (if it has been updated in the mean time)
+        # Make sure to reload pending data (if it has been updated in the meantime)
         self.reload_pending_data()
 
         # Check if we have a cards section. If not, create it.
@@ -221,29 +203,21 @@ class OfflineDataStorage(DataStorage):
         if self.__save_json_data_to_file__(self.pending_json_data, OfflineDataStorage.PENDING_DATA_FILE_NAME):
             Logger.info(f"StellaPayUI: Registered (offline) new card with id {card_id} for {email}")
 
-            if callback is not None:
-                callback(True)
-            return
+            return True
         else:
             # User could not be added succesfully, give error 2.
             Logger.warning(f"StellaPayUI: Could not register (offline) new card with id {card_id} for {email}")
 
-            if callback is not None:
-                callback(False)
-            return
+            return False
 
-    def create_transactions(self, shopping_cart: ShoppingCart = None, callback: Callable[[bool], None] = None) -> None:
+    async def create_transactions(self, shopping_cart: ShoppingCart = None) -> bool:
         # Check if we have a shopping cart
         if shopping_cart is None:
-            if callback is not None:
-                callback(False)
-            return
+            return False
 
         # Check if the shopping cart is empty. If so, we return true (since all transactions have been registered).
         if len(shopping_cart.basket) < 1:
-            if callback is not None:
-                callback(True)
-            return
+            return True
 
         try:
             json_cart = shopping_cart.to_json()
@@ -251,9 +225,7 @@ class OfflineDataStorage(DataStorage):
             Logger.warning("StellaPayUI: There was an error while parsing the shopping cart to JSON!")
             traceback.print_exception(None, e, e.__traceback__)
 
-            if callback is not None:
-                callback(False)
-            return
+            return False
 
         # Make sure to reload pending data (if it has been updated in the mean time)
         self.reload_pending_data()
@@ -272,16 +244,13 @@ class OfflineDataStorage(DataStorage):
         if self.__save_json_data_to_file__(self.pending_json_data, OfflineDataStorage.PENDING_DATA_FILE_NAME):
             Logger.info(f"StellaPayUI: Registered {len(shopping_cart.basket)} transactions to the pending data.")
 
-            if callback is not None:
-                callback(True)
-            return
+            return True
         else:
             Logger.warning(
-                f"StellaPayUI: Failed to register {len(shopping_cart.basket)} transactions to the pending data.")
+                f"StellaPayUI: Failed to register {len(shopping_cart.basket)} transactions to the pending data."
+            )
 
-            if callback is not None:
-                callback(False)
-            return
+            return False
 
     def __save_json_data_to_file__(self, json_data: Dict, path_to_file: str = None) -> bool:
         """
@@ -311,7 +280,8 @@ class OfflineDataStorage(DataStorage):
         """
 
         Logger.debug(
-            f"StellaPayUI: Updating offline storage from data in the cache (on thread {threading.current_thread().name})!")
+            f"StellaPayUI: Updating offline storage from data in the cache (on thread {threading.current_thread().name})!"
+        )
 
         json_data_to_store = dict()
 

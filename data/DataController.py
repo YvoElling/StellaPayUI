@@ -1,7 +1,10 @@
+import asyncio
 import json
+import sys
+import time
 from json import JSONDecodeError
 from threading import Thread
-from typing import Callable, Optional, Dict, List
+from typing import Optional, Dict, List
 
 import requests
 from kivy import Logger
@@ -11,10 +14,12 @@ from data.CachedDataStorage import CachedDataStorage
 from data.ConnectionListener import ConnectionListener
 from data.OfflineDataStorage import OfflineDataStorage
 from data.OnlineDataStorage import OnlineDataStorage
+from data.user.user_data import UserData
 from ds.NFCCardInfo import NFCCardInfo
 from ds.Product import Product
 from ds.ShoppingCart import ShoppingCart
 from utils import Connections, ConfigurationOptions
+from utils.ConfigurationOptions import ConfigurationOption
 
 
 class DataController:
@@ -38,121 +43,91 @@ class DataController:
 
     def start_connection_update_thread(self, url: str = None):
         # Create a thread to update connection status
-        self.connection_update_thread = Thread(target=self.__update_connection_status__, args=(url,))
+        self.connection_update_thread = Thread(target=self._update_connection_status, args=(url,), daemon=True)
 
         # Start the thread
         self.connection_update_thread.start()
 
-    def get_user_data(self, callback: Callable[[Optional[Dict[str, str]]], None] = None) -> None:
+    async def get_user_data(self) -> List[UserData]:
         """
-        Get a mapping of all users and their e-mail addresses. Note that you'll need to provide a callback function
-        that will be called whenever the data is available. The callback will also be called when no data is available.
+        Get a mapping of all users and their e-mail addresses. Note that is an asynchronous method that needs to be awaited.
 
-        The user data is returned as a dictionary, where the key (str) is the username and the corresponding value (str)
-        is the associated e-mail address.
+        The user data is as a list of `UserData` objects, containing the user's name and email address.
 
-        :param callback: Method called when this method is finished retrieving data. The callback will have one argument
-            that represents a dictionary of users. This might also be None!
-
-        :return: Nothing.
+        :return: a list of known users
         """
-
-        # Pass the callback to the appropriate method.
         if self.running_in_online_mode():
-            self.online_data_storage.get_user_data(callback=callback)
+            return await self.online_data_storage.get_user_data()
         else:
-            self.offline_data_storage.get_user_data(callback=callback)
+            return await self.offline_data_storage.get_user_data()
 
-    def get_product_data(self, callback: Callable[[Optional[Dict[str, List[Product]]]], None] = None) -> None:
-        """
-        Get a list of all products (in their categories). Note that you'll need to provide a callback function
-        that will be called whenever the data is available. The callback will also be called when no data is available.
+    async def get_product_data(self) -> Dict[str, List[Product]]:
+    """
+    Get a list of all products in their corresponding categories. Note that this is an asynchronous method and needs
+    to be awaited!
 
-        The product data is returned as a map, where each key is a category name and the value a list of Product objects.
+    :return: a dictionary is returned where the key is a category name and the value a list of products in that category
+    """
+    if self.running_in_online_mode():
+        return await self.online_data_storage.get_product_data()
+    else:
+        return await self.offline_data_storage.get_product_data()
 
-        :param callback: Method called when this method is finished retrieving data. The callback will have one argument
-            that represents the map. This might also be None!
+    async def get_category_data(self) -> List[str]:
+    """
+    Get a list of all categories Note that this is an asynchronous method and needs to be awaited!
 
-        :return: Nothing.
-        """
-        # Pass the callback to the appropriate method.
-        if self.running_in_online_mode():
-            self.online_data_storage.get_product_data(callback=callback)
+    :return: a list of categories
+    """
+    if self.running_in_online_mode():
+        return await self.online_data_storage.get_category_data()
+    else:
+        return await self.offline_data_storage.get_category_data()
+
+    async def get_card_info(self, card_id) -> Optional[NFCCardInfo]:
+    """
+    Get info of a particular card. Note that this method is asynchronous and thus needs to be awaited.
+
+    The card info will be returned as a `NFCCardInfo` object.
+
+    :param card_id: Id of the card to look for
+    :return: a `NFCCardInfo` object if matching the given ``card_id`` or None if nothing could be found
+    """
+    if self.running_in_online_mode():
+        return await self.online_data_storage.get_card_info(card_id=card_id)
         else:
-            self.offline_data_storage.get_product_data(callback=callback)
+            return await self.offline_data_storage.get_card_info(card_id=card_id)
 
-    def get_category_data(self, callback: Callable[[Optional[List[str]]], None] = None) -> None:
+    async def register_card_info(self, card_id: str, email: str, owner: str) -> bool:
         """
-        Get a list of all categories. Note that you'll need to provide a callback function
-        that will be called whenever the data is available. The callback will also be called when no data is available.
+        Register a new card for a particular user. Note that this is an asynchronous method and thus must be awaited!
 
-        The category data is returned as a list, where each element is the name of category (as a string).
-
-        :param callback: Method called when this method is finished retrieving data. The callback will have one argument
-            that represents a list of categories. This might also be None!
-
-        :return: Nothing.
-        """
-        # Pass the callback to the appropriate method.
-        if self.running_in_online_mode():
-            self.online_data_storage.get_category_data(callback=callback)
-        else:
-            self.offline_data_storage.get_category_data(callback=callback)
-
-    def get_card_info(self, card_id=None, callback: Callable[[Optional[NFCCardInfo]], None] = None) -> None:
-        """
-        Get info of a particular card. Note that you'll need to provide a callback function
-        that will be called whenever the data is available. The callback will also be called when no data is available.
-
-        The card info will be returned as a NFCCardInfo object.
-
-        :param card_id: id of the card
-        :param callback: Method called when this method is finished retrieving data. The callback will have one argument
-            that represents the card info. This might also be None!
-        :return: Nothing.
-        """
-        # Pass the callback to the appropriate method.
-        if self.running_in_online_mode():
-            self.online_data_storage.get_card_info(card_id=card_id, callback=callback)
-        else:
-            self.offline_data_storage.get_card_info(card_id=card_id, callback=callback)
-
-    def register_card_info(self, card_id: str = None, email: str = None, owner: str = None,
-                           callback: Callable[[bool], None] = None) -> None:
-        """
-        Register a new card for a particular user.
         :param card_id: Id of the card to register
         :param email: E-mail address of the user that you want to match this card with.
         :param owner: Name of the owner of the card
-        :param callback: Method called when this method is finished. The callback will have one argument (boolean)
-            that indicates whether the card has been registered (true) or not (false).
-        :return: Nothing
+        :return: Whether the card has successfully been registered.
         """
         # Pass the callback to the appropriate method.
         if self.running_in_online_mode():
-            self.online_data_storage.register_card_info(card_id=card_id, email=email, owner=owner, callback=callback)
+            return await self.online_data_storage.register_card_info(card_id=card_id, email=email, owner=owner)
         else:
-            self.offline_data_storage.register_card_info(card_id=card_id, email=email, owner=owner, callback=callback)
+            return await self.offline_data_storage.register_card_info(card_id=card_id, email=email, owner=owner)
 
-    def create_transactions(self, shopping_cart: ShoppingCart = None, callback: Callable[[bool], None] = None) -> None:
+    async def create_transactions(self, shopping_cart: ShoppingCart) -> bool:
         """
-        Create a transaction (or multiple) of goods. Note that you'll need to provide a callback function
-        that will be called whenever the call is completed.
+        Create a transaction (or multiple) of goods. Note that this is an asynchronous method and thus must be awaited!
 
         :param shopping_cart: Shopping cart that has all transactions you want to create
-        :param callback: Method called when this method is finished. The callback will have one argument (boolean)
-            that indicates whether the transactions have been registered (true) or not (false).
-        :return: Nothing
+        :return: Whether the transactions have been registered (true) or not (false).
         """
-        # Pass the callback to the appropriate method.
 
         if self.running_in_online_mode():
-            self.online_data_storage.create_transactions(shopping_cart=shopping_cart, callback=callback)
+            return await self.online_data_storage.create_transactions(shopping_cart=shopping_cart)
         else:
-            self.offline_data_storage.create_transactions(shopping_cart=shopping_cart, callback=callback)
+            return await self.offline_data_storage.create_transactions(shopping_cart=shopping_cart)
 
     @staticmethod
-    def __is_online_database_reachable__(url: str = Connections.hostname, timeout: int = 5) -> bool:
+    def _is_online_database_reachable(url: str = Connections.hostname, timeout: int = 5) -> bool:
         try:
             req = requests.head(url, timeout=timeout)
             # HTTP errors are not raised by default, this statement does that
@@ -165,39 +140,41 @@ class DataController:
             pass
         return False
 
-    def __update_connection_status__(self, url: str = None) -> None:
+    def _update_connection_status(self, url: str = None) -> None:
         """
         This method continuously checks whether a connection to the online database is possible. Note that this method
         should be called only once and another thread as it will block periodically.
         """
-        connection_status = DataController.__is_online_database_reachable__(url=url)
+        while True:
+            connection_status = DataController._is_online_database_reachable(url=url)
 
-        # If we could not connect before, but we did now, let's make sure to tell!
-        if not self.can_use_online_database and connection_status:
-            Logger.debug(f"StellaPayUI: Connected to online database (again)!")
+            # If we could not connect before, but we did now, let's make sure to tell!
+            if not self.can_use_online_database and connection_status:
+                Logger.debug(f"StellaPayUI: Connected to online database (again)!")
 
-            # Notify all listeners
-            for listener in self.on_connection_change_listeners:
-                listener.on_connection_change(True)
+                # Notify all listeners
+                for listener in self.on_connection_change_listeners:
+                    listener.on_connection_change(True)
 
-        # If we had connection, but lost it, let's tell that as well.
-        elif self.can_use_online_database and not connection_status:
-            Logger.warning(f"StellaPayUI: Lost connection to the online database!")
+            # If we had connection, but lost it, let's tell that as well.
+            elif self.can_use_online_database and not connection_status:
+                Logger.warning(f"StellaPayUI: Lost connection to the online database!")
 
-            # Notify all listeners
-            for listener in self.on_connection_change_listeners:
-                listener.on_connection_change(False)
+                # Notify all listeners
+                for listener in self.on_connection_change_listeners:
+                    listener.on_connection_change(False)
 
-        self.can_use_online_database = connection_status
+            self.can_use_online_database = connection_status
 
-        from StellaPay import StellaPay
-        time_until_next_check = int(StellaPay.get_app().get_config_option(
-            ConfigurationOptions.ConfigurationOption.TIME_BETWEEN_CHECKING_INTERNET_STATUS))
+            time_until_next_check = int(
+                App.get_running_app().get_config_option(
+                    ConfigurationOptions.ConfigurationOption.TIME_BETWEEN_CHECKING_INTERNET_STATUS
+                )
+            )
 
-        # Make sure to run another call soon
-        App.get_running_app().loop.call_later(time_until_next_check, self.__update_connection_status__, url)
+            time.sleep(time_until_next_check)
 
-    def __update_offline_storage__(self) -> None:
+    async def _update_offline_storage(self) -> None:
         """
         This method runs in a different thread and runs the updater of the offline storage periodically.
         It also makes sure to write any pending data to the backend if there is a connection
@@ -206,17 +183,9 @@ class DataController:
         self.offline_data_storage.update_file_from_cache()
 
         # After updating the offline storage, let's check if we can send pending data
-        self.__send_pending_data_to_online_server__()
+        await self._send_pending_data_to_online_server()
 
-        from StellaPay import StellaPay
-
-        time_until_we_appear_again = int(StellaPay.get_app().get_config_option(
-            ConfigurationOptions.ConfigurationOption.TIME_BETWEEN_UPDATING_OFFLINE_STORAGE))
-
-        # Make sure to run another call in a few minutes again
-        App.get_running_app().loop.call_later(time_until_we_appear_again, self.__update_offline_storage__)
-
-    def __send_pending_data_to_online_server__(self) -> None:
+    async def _send_pending_data_to_online_server(self) -> None:
         """
         This method will look in the pending data file to see if there are entries that need to registered at the online
         server. If that is the case, the entries will be registered and subsequently removed from the pending data.
@@ -262,19 +231,14 @@ class DataController:
 
                 # If we have a valid shopping cart and it's not empty
                 if shopping_cart is not None and len(shopping_cart.basket) > 0:
-
-                    def handle_transactions_callback(success: bool):
-                        # We want to alter the variable outside of this function, so we define it to be non-local
-                        nonlocal registered_pending_transactions_successfully
-                        registered_pending_transactions_successfully = success
-
-                    # We send it to the online server and handle the callback
-                    self.create_transactions(shopping_cart, handle_transactions_callback)
+                    # We send it to the online server
+                    registered_pending_transactions_successfully = await self.create_transactions(shopping_cart)
 
                     # Check result
                     if registered_pending_transactions_successfully:
                         Logger.debug(
-                            f"StellaPayUI: Registered {len(shopping_cart.basket)} new transactions from pending transactions")
+                            f"StellaPayUI: Registered {len(shopping_cart.basket)} new transactions from pending transactions"
+                        )
                     else:
                         Logger.debug(f"StellaPayUI: Failed to register transactions from pending transactions")
 
@@ -305,9 +269,14 @@ class DataController:
                         continue
 
                     # Register card
-                    self.register_card_info(card_id=card_id, email=card_info["email"], owner=None,
-                                            callback=lambda success: cards_registered_successfully.append(
-                                                card_id if success else None))
+                    success = await self.register_card_info(
+                        card_id=card_id, email=card_info["email"], owner="Unknown owner"
+                    )
+
+                    if success:
+                        cards_registered_successfully.append(card_id)
+                    else:
+                        Logger.critical(f"StellaPayUI: Could not register card '{card_id}' at server!")
 
             # Determine which cards were validly registered (and hence can be removed from the pending data)
             valid_cards = list(filter((lambda card: card is not None), cards_registered_successfully))
@@ -322,7 +291,7 @@ class DataController:
             json_data_to_write = pending_data_json
 
         # Finally write the new JSON data to the pending data file
-        with open(OfflineDataStorage.PENDING_DATA_FILE_NAME, 'w') as data_file:
+        with open(OfflineDataStorage.PENDING_DATA_FILE_NAME, "w") as data_file:
             json.dump(json_data_to_write, data_file, indent=4)
 
     # Get whether we can connect to the backend or not
@@ -332,20 +301,44 @@ class DataController:
     # Run the setup procedure, i.e. check whether we can connect to remote server
     # If we can connect, we start authentication, otherwise we run in offline mode.
     # Make sure to run this method in a separate thread because it will be blocking.
-    def start_setup_procedure(self):
+    async def start_setup_procedure(self):
+
+        Logger.debug(f"StellaPayUI: Waiting before setting up start procedure")
+        start_time = time.perf_counter()
+
+        await asyncio.sleep(
+            int(App.get_running_app().get_config_option(ConfigurationOption.TIME_TO_WAIT_BEFORE_AUTHENTICATING)),
+            loop=App.get_running_app().loop,
+        )
+
+        Logger.debug(f"StellaPayUI: Starting setup procedure after {time.perf_counter() - start_time} seconds")
+
         if self.running_in_online_mode():
             Logger.critical(f"StellaPayUI: Running in ONLINE mode!")
             # Start up authentication
-            App.get_running_app().loop.call_soon_threadsafe(App.get_running_app().session_manager.setup_session,
-                                                            App.get_running_app().done_loading_authentication)
+            authentication_success = await App.get_running_app().session_manager.setup_session_async()
+
+            if authentication_success:
+                await App.get_running_app().done_loading_authentication()
+            else:
+                Logger.critical(f"StellaPayUI: Could not authenticate to backend!")
+                sys.exit(1)
         else:
             # We need to run in offline mode. Do not run authentication to the backend (as it will fail anyway).
             Logger.critical(f"StellaPayUI: Running in OFFLINE mode!")
 
-            App.get_running_app().loop.call_soon_threadsafe(App.get_running_app().done_loading_authentication)
+            await App.get_running_app().done_loading_authentication()
+
+        time_until_we_appear_again = int(
+            App.get_running_app().get_config_option(
+                ConfigurationOptions.ConfigurationOption.TIME_BETWEEN_UPDATING_OFFLINE_STORAGE
+            )
+        )
 
         # Thread to keep updating the offline storage files with data from the caching manager
-        App.get_running_app().loop.call_later(60, self.__update_offline_storage__)
+        while True:
+            await self._update_offline_storage()
+            await asyncio.sleep(time_until_we_appear_again, loop=App.get_running_app().loop)
 
     def register_connection_listener(self, connection_listener: ConnectionListener) -> None:
         """

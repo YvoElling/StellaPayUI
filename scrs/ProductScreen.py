@@ -1,4 +1,5 @@
-import os
+import asyncio
+import sys
 import threading
 import time
 from asyncio import AbstractEventLoop
@@ -9,10 +10,10 @@ from kivy.app import App
 from kivy.clock import Clock, mainthread
 from kivy.lang import Builder
 from kivy.uix.screenmanager import Screen, SlideTransition
-from kivymd.toast import toast
 from kivymd.uix.button import MDFlatButton, MDRaisedButton
 from kivymd.uix.dialog import MDDialog
 
+from ds.Product import Product
 from ds.Purchase import Purchase
 from ds.ShoppingCart import ShoppingCart, ShoppingCartListener
 from scrs.TabDisplay import TabDisplay
@@ -23,13 +24,13 @@ from ux.ShoppingCartItem import ShoppingCartItem
 
 
 class OnChangeShoppingCartListener(ShoppingCartListener):
-
     def __init__(self, product_screen):
         self.product_screen = product_screen
 
     def on_change(self):
-        self.product_screen.ids.shopping_cart_button.disabled = len(
-            ProductScreen.shopping_cart.get_shopping_cart()) == 0
+        self.product_screen.ids.shopping_cart_button.disabled = (
+                len(ProductScreen.shopping_cart.get_shopping_cart()) == 0
+        )
 
         active_user = App.get_running_app().active_user
 
@@ -37,11 +38,14 @@ class OnChangeShoppingCartListener(ShoppingCartListener):
         for tab in self.product_screen.tabs:
             for product_item in tab.ids.container.children:
                 # Find a matching purchase in the shopping cart (by the active user)
-                matching_purchase = next((
-                    purchase for purchase in ProductScreen.shopping_cart.get_shopping_cart()
-                    if purchase.product_name == product_item.text
-                       and purchase.purchaser_name == active_user
-                ), None)
+                matching_purchase = next(
+                    (
+                        purchase
+                        for purchase in ProductScreen.shopping_cart.get_shopping_cart()
+                        if purchase.product_name == product_item.text and purchase.purchaser_name == active_user
+                    ),
+                    None,
+                )
 
                 # If this item is not in the shopping cart, we can set the count to zero (as it is not being bought)
                 if matching_purchase is None:
@@ -61,7 +65,7 @@ class ProductScreen(Screen):
 
     def __init__(self, **kwargs):
         # Load screen
-        Builder.load_file('kvs/ProductScreen.kv')
+        Builder.load_file("kvs/ProductScreen.kv")
         super(ProductScreen, self).__init__(**kwargs)
 
         # Class level variables
@@ -94,41 +98,54 @@ class ProductScreen(Screen):
         self.timeout_event.cancel()
         self.on_start_timeout()
 
-    # Load tabs (if they are not loaded yet) and load product information afterwards
     @mainthread
-    def load_category_data(self):
+    def show_products(self, products: Dict[str, List[Product]]):
+        if products is None or len(products) == 0:
+            return
 
-        Logger.debug(f"StellaPayUI: Loading category data on thread {threading.current_thread().name}")
+        # If tabs have not been created yet, create them first
+        if self.tabs is None or len(self.tabs) == 0:
+            Logger.debug(f"StellaPayUI: ({threading.current_thread().name}) Drawing tabs for the first time.")
+            self.tabs = []
+            for tab_name in products.keys():
+                tab = TabDisplay(text=tab_name)
+                self.ids.android_tabs.add_widget(tab)
+                self.tabs.append(tab)
+        else:
+            Logger.debug(f"StellaPayUI: Not drawing products again.")
 
         start_time = time.time()
 
-        if len(self.tabs) > 0:
-            Logger.debug("StellaPayUI: Don't load tabs as we already have that information.")
+        for tab in self.tabs:
+            for product in products[tab.text]:
+                # Get fun fact description of database
+                product_description = App.get_running_app().database_manager.get_random_fun_fact(product.get_name())
 
-            Logger.debug(
-                f"StellaPayUI: Loaded category data and tabs (after skipping) in {time.time() - start_time} seconds")
+                # Add item to the tab
+                tab.ids.container.add_widget(
+                    ProductListItem(
+                        text=product.get_name(),
+                        secondary_text=product_description,
+                        secondary_theme_text_color="Custom",
+                        secondary_text_color=[0.509, 0.509, 0.509, 1],
+                        price="€" + product.get_price(),
+                    )
+                )
 
-            # Load product items (because we still need to reload them)
-            self.load_products()
+            # Add last item to the products (for each category) that is empty. This improves readability.
+            tab.ids.container.add_widget(
+                ProductListItem(
+                    text="",
+                    secondary_text="",
+                    secondary_theme_text_color="Custom",
+                    secondary_text_color=[0.509, 0.509, 0.509, 1],
+                    price=None,
+                )
+            )
 
-            return
+            Logger.debug(f"Loaded products of category {tab.text} (no skipping) in {time.time() - start_time} seconds")
 
-        Logger.debug("StellaPayUI: Loading category view")
-
-        def handle_product_data(product_data: Dict[str, List["Product"]]):
-            for category in product_data.keys():
-                # Create tab display
-                tab = TabDisplay(text=category)
-                self.ids.android_tabs.add_widget(tab)
-                self.tabs.append(tab)
-
-            Logger.debug(
-                f"StellaPayUI: Loaded category data and tabs (no skipping) in {time.time() - start_time} seconds")
-
-            # Load product items
-            self.load_products()
-
-        App.get_running_app().data_controller.get_product_data(callback=handle_product_data)
+        Logger.debug(f"Loaded all products (no skipping) in {time.time() - start_time} seconds")
 
     def on_pre_enter(self, *args):
         # Initialize timeouts
@@ -140,57 +157,22 @@ class ProductScreen(Screen):
     def on_enter(self, *args):
 
         # Set name of the active user in the toolbar (if there is one)
-        self.ids.toolbar.title = \
+        self.ids.toolbar.title = (
             App.get_running_app().active_user if App.get_running_app().active_user is not None else "Stella Pay"
+        )
 
-        # Load product data
-        self.event_loop.call_soon_threadsafe(self.load_category_data)
+        if len(self.tabs) <= 0:
+            # Load product data
+            asyncio.run_coroutine_threadsafe(self.load_products(), loop=App.get_running_app().loop)
 
     # Load product information and set up product view
-    @mainthread
-    def load_products(self):
+    async def load_products(self):
 
         Logger.debug(f"StellaPayUI: Loading product data on thread {threading.current_thread().name}")
 
-        start_time = time.time()
+        product_data = await App.get_running_app().data_controller.get_product_data()
 
-        # Check if we have tabs loaded
-        if len(self.tabs) < 1:
-            toast("There are no loaded tabs!")
-            return
-
-        if len(self.tabs[0].ids.container.children) > 0:
-            Logger.debug("StellaPayUI: Don't load products view again as it's already there..")
-            Logger.debug(f"Loaded products (after skipping) in {time.time() - start_time} seconds")
-            return
-
-        Logger.debug(f"StellaPayUI: Setting up product view")
-
-        @mainthread
-        def handle_product_data(product_data: Dict[str, List["Product"]]):
-            for tab in self.tabs:
-                for product in product_data[tab.text]:
-                    # Get fun fact description of database
-                    product_description = App.get_running_app().database_manager.get_random_fun_fact(product.get_name())
-
-                    # Add item to the tab
-                    tab.ids.container.add_widget(
-                        ProductListItem(text=product.get_name(), secondary_text=product_description,
-                                        secondary_theme_text_color="Custom",
-                                        secondary_text_color=[0.509, 0.509, 0.509, 1],
-                                        price="€" + product.get_price()))
-
-                # Add last item to the products (for each category) that is empty. This improves readability.
-                tab.ids.container.add_widget(
-                    ProductListItem(text="", secondary_text="", secondary_theme_text_color="Custom",
-                                    secondary_text_color=[0.509, 0.509, 0.509, 1],
-                                    price=None))
-
-                Logger.debug(
-                    f"Loaded products of category {tab.text} (no skipping) in {time.time() - start_time} seconds")
-            Logger.debug(f"Loaded all products (no skipping) in {time.time() - start_time} seconds")
-
-        App.get_running_app().data_controller.get_product_data(callback=handle_product_data)
+        self.show_products(product_data)
 
     #
     # timeout callback function
@@ -219,7 +201,7 @@ class ProductScreen(Screen):
     # Called when the user wants to leave this active session.
     def on_leave_product_screen_button(self):
         self.end_user_session()
-        self.manager.transition = SlideTransition(direction='right')
+        self.manager.transition = SlideTransition(direction="right")
         self.manager.current = Screens.DEFAULT_SCREEN.value
 
     #
@@ -243,11 +225,13 @@ class ProductScreen(Screen):
 
         # Retrieve all items from shopping cart and store in local shopping cart list
         for purchase in self.shopping_cart.get_shopping_cart():
-            item = ShoppingCartItem(purchase=purchase,
-                                    text=purchase.product_name,
-                                    secondary_text="",
-                                    secondary_theme_text_color="Custom",
-                                    secondary_text_color=[0.509, 0.509, 0.509, 1])
+            item = ShoppingCartItem(
+                purchase=purchase,
+                text=purchase.product_name,
+                secondary_text="",
+                secondary_theme_text_color="Custom",
+                secondary_text_color=[0.509, 0.509, 0.509, 1],
+            )
             shopping_cart_items.append(item)
 
         # If there are items in the shopping cart, display them
@@ -257,14 +241,8 @@ class ProductScreen(Screen):
                 auto_dismiss=False,
                 list_content=shopping_cart_items,
                 buttons=[
-                    MDFlatButton(
-                        text="Nee",
-                        on_release=self.on_close_shoppingcart
-                    ),
-                    MDRaisedButton(
-                        text="Ja",
-                        on_release=self.on_confirm_payment
-                    ),
+                    MDFlatButton(text="Nee", on_release=self.on_close_shoppingcart),
+                    MDRaisedButton(text="Ja", on_release=self.on_confirm_payment),
                 ],
             )
 
@@ -292,48 +270,49 @@ class ProductScreen(Screen):
     def on_confirm_payment(self, dt=None):
         Logger.info(f"StellaPayUI: Payment was confirmed by the user.")
 
-        @mainthread
-        def handle_transaction_result(success: bool):
-            # Reset instance variables
-            self.end_user_session()
+        asyncio.run_coroutine_threadsafe(self.submit_payment(), loop=App.get_running_app().loop)
 
-            if self.shopping_cart_dialog is not None:
-                self.shopping_cart_dialog.dismiss()
+    async def submit_payment(self):
+        Logger.info(f"StellaPayUI: Submitting payment of user!")
 
-            if success:
+        successfully_created_transactions = await App.get_running_app().data_controller.create_transactions(
+            self.shopping_cart
+        )
 
-                self.timeout_event.cancel()
+        # Reset instance variables
+        self.end_user_session()
 
-                self.final_dialog = MDDialog(
-                    text="Gelukt! Je aankoop is geregistreerd",
-                    buttons=[
-                        MDRaisedButton(
-                            text="Thanks",
-                            on_release=self.on_thanks
-                        ),
-                    ]
-                )
+        if self.shopping_cart_dialog is not None:
+            self.shopping_cart_dialog.dismiss()
 
-                self.timeout_event = Clock.schedule_once(self.on_thanks, 5)
-                self.final_dialog.open()
-            else:
+        if successfully_created_transactions:
+            self.show_thanks_dialog()
+        else:
+            self.show_failure_dialog()
 
-                self.final_dialog = MDDialog(
-                    text="Het is niet gelukt je aankoop te registreren. Herstart de app svp.",
-                    buttons=[
-                        MDRaisedButton(
-                            text="Herstart",
-                            on_release=(
-                                os._exit(1)
-                            )
-                        ),
-                    ]
-                )
-                self.final_dialog.open()
+    @mainthread
+    def show_thanks_dialog(self):
+        self.timeout_event.cancel()
 
-        # Make request to create transactions (on separate thread)
-        App.get_running_app().loop.call_soon_threadsafe(
-            App.get_running_app().data_controller.create_transactions, self.shopping_cart, handle_transaction_result)
+        self.final_dialog = MDDialog(
+            text="Gelukt! Je aankoop is geregistreerd",
+            buttons=[
+                MDRaisedButton(text="Thanks", on_release=self.on_thanks),
+            ],
+        )
+
+        self.timeout_event = Clock.schedule_once(self.on_thanks, 5)
+        self.final_dialog.open()
+
+    @mainthread
+    def show_failure_dialog(self):
+        self.final_dialog = MDDialog(
+            text="Het is niet gelukt je aankoop te registreren. Herstart de app svp.",
+            buttons=[
+                MDRaisedButton(text="Herstart", on_release=lambda: sys.exit(1)),
+            ],
+        )
+        self.final_dialog.open()
 
     def on_thanks(self, _):
         if self.manager.current == Screens.PRODUCT_SCREEN.value:
