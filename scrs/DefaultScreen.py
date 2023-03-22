@@ -166,14 +166,13 @@ class DefaultScreen(Screen):
             self.clear_recent_user(i)
 
     async def get_most_recent_users(self):
-    Logger.debug(f"StellaPayUI: Loading recent users on {threading.current_thread().name}")
+        Logger.debug(f"StellaPayUI: Loading recent users on {threading.current_thread().name}")
 
-    recent_users = await App.get_running_app().data_controller.get_recent_users(number_of_unique_users=3)
+        recent_users = await App.get_running_app().data_controller.get_recent_users(number_of_unique_users=3)
 
-    self.set_recent_users(recent_users)
+        self.set_recent_users(recent_users)
 
-
-#
+    #
     # gets called when the 'NFC kaart vergeten button' is pressed
     # Shows a dialog to select a user.
     #

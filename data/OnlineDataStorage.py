@@ -55,36 +55,36 @@ class OnlineDataStorage(DataStorage):
         ]
 
     async def get_product_data(self) -> Dict[str, List[Product]]:
-    # Check if we have no data in the cache
-    if len(self.cached_data_storage.cached_product_data) <= 0:
-        Logger.debug(f"StellaPayUI: Loading product data on thread {threading.current_thread().name}")
+        # Check if we have no data in the cache
+        if len(self.cached_data_storage.cached_product_data) <= 0:
+            Logger.debug(f"StellaPayUI: Loading product data on thread {threading.current_thread().name}")
 
-        # Grab products from each category
-        for category in self.cached_data_storage.cached_category_data:
-            # Request products from each category
-            request = Connections.get_products() + category
-            product_data = await App.get_running_app().session_manager.do_get_request_async(request)
+            # Grab products from each category
+            for category in self.cached_data_storage.cached_category_data:
+                # Request products from each category
+                request = Connections.get_products() + category
+                product_data = await App.get_running_app().session_manager.do_get_request_async(request)
 
-            if product_data and product_data.ok:
-                # convert to json
-                products = product_data.json()
+                if product_data and product_data.ok:
+                    # convert to json
+                    products = product_data.json()
 
-                Logger.debug(f"StellaPayUI: Retrieved {len(products)} products for category '{category}'")
+                    Logger.debug(f"StellaPayUI: Retrieved {len(products)} products for category '{category}'")
 
-                # Create a product object for all products
-                for product in products:
-                    # Only add the product to the list if the product must be shown
-                    if product["shown"]:
-                        p = Product().create_from_json(product)
-                        self.cached_data_storage.cached_product_data[category].append(p)
+                    # Create a product object for all products
+                    for product in products:
+                        # Only add the product to the list if the product must be shown
+                        if product["shown"]:
+                            p = Product().create_from_json(product)
+                            self.cached_data_storage.cached_product_data[category].append(p)
 
-            else:
-                Logger.warning(f"StellaPayUI: Error: could not fetch products for category {category}.")
-    else:  # We already have a cache, so use that instead.
-        Logger.debug("StellaPayUI: Using online (cached) product data")
+                else:
+                    Logger.warning(f"StellaPayUI: Error: could not fetch products for category {category}.")
+        else:  # We already have a cache, so use that instead.
+            Logger.debug("StellaPayUI: Using online (cached) product data")
 
-    # Return cached product data
-    return self.cached_data_storage.cached_product_data
+        # Return cached product data
+        return self.cached_data_storage.cached_product_data
 
     async def get_category_data(self) -> List[str]:
         if len(self.cached_data_storage.cached_category_data) <= 0:
