@@ -19,42 +19,6 @@ class OnlineDataStorage(DataStorage):
     def __init__(self, cached_data_storage: CachedDataStorage):
         self.cached_data_storage = cached_data_storage
 
-    # def get_user_data(self, callback: Callable[[Optional[Dict[str, str]]], None] = None) -> None:
-    #
-    #     # We're not doing any work when the result is ignored anyway.
-    #     if callback is None:
-    #         return
-    #
-    #     if len(self.cached_data_storage.cached_user_data) > 0:
-    #         Logger.debug("StellaPayUI: Using online (cached) user data")
-    #         # Return cached user data
-    #         callback(self.cached_data_storage.cached_user_data)
-    #         return
-    #
-    #     Logger.debug(f"StellaPayUI: Loading user mapping on thread {threading.current_thread().name}")
-    #
-    #     user_data = App.get_running_app().session_manager.do_get_request(url=Connections.get_users())
-    #
-    #     if user_data and user_data.ok:
-    #         # convert to json
-    #         user_json = user_data.json()
-    #
-    #         # append json to list and sort the list
-    #         for user in user_json:
-    #             # store all emails addressed in the sheet_menu
-    #             self.cached_data_storage.cached_user_data[user["name"]] = user["email"]
-    #
-    #         # Sort items
-    #         self.cached_data_storage.cached_user_data = OrderedDict(
-    #             sorted(self.cached_data_storage.cached_user_data.items()))
-    #
-    #         Logger.debug("StellaPayUI: Loaded user data")
-    #
-    #         callback(self.cached_data_storage.cached_user_data)
-    #     else:
-    #         Logger.critical("StellaPayUI: Error: users could not be fetched from the online database")
-    #         callback(None)
-
     async def get_user_data(self) -> List[UserData]:
         # Check if we have no data in the cache
         if len(self.cached_data_storage.cached_user_data) <= 0:
@@ -80,7 +44,6 @@ class OnlineDataStorage(DataStorage):
                 Logger.debug("StellaPayUI: Loaded user data")
             else:
                 Logger.critical("StellaPayUI: Error: users could not be fetched from the online database")
-                return []
 
         else:  # We already have a cache, so use that instead.
             Logger.debug("StellaPayUI: Using online (cached) user data")
@@ -92,16 +55,8 @@ class OnlineDataStorage(DataStorage):
         ]
 
     async def get_product_data(self) -> Dict[str, List[Product]]:
-        if len(self.cached_data_storage.cached_product_data) > 0:
-            Logger.debug("StellaPayUI: Using online (cached) product data")
-            # Return cached product data
-            return self.cached_data_storage.cached_product_data
-
-        # Check if there is category data loaded. We need that, otherwise we can't load the products.
-        if len(self.cached_data_storage.cached_category_data) < 1:
-            Logger.warning("StellaPayUI: Cannot load product data because there is no (cached) category data!")
-            return dict()
-
+    # Check if we have no data in the cache
+    if len(self.cached_data_storage.cached_product_data) <= 0:
         Logger.debug(f"StellaPayUI: Loading product data on thread {threading.current_thread().name}")
 
         # Grab products from each category
@@ -125,13 +80,11 @@ class OnlineDataStorage(DataStorage):
 
             else:
                 Logger.warning(f"StellaPayUI: Error: could not fetch products for category {category}.")
-                return dict()
+    else:  # We already have a cache, so use that instead.
+        Logger.debug("StellaPayUI: Using online (cached) product data")
 
-        # Make sure to call the callback with the proper data. (None if we have no data).
-        if len(self.cached_data_storage.cached_product_data) > 0:
-            return self.cached_data_storage.cached_product_data
-        else:
-            return dict()
+    # Return cached product data
+    return self.cached_data_storage.cached_product_data
 
     async def get_category_data(self) -> List[str]:
         if len(self.cached_data_storage.cached_category_data) <= 0:
@@ -190,12 +143,12 @@ class OnlineDataStorage(DataStorage):
                 self.cached_data_storage.cached_card_info[card_data_id] = card_info
 
             Logger.debug("StellaPayUI: Loaded cards data")
-
-            # Return the loaded card data to the user
-            return self.cached_data_storage.cached_card_info.get(card_id, None)
         else:
             Logger.critical("StellaPayUI: Error: cards could not be fetched from the online database")
             return None
+
+        # Return the loaded card data to the user
+        return self.cached_data_storage.cached_card_info.get(card_id, None)
 
     async def register_card_info(self, card_id: str = None, email: str = None, owner: str = None) -> bool:
         # Check if we have a card id and email
