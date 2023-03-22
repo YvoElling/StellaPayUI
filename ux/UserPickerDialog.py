@@ -1,20 +1,21 @@
 import datetime
+from typing import List
 
-from kivy.app import App
 from kivy.lang import Builder
 from kivy.properties import StringProperty
 from kivy.uix.boxlayout import BoxLayout
 from kivymd.uix.dialog import MDDialog
 
-Builder.load_file('kvs/UserPickerContent.kv')
+Builder.load_file("kvs/UserPickerContent.kv")
 
 
 class UserPickerContent(BoxLayout):
     picked_user = StringProperty()
 
-    def __init__(self, **kwargs):
+    def __init__(self, selectable_users: List[str], **kwargs):
         super(UserPickerContent, self).__init__(**kwargs)
-        self.eligible_users_to_select = list(App.get_running_app().user_mapping.keys())
+        self.eligible_users_to_select = selectable_users
+        # list(App.get_running_app().user_mapping.keys())
 
         self.last_click_registered = datetime.datetime.now()
 
@@ -26,10 +27,12 @@ class UserPickerContent(BoxLayout):
         user_name: str
         for user_name in self.eligible_users_to_select:
             if typed_text.lower() in user_name.lower():
-                self.ids.matched_users.data.append({
-                    "viewclass": "OneLineIconListItem",
-                    "text": user_name,
-                })
+                self.ids.matched_users.data.append(
+                    {
+                        "viewclass": "OneLineIconListItem",
+                        "text": user_name,
+                    }
+                )
 
         # Make sure to add listeners so we get alerted whenever a child is clicked.
         for shown_user_element in self.ids.matched_users.children[0].children:
@@ -69,9 +72,9 @@ class UserPickerDialog(MDDialog):
     If no person is selected, this property will be None.
     """
 
-    def __init__(self, **kwargs):
+    def __init__(self, selectable_users: List[str], **kwargs):
         self.type = "custom"
-        self.content_cls = UserPickerContent()
+        self.content_cls = UserPickerContent(selectable_users=selectable_users)
         self.title = "Select a name"
 
         super(UserPickerDialog, self).__init__(**kwargs)

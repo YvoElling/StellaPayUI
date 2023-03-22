@@ -1,8 +1,7 @@
 import sys
 
 from kivy import Logger
-from kivy.app import App
-from kivy.clock import Clock
+from kivy.clock import Clock, mainthread
 from kivy.lang import Builder
 from kivy.properties import ObjectProperty
 from kivy.uix.screenmanager import Screen
@@ -11,7 +10,7 @@ from kivy.uix.screenmanager import Screen
 from utils.Screens import Screens
 from utils.async_requests.AsyncResult import AsyncResult
 
-Builder.load_file('kvs/StartupScreen.kv')
+Builder.load_file("kvs/StartupScreen.kv")
 
 
 class StartupScreen(Screen):
@@ -26,7 +25,7 @@ class StartupScreen(Screen):
     # Calls upon entry of this screen
     #
     def on_enter(self, *args):
-        App.get_running_app().loop.call_soon_threadsafe(self.check_if_all_data_is_loaded)
+        self.check_if_all_data_is_loaded()
 
     # Called when all data has loaded
     def finished_loading(self, dt):
@@ -41,8 +40,8 @@ class StartupScreen(Screen):
     def on_products_loaded(self, _, _2):
         self.check_if_all_data_is_loaded()
 
+    @mainthread
     def check_if_all_data_is_loaded(self) -> None:
-
         self.set_loading_text("Waiting for data to load... (0/3)")
 
         if self.users_loaded is None or self.users_loaded.result is None:
