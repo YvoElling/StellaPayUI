@@ -295,7 +295,7 @@ class ProductScreen(Screen):
         self.timeout_event.cancel()
 
         self.final_dialog = MDDialog(
-            text="Gelukt! Je aankoop is geregistreerd",
+            text="Gelukt! Je aankoop is geregistreerd!",
             on_dismiss=self.on_thanks
         )
 
