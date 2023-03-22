@@ -62,39 +62,39 @@ class DataController:
             return await self.offline_data_storage.get_user_data()
 
     async def get_product_data(self) -> Dict[str, List[Product]]:
-    """
-    Get a list of all products in their corresponding categories. Note that this is an asynchronous method and needs
-    to be awaited!
+        """
+        Get a list of all products in their corresponding categories. Note that this is an asynchronous method and needs
+        to be awaited!
 
-    :return: a dictionary is returned where the key is a category name and the value a list of products in that category
-    """
-    if self.running_in_online_mode():
-        return await self.online_data_storage.get_product_data()
-    else:
-        return await self.offline_data_storage.get_product_data()
+        :return: a dictionary is returned where the key is a category name and the value a list of products in that category
+        """
+        if self.running_in_online_mode():
+            return await self.online_data_storage.get_product_data()
+        else:
+            return await self.offline_data_storage.get_product_data()
 
     async def get_category_data(self) -> List[str]:
-    """
-    Get a list of all categories Note that this is an asynchronous method and needs to be awaited!
+        """
+        Get a list of all categories Note that this is an asynchronous method and needs to be awaited!
 
-    :return: a list of categories
-    """
-    if self.running_in_online_mode():
-        return await self.online_data_storage.get_category_data()
-    else:
-        return await self.offline_data_storage.get_category_data()
+        :return: a list of categories
+        """
+        if self.running_in_online_mode():
+            return await self.online_data_storage.get_category_data()
+        else:
+            return await self.offline_data_storage.get_category_data()
 
     async def get_card_info(self, card_id) -> Optional[NFCCardInfo]:
-    """
-    Get info of a particular card. Note that this method is asynchronous and thus needs to be awaited.
+        """
+        Get info of a particular card. Note that this method is asynchronous and thus needs to be awaited.
 
-    The card info will be returned as a `NFCCardInfo` object.
+        The card info will be returned as a `NFCCardInfo` object.
 
-    :param card_id: Id of the card to look for
-    :return: a `NFCCardInfo` object if matching the given ``card_id`` or None if nothing could be found
-    """
-    if self.running_in_online_mode():
-        return await self.online_data_storage.get_card_info(card_id=card_id)
+        :param card_id: Id of the card to look for
+        :return: a `NFCCardInfo` object if matching the given ``card_id`` or None if nothing could be found
+        """
+        if self.running_in_online_mode():
+            return await self.online_data_storage.get_card_info(card_id=card_id)
         else:
             return await self.offline_data_storage.get_card_info(card_id=card_id)
 
@@ -120,7 +120,6 @@ class DataController:
         :param shopping_cart: Shopping cart that has all transactions you want to create
         :return: Whether the transactions have been registered (true) or not (false).
         """
-
         if self.running_in_online_mode():
             return await self.online_data_storage.create_transactions(shopping_cart=shopping_cart)
         else:
@@ -294,10 +293,6 @@ class DataController:
         with open(OfflineDataStorage.PENDING_DATA_FILE_NAME, "w") as data_file:
             json.dump(json_data_to_write, data_file, indent=4)
 
-    # Get whether we can connect to the backend or not
-    def running_in_online_mode(self) -> bool:
-        return self.can_use_online_database
-
     # Run the setup procedure, i.e. check whether we can connect to remote server
     # If we can connect, we start authentication, otherwise we run in offline mode.
     # Make sure to run this method in a separate thread because it will be blocking.
@@ -339,6 +334,10 @@ class DataController:
         while True:
             await self._update_offline_storage()
             await asyncio.sleep(time_until_we_appear_again, loop=App.get_running_app().loop)
+
+    # Get whether we can connect to the backend or not
+    def running_in_online_mode(self) -> bool:
+        return self.can_use_online_database
 
     def register_connection_listener(self, connection_listener: ConnectionListener) -> None:
         """
