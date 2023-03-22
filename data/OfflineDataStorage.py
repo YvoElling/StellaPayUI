@@ -71,7 +71,7 @@ class OfflineDataStorage(DataStorage):
 
     async def get_product_data(self) -> Dict[str, List[Product]]:
         if len(self.cached_data_storage.cached_product_data) > 0:
-            Logger.debug("StellaPayUI: Using online (cached) product data")
+            Logger.debug("StellaPayUI: Using offline (cached) product data")
             # Return cached product data
             return self.cached_data_storage.cached_product_data
 
