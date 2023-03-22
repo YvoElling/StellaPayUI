@@ -296,9 +296,7 @@ class ProductScreen(Screen):
 
         self.final_dialog = MDDialog(
             text="Gelukt! Je aankoop is geregistreerd",
-            buttons=[
-                MDRaisedButton(text="Thanks", on_release=self.on_thanks),
-            ],
+            on_dismiss=self.on_thanks
         )
 
         self.timeout_event = Clock.schedule_once(self.on_thanks, 5)
