@@ -215,6 +215,7 @@ class DefaultScreen(Screen):
                 on_dismiss=self.on_user_select_dialog_close,
             )
 
+    @mainthread
     # An active user is selected via the dialog
     def selected_active_user(self, selected_user_name: Optional[str]):
         # Close the dialog screen
@@ -243,7 +244,7 @@ class DefaultScreen(Screen):
 
     @mainthread
     def nfc_card_presented(self, uid: str):
-        Logger.debug("StellaPayUI: Read NFC card with uid" + uid)
+        Logger.debug(f"StellaPayUI: Read NFC card with uid '{uid}'")
 
         # If we are currently making a transaction, ignore the card reading.
         if App.get_running_app().active_user is not None:
@@ -269,20 +270,18 @@ class DefaultScreen(Screen):
 
         if card_info is None:
             Logger.debug(f"StellaPayUI: Did not find info for card '{uid}'.")
-            # User was not found, proceed to registerUID file
-            self.manager.transition = SlideTransition(direction="right")
-            self.manager.get_screen(Screens.REGISTER_UID_SCREEN.value).nfc_id = uid
-            self.manager.current = Screens.REGISTER_UID_SCREEN.value
+
+            self.move_to_register_card_screen(uid)
         else:
             Logger.debug(f"StellaPayUI: Card '{uid}' belongs to {card_info.owner_name}.")
-            # User is found
-            App.get_running_app().active_user = card_info.owner_name
+            self.selected_active_user(card_info.owner_name)
 
-            # Set slide transition correctly.
-            self.manager.transition = SlideTransition(direction="left")
-
-            # Go to the product screen
-            self.manager.current = Screens.PRODUCT_SCREEN.value
+    @mainthread
+    def move_to_register_card_screen(self, uid: str):
+        # User was not found, proceed to registerUID file
+        self.manager.transition = SlideTransition(direction="right")
+        self.manager.get_screen(Screens.REGISTER_UID_SCREEN.value).nfc_id = uid
+        self.manager.current = Screens.REGISTER_UID_SCREEN.value
 
     def on_select_guest(self):
         self.select_special_user("Gast Account")

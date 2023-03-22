@@ -1,6 +1,5 @@
 import asyncio
 import threading
-from asyncio import AbstractEventLoop
 
 from kivy import Logger
 from kivy.app import App
@@ -8,9 +7,9 @@ from kivy.clock import Clock, mainthread
 from kivy.lang import Builder
 from kivy.uix.screenmanager import Screen
 from kivymd.toast import toast
-from kivymd.uix.bottomsheet import MDListBottomSheet
 
 from utils.Screens import Screens
+from ux.UserPickerDialog import UserPickerDialog
 
 
 class RegisterUIDScreen(Screen):
@@ -24,17 +23,9 @@ class RegisterUIDScreen(Screen):
         # call to user with arguments
         super(RegisterUIDScreen, self).__init__(**kwargs)
 
-        # local list that stores all mailadresses currently retrieved from the database
-        self.mail_list = []
-
         # Timeout variables
         self.timeout_event = None
         self.timeout_time = 30
-
-        # Create the bottom menu
-        self.bottom_sheet_menu = None
-
-        self.event_loop: AbstractEventLoop = App.get_running_app().loop
 
     #
     # Function is called when the product screen is entered
@@ -42,12 +33,13 @@ class RegisterUIDScreen(Screen):
     def on_enter(self, *args):
         self.timeout_event = Clock.schedule_once(self.on_timeout, self.timeout_time)
 
+        self.user_select_dialog = UserPickerDialog(App.get_running_app().user_mapping.keys())
+        self.user_select_dialog.bind(selected_user=lambda _, selected_user: self.on_user_selected(selected_user))
+
     #
     # Timeout callback function
     #
     def on_timeout(self, dt):
-        if self.bottom_sheet_menu:
-            self.bottom_sheet_menu.dismiss()
         self.timeout_event.cancel()
         self.on_cancel()
 
@@ -61,9 +53,11 @@ class RegisterUIDScreen(Screen):
     # Return to default screen when cancelled
     @mainthread
     def on_cancel(self):
+        if self.user_select_dialog is not None:
+            self.user_select_dialog.close_dialog()
+
         self.manager.current = Screens.DEFAULT_SCREEN.value
 
-    # Saves user-card-mapping to the database
     def on_save_user(self):
         # Validate whether a correct user was selected.
         if self.ids.chosen_user.text not in App.get_running_app().user_mapping.keys():
@@ -95,7 +89,7 @@ class RegisterUIDScreen(Screen):
     def card_registration_succeeded(self, user: str):
         # Store the active user in the app so other screens can use it.
         App.get_running_app().active_user = user
-        self.manager.current = Screens.WELCOME_SCREEN.value
+        self.manager.current = Screens.PRODUCT_SCREEN.value
 
     @mainthread
     def card_registration_failed(self, user: str):
@@ -107,24 +101,17 @@ class RegisterUIDScreen(Screen):
     #
     # Whenever the user wants to show the list of users to register the card to.
     #
-    def on_click_user_list_button(self):
+    def on_open_user_selector(self):  # Triggered whenever the user wants to start selecting a person
         # Restart timeout procedure
         self.timeout_event.cancel()
-        self.on_enter()
 
-        # Add items to the bottom list
-        self.bottom_sheet_menu = MDListBottomSheet(height="200dp")
-        for user_name, user_email in sorted(App.get_running_app().user_mapping.items()):
-            # store all emails addresses in the sheet_menu
-            self.bottom_sheet_menu.add_item(user_name, self.on_user_selected)
-        # open the bottom sheet menu
-        self.bottom_sheet_menu.open()
+        self.user_select_dialog.show_user_selector()
 
-    # When the user selects a user to register for this card.
-    def on_user_selected(self, item):
+    def on_user_selected(self, selected_user: str):  # Triggered when the user selects a person from the dialog
         self.timeout_event.cancel()
-        self.on_enter()
-        self.ids.chosen_user.text = item.text
+        self.ids.chosen_user.text = selected_user
+
+        self.user_select_dialog.close_dialog()
 
     def on_leave(self, *args):
         # Stop the timer
