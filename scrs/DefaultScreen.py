@@ -1,6 +1,5 @@
 import asyncio
 import datetime
-import json
 import threading
 import time
 import typing
@@ -17,7 +16,6 @@ from kivymd.uix.dialog import MDDialog
 from PythonNFCReader.CardListener import CardListener
 from PythonNFCReader.NFCReader import CardConnectionManager
 from data.ConnectionListener import ConnectionListener
-from utils import Connections
 from utils.Screens import Screens
 from ux.SelectUserItem import SelectUserItem
 from ux.UserPickerDialog import UserPickerDialog
@@ -121,10 +119,7 @@ class DefaultScreen(Screen):
         asyncio.run_coroutine_threadsafe(self.load_user_data(), loop=App.get_running_app().loop)
 
     def on_pre_enter(self, *args):
-        # Get today, and set time to midnight.
-        today = datetime.datetime.today().replace(hour=0, minute=0, second=0, microsecond=0)
-
-        asyncio.run_coroutine_threadsafe(self.get_most_recent_users(today), loop=App.get_running_app().loop)
+        asyncio.run_coroutine_threadsafe(self.get_most_recent_users(), loop=App.get_running_app().loop)
 
     def to_credits(self):
         # Only show credits when user select dialog is not showing
@@ -170,50 +165,15 @@ class DefaultScreen(Screen):
         for i in range(clear_index, 3):
             self.clear_recent_user(i)
 
-    async def get_most_recent_users(self, today: datetime.datetime):
-        Logger.debug(f"StellaPayUI: Loading recent users on {threading.current_thread().name}")
+    async def get_most_recent_users(self):
+    Logger.debug(f"StellaPayUI: Loading recent users on {threading.current_thread().name}")
 
-        response = await App.get_running_app().session_manager.do_post_request_async(
-            url=Connections.get_all_transactions(), json_data={"begin_date": today.strftime("%Y/%m/%d %H:%M:%S")}
-        )
+    recent_users = await App.get_running_app().data_controller.get_recent_users(number_of_unique_users=3)
 
-        if response is None or not response.ok:
-            return
+    self.set_recent_users(recent_users)
 
-        try:
-            body = json.loads(response.content)
-        except:
-            Logger.warning("StellaPayUI: Failed to parse most recent users query")
-            return
 
-        names = self.get_most_recent_names(body)
-        self.set_recent_users(names)
-
-    def get_most_recent_names(self, body: typing.List[typing.Dict]):
-        ignored_addresses = [
-            "onderhoud@solarteameindhoven.nl",
-            "beheer@solarteameindhoven.nl",
-            "info@solarteameindhoven.nl",
-        ]
-
-        user_names = []
-
-        for user_dict in reversed(body):
-            if len(user_names) >= 3:
-                break
-
-            mail_address = user_dict["email"]
-            name = App.get_running_app().get_user_by_email(mail_address)
-            if mail_address in ignored_addresses:
-                continue
-            if name in user_names:
-                continue
-            else:
-                user_names.append(name)
-
-        return user_names
-
-    #
+#
     # gets called when the 'NFC kaart vergeten button' is pressed
     # Shows a dialog to select a user.
     #

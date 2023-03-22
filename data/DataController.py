@@ -1,7 +1,9 @@
 import asyncio
 import json
 import sys
+import threading
 import time
+from datetime import datetime
 from json import JSONDecodeError
 from threading import Thread
 from typing import Optional, Dict, List
@@ -124,6 +126,61 @@ class DataController:
             return await self.online_data_storage.create_transactions(shopping_cart=shopping_cart)
         else:
             return await self.offline_data_storage.create_transactions(shopping_cart=shopping_cart)
+
+    async def get_recent_users(self, number_of_unique_users: int = 3) -> List[str]:
+        """
+        Get the most recent users that have bought something since the start of the current day. This method
+        will only work when we are connected to the internet. Note that this method is asynchronous and thus
+        needs to be awaited.
+
+        :param number_of_unique_users: The number of unique users to return. If there are fewer than
+            the requested amount, all of them are returned.
+        :return: a list of names of users that bought something, in order of their purchase time.
+        """
+        # This is not supported when running in offline mode
+        if not self.running_in_online_mode():
+            return []
+
+        Logger.debug(f"StellaPayUI: ({threading.current_thread().name}) Loading most recent users")
+
+        # Get today, and set time to midnight.
+        today = datetime.today().replace(hour=0, minute=0, second=0, microsecond=0)
+
+        response = await App.get_running_app().session_manager.do_post_request_async(
+            url=Connections.get_all_transactions(), json_data={"begin_date": today.strftime("%Y/%m/%d %H:%M:%S")}
+        )
+
+        if response is None or not response.ok:
+            return []
+
+        try:
+            body = json.loads(response.content)
+        except:
+            Logger.warning("StellaPayUI: Failed to parse most recent users query")
+            return []
+
+        ignored_addresses = [
+            "onderhoud@solarteameindhoven.nl",
+            "beheer@solarteameindhoven.nl",
+            "info@solarteameindhoven.nl",
+        ]
+
+        recent_users = []
+
+        for user_dict in reversed(body):
+            if len(recent_users) >= number_of_unique_users:
+                break
+
+            mail_address = user_dict["email"]
+            name = App.get_running_app().get_user_by_email(mail_address)
+            if mail_address in ignored_addresses:
+                continue
+            if name in recent_users:
+                continue
+            else:
+                recent_users.append(name)
+
+        return recent_users
 
     @staticmethod
     def _is_online_database_reachable(url: str = Connections.hostname, timeout: int = 5) -> bool:
