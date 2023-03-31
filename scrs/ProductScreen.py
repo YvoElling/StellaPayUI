@@ -108,7 +108,7 @@ class ProductScreen(Screen):
             Logger.debug(f"StellaPayUI: ({threading.current_thread().name}) Drawing tabs for the first time.")
             self.tabs = []
             for tab_name in products.keys():
-                tab = TabDisplay(text=tab_name)
+                tab = TabDisplay(title=tab_name)
                 self.ids.android_tabs.add_widget(tab)
                 self.tabs.append(tab)
         else:
@@ -117,7 +117,7 @@ class ProductScreen(Screen):
         start_time = time.time()
 
         for tab in self.tabs:
-            for product in products[tab.text]:
+            for product in products[tab.title]:
                 # Get fun fact description of database
                 product_description = App.get_running_app().database_manager.get_random_fun_fact(product.get_name())
 
@@ -143,7 +143,7 @@ class ProductScreen(Screen):
                 )
             )
 
-            Logger.debug(f"Loaded products of category {tab.text} (no skipping) in {time.time() - start_time} seconds")
+            Logger.debug(f"Loaded products of category {tab.title} (no skipping) in {time.time() - start_time} seconds")
 
         Logger.debug(f"Loaded all products (no skipping) in {time.time() - start_time} seconds")
 
@@ -294,10 +294,7 @@ class ProductScreen(Screen):
     def show_thanks_dialog(self):
         self.timeout_event.cancel()
 
-        self.final_dialog = MDDialog(
-            text="Gelukt! Je aankoop is geregistreerd!",
-            on_dismiss=self.on_thanks
-        )
+        self.final_dialog = MDDialog(text="Gelukt! Je aankoop is geregistreerd!", on_dismiss=self.on_thanks)
 
         self.timeout_event = Clock.schedule_once(self.on_thanks, 5)
         self.final_dialog.open()
