@@ -1,4 +1,4 @@
 smartcard~=0.3
 Kivy~=2.1.0
 requests==2.28.2
-kivymd~=0.104.2
+kivymd~=1.1.1
