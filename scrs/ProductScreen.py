@@ -10,8 +10,10 @@ from kivy.app import App
 from kivy.clock import Clock, mainthread
 from kivy.lang import Builder
 from kivy.uix.screenmanager import Screen, SlideTransition
+from kivymd.material_resources import dp
 from kivymd.uix.button import MDFlatButton, MDRaisedButton
 from kivymd.uix.dialog import MDDialog
+from kivymd.uix.spinner import MDSpinner
 
 from ds.Product import Product
 from ds.Purchase import Purchase
@@ -245,7 +247,6 @@ class ProductScreen(Screen):
                     MDRaisedButton(text="Ja", on_release=self.on_confirm_payment),
                 ],
             )
-
             # Open the dialog to display the shopping cart
             self.shopping_cart_dialog.open()
 
@@ -270,6 +271,17 @@ class ProductScreen(Screen):
     def on_confirm_payment(self, dt=None):
         Logger.info(f"StellaPayUI: Payment was confirmed by the user.")
 
+        spinner = MDSpinner(
+            size_hint=(None, None),
+            size=(dp(32), dp(32)),
+            active=True
+        )
+
+        # Show a spinner when user confirms the payment and hide the other buttons
+        self.shopping_cart_dialog.ids.button_box.add_widget(spinner)
+        self.shopping_cart_dialog.ids.button_box.children[1].opacity = 0.0
+        self.shopping_cart_dialog.ids.button_box.children[2].opacity = 0.0
+
         asyncio.run_coroutine_threadsafe(self.submit_payment(), loop=App.get_running_app().loop)
 
     async def submit_payment(self):
@@ -279,13 +291,17 @@ class ProductScreen(Screen):
             self.shopping_cart
         )
 
+        self.update_ui_after_payment(successfully_created_transactions)
+
+    @mainthread
+    def update_ui_after_payment(self, transaction_successful: bool):
         # Reset instance variables
         self.end_user_session()
 
         if self.shopping_cart_dialog is not None:
             self.shopping_cart_dialog.dismiss()
 
-        if successfully_created_transactions:
+        if transaction_successful:
             self.show_thanks_dialog()
         else:
             self.show_failure_dialog()
