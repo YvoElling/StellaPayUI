@@ -289,13 +289,13 @@ class DefaultScreen(Screen):
         self.manager.current = Screens.REGISTER_UID_SCREEN.value
 
     def on_select_guest(self, _):
-    self.select_special_user("Gast Account")
+        self.select_special_user("Gast Account")
 
     def on_select_beheer(self, _):
-    self.select_special_user("Beheer Algemeen")
+        self.select_special_user("Beheer Algemeen")
 
     def on_select_onderhoud(self, _):
-    self.select_special_user("Beheer Onderhoud")
+        self.select_special_user("Beheer Onderhoud")
 
     def select_special_user(self, user: str):
         # Close the user dialog
