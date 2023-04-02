@@ -77,15 +77,19 @@
         orientation: "horizontal"
         size_hint_x: 0.4
         pos_hint: {"center_x": (button_select_user.center_x / root.width), "y": 0.1}
+
         VerticalButtonWithIcon:
+            id: guest_button
             icon: "account-clock"
             label_text: "Gasten"
 
         VerticalButtonWithIcon:
+            id: maintenance_button
             icon: "tools"
             label_text: "Onderhoud"
 
         VerticalButtonWithIcon:
+            id: admin_button
             icon: "account-supervisor-circle"
             label_text: "Beheer"
 #    BoxLayout:

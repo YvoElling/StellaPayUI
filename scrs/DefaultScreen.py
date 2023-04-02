@@ -101,6 +101,11 @@ class DefaultScreen(Screen):
         # Register listener
         App.get_running_app().data_controller.register_connection_listener(self.connection_change_listener)
 
+        # Listen to a user pressing the icon of a button
+        self.ids.admin_button.ids.icon_of_button.bind(on_press=self.on_select_beheer)
+        self.ids.guest_button.ids.icon_of_button.bind(on_press=self.on_select_guest)
+        self.ids.maintenance_button.ids.icon_of_button.bind(on_press=self.on_select_onderhoud)
+
     def register_card_listener(self, card_connection_manager: "CardConnectionManager"):
         card_connection_manager.register_listener(self.nfc_listener)
 
@@ -283,14 +288,14 @@ class DefaultScreen(Screen):
         self.manager.get_screen(Screens.REGISTER_UID_SCREEN.value).nfc_id = uid
         self.manager.current = Screens.REGISTER_UID_SCREEN.value
 
-    def on_select_guest(self):
-        self.select_special_user("Gast Account")
+    def on_select_guest(self, _):
+    self.select_special_user("Gast Account")
 
-    def on_select_beheer(self):
-        self.select_special_user("Beheer Algemeen")
+    def on_select_beheer(self, _):
+    self.select_special_user("Beheer Algemeen")
 
-    def on_select_onderhoud(self):
-        self.select_special_user("Beheer Onderhoud")
+    def on_select_onderhoud(self, _):
+    self.select_special_user("Beheer Onderhoud")
 
     def select_special_user(self, user: str):
         # Close the user dialog
