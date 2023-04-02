@@ -193,7 +193,7 @@ class ProductScreen(Screen):
     #
     # upon leaving the screen, cancel the timeout event
     #
-    def on_leave(self, *args):
+    def on_pre_leave(self, *args):
         self.timeout_event.cancel()
 
         if self.final_dialog is not None:
@@ -271,11 +271,7 @@ class ProductScreen(Screen):
     def on_confirm_payment(self, dt=None):
         Logger.info(f"StellaPayUI: Payment was confirmed by the user.")
 
-        spinner = MDSpinner(
-            size_hint=(None, None),
-            size=(dp(32), dp(32)),
-            active=True
-        )
+        spinner = MDSpinner(size_hint=(None, None), size=(dp(32), dp(32)), active=True)
 
         # Show a spinner when user confirms the payment and hide the other buttons
         self.shopping_cart_dialog.ids.button_box.add_widget(spinner)
@@ -310,7 +306,10 @@ class ProductScreen(Screen):
     def show_thanks_dialog(self):
         self.timeout_event.cancel()
 
-        self.final_dialog = MDDialog(text="Gelukt! Je aankoop is geregistreerd!", on_dismiss=self.on_thanks)
+        self.final_dialog = MDDialog(
+            text="Gelukt! Je aankoop is geregistreerd!",
+            on_dismiss=self.on_thanks,
+        )
 
         self.timeout_event = Clock.schedule_once(self.on_thanks, 5)
         self.final_dialog.open()
