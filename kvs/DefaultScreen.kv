@@ -25,6 +25,7 @@
         pos_hint: {"center_x": 0.13,"center_y":0.79}
 
     MDFillRoundFlatButton:
+        id: button_select_user
         text: "Selecteer gebruiker"
         font_size: '32sp'
         pos_hint: {"center_x":0.7,"center_y":0.78}
@@ -73,112 +74,127 @@
 
 
     BoxLayout:
-        canvas.before:
-            Color:
-                rgba: 0, 1, 0, 1
-            Rectangle:
-                pos: self.pos
-                size: self.size
-        orientation: "vertical"
-        pos_hint: {"x": 0.55, "y": 0.1}
-        size_hint_y: 0.2
-        size_hint_x: 0.08
-
-        MDIconButton:
-            canvas.before:
-                Color:
-                    rgba: 0, 1, 1, 1
-                Rectangle:
-                    pos: self.pos
-                    size: self.size
+        orientation: "horizontal"
+        size_hint_x: 0.4
+        pos_hint: {"center_x": (button_select_user.center_x / root.width), "y": 0.1}
+        VerticalButtonWithIcon:
             icon: "account-clock"
-            icon_size: "64dp"
-            pos_hint: {"center_x": .5}
-            on_press: root.on_select_guest()
+            label_text: "Gasten"
 
-        MDLabel:
-            canvas.before:
-                Color:
-                    rgba: 1, 1, 0, 1
-                Rectangle:
-                    pos: self.pos
-                    size: self.size
-            text: "Gasten"
-            font_style: "H6"
-            halign: "center"
-            theme_text_color: "Primary"
-
-
-    BoxLayout:
-        canvas.before:
-            Color:
-                rgba: 0, 1, 0, 1
-            Rectangle:
-                pos: self.pos
-                size: self.size
-        orientation: "vertical"
-        pos_hint: {"x": 0.65, "y": 0.1}
-        size_hint_y: 0.2
-        size_hint_x: 0.08
-        MDIconButton:
-            canvas.before:
-                Color:
-                    rgba: 0, 1, 1, 1
-                Rectangle:
-                    pos: self.pos
-                    size: self.size
+        VerticalButtonWithIcon:
             icon: "tools"
-            icon_size: "64dp"
-            pos_hint: {"center_x": .5}
-            on_press: root.on_select_onderhoud()
+            label_text: "Onderhoud"
 
-        MDLabel:
-            canvas.before:
-                Color:
-                    rgba: 1, 1, 0, 1
-                Rectangle:
-                    pos: self.pos
-                    size: self.size
-            text: "Onderhoud"
-            font_style: "H6"
-            halign: "center"
-            theme_text_color: "Primary"
-
-    BoxLayout:
-        canvas.before:
-            Color:
-                rgba: 0, 1, 0, 1
-            Rectangle:
-                pos: self.pos
-                size: self.size
-        orientation: "vertical"
-        pos_hint: {"x": 0.75, "y": 0.1}
-        size_hint_y: 0.2
-        size_hint_x: 0.08
-
-        MDIconButton:
-            canvas.before:
-                Color:
-                    rgba: 0, 1, 1, 1
-                Rectangle:
-                    pos: self.pos
-                    size: self.size
+        VerticalButtonWithIcon:
             icon: "account-supervisor-circle"
-            icon_size: "64dp"
-            pos_hint: {"center_x": .5}
-            on_press: root.on_select_beheer()
+            label_text: "Beheer"
+#    BoxLayout:
+#        canvas.before:
+#            Color:
+#                rgba: 0, 1, 0, 1
+#            Rectangle:
+#                pos: self.pos
+#                size: self.size
+#        orientation: "vertical"
+#        pos_hint: {"x": 0.55, "y": 0.1}
+#        size_hint_y: 0.2
+#        size_hint_x: 0.08
+#
+#        MDIconButton:
+#            canvas.before:
+#                Color:
+#                    rgba: 0, 1, 1, 1
+#                Rectangle:
+#                    pos: self.pos
+#                    size: self.size
+#            icon: "account-clock"
+#            icon_size: "64dp"
+#            pos_hint: {"center_x": .5}
+#            on_press: root.on_select_guest()
+#
+#        MDLabel:
+#            canvas.before:
+#                Color:
+#                    rgba: 1, 1, 0, 1
+#                Rectangle:
+#                    pos: self.pos
+#                    size: self.size
+#            text: "Gasten"
+#            font_style: "H6"
+#            halign: "center"
+#            theme_text_color: "Primary"
 
-        MDLabel:
-            canvas.before:
-                Color:
-                    rgba: 1, 1, 0, 1
-                Rectangle:
-                    pos: self.pos
-                    size: self.size
-            text: "Beheer"
-            font_style: "H6"
-            halign: "center"
-            theme_text_color: "Primary"
+#    BoxLayout:
+#        canvas.before:
+#            Color:
+#                rgba: 0, 1, 0, 1
+#            Rectangle:
+#                pos: self.pos
+#                size: self.size
+#        orientation: "vertical"
+#        pos_hint: {"x": 0.65, "y": 0.1}
+#        size_hint_y: 0.2
+#        size_hint_x: 0.08
+#
+#        MDIconButton:
+#            canvas.before:
+#                Color:
+#                    rgba: 0, 1, 1, 1
+#                Rectangle:
+#                    pos: self.pos
+#                    size: self.size
+#            icon: "tools"
+#            icon_size: "64dp"
+#            pos_hint: {"center_x": .5}
+#            on_press: root.on_select_onderhoud()
+#
+#        MDLabel:
+#            canvas.before:
+#                Color:
+#                    rgba: 1, 1, 0, 1
+#                Rectangle:
+#                    pos: self.pos
+#                    size: self.size
+#            text: "Onderhoud"
+#            font_style: "H6"
+#            halign: "center"
+#            theme_text_color: "Primary"
+#
+#    BoxLayout:
+#        canvas.before:
+#            Color:
+#                rgba: 0, 1, 0, 1
+#            Rectangle:
+#                pos: self.pos
+#                size: self.size
+#        orientation: "vertical"
+#        pos_hint: {"x": 0.75, "y": 0.1}
+#        size_hint_y: 0.2
+#        size_hint_x: 0.08
+#
+#        MDIconButton:
+#            canvas.before:
+#                Color:
+#                    rgba: 0, 1, 1, 1
+#                Rectangle:
+#                    pos: self.pos
+#                    size: self.size
+#            icon: "account-supervisor-circle"
+#            icon_size: "64dp"
+#            pos_hint: {"center_x": .5}
+#            on_press: root.on_select_beheer()
+#
+#        MDLabel:
+#            canvas.before:
+#                Color:
+#                    rgba: 1, 1, 0, 1
+#                Rectangle:
+#                    pos: self.pos
+#                    size: self.size
+#            text: "Beheer"
+#            font_style: "H6"
+#            halign: "center"
+#            theme_text_color: "Primary"
 
 #    MDIconButton:
 #        icon: "account-supervisor-circle"
