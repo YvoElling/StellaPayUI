@@ -14,6 +14,8 @@
         text: "[b]STELLA PAY[/b]"
         font_size: '53sp'
         pos_hint: {"center_x":0.27,"center_y":0.2}
+        size_hint_x: 0.4
+        size_hint_y: 0.2
         font_name: 'fonts/orbitron/Orbitron-Bold.ttf'
         markup: True
 
@@ -75,20 +77,24 @@
     BoxLayout:
         orientation: "horizontal"
         size_hint_x: 0.4
-        pos_hint: {"center_x": (button_select_user.center_x / root.width), "y": 0.1}
+        size_hint_y: 0.25
+        pos_hint: {"center_x": (button_select_user.center_x / root.width), "center_y": (stella_pay.center_y / root.height)}
 
         VerticalButtonWithIcon:
             id: guest_button
+            pos_hint: {"center_y": 0.5}
             icon: "account-clock"
             label_text: "Gasten"
 
         VerticalButtonWithIcon:
             id: maintenance_button
+            pos_hint: {"center_y": 0.5}
             icon: "tools"
             label_text: "Onderhoud"
 
         VerticalButtonWithIcon:
             id: admin_button
+            pos_hint: {"center_y": 0.5}
             icon: "account-supervisor-circle"
             label_text: "Beheer"
 
