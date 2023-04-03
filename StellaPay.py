@@ -135,6 +135,7 @@ class StellaPay(MDApp):
         Window.show_cursor = self.get_config_option(config.ConfigurationOption.DEVICE_SHOW_CURSOR) == "True"
 
         # Load .kv file
+        Builder.load_file("kvs/VerticalButtonWithIcon.kv")
         Builder.load_file("kvs/DefaultScreen.kv")
 
         Logger.debug("StellaPayUI: Starting event loop")

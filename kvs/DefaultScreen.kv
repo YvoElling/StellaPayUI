@@ -4,7 +4,7 @@
     
     MDIconButton:
         icon: 'img/STEmediumnobg.png'
-        user_font_size: "450sp"
+        icon_size: "450dp"
         size_hint: None, None
         pos_hint: {"center_x":0.27,"center_y":0.63}
         on_release: root.to_credits()
@@ -14,17 +14,20 @@
         text: "[b]STELLA PAY[/b]"
         font_size: '53sp'
         pos_hint: {"center_x":0.27,"center_y":0.2}
+        size_hint_x: 0.4
+        size_hint_y: 0.2
         font_name: 'fonts/orbitron/Orbitron-Bold.ttf'
         markup: True
 
     MDIconButton:
         id: connection_state
-        user_font_size: "25sp"
+        icon_size: "25dp"
         md_bg_color: app.theme_cls.purple_button
         icon: "wifi-off"
         pos_hint: {"center_x": 0.13,"center_y":0.79}
 
     MDFillRoundFlatButton:
+        id: button_select_user
         text: "Selecteer gebruiker"
         font_size: '32sp'
         pos_hint: {"center_x":0.7,"center_y":0.78}
@@ -71,42 +74,29 @@
         on_press: root.select_recent_user(recent_user_two.text)
         halign: "center"
 
-    MDIconButton:
-        icon: "account-clock"
-        text: "test"
-        user_font_size: "64sp"
-        pos_hint: {"center_x":0.58,"center_y":0.24}
-        on_press: root.on_select_guest()
+    BoxLayout:
+        orientation: "horizontal"
+        size_hint_x: 0.4
+        size_hint_y: 0.25
+        pos_hint: {"center_x": (button_select_user.center_x / root.width), "center_y": (stella_pay.center_y / root.height)}
 
-    MDLabel:
-        text: "Gasten"
-        pos_hint: {"x":0.55,"center_y":0.165}
-        font_style: "H6"
-        theme_text_color: "Primary"
+        VerticalButtonWithIcon:
+            id: guest_button
+            pos_hint: {"center_y": 0.5}
+            icon: "account-clock"
+            label_text: "Gasten"
 
-    MDIconButton:
-        icon: "tools"
-        user_font_size: "64sp"
-        pos_hint: {"center_x":0.7,"center_y":0.24}
-        on_press: root.on_select_onderhoud()
+        VerticalButtonWithIcon:
+            id: maintenance_button
+            pos_hint: {"center_y": 0.5}
+            icon: "tools"
+            label_text: "Onderhoud"
 
-    MDLabel:
-        text: "Onderhoud"
-        pos_hint: {"x":0.665,"center_y":0.165}
-        font_style: "H6"
-        theme_text_color: "Primary"
-
-    MDIconButton:
-        icon: "account-supervisor-circle"
-        user_font_size: "64sp"
-        pos_hint: {"center_x":0.82,"center_y":0.24}
-        on_press: root.on_select_beheer()
-
-    MDLabel:
-        text: "Beheer"
-        pos_hint: {"x":0.795,"center_y":0.165}
-        font_style: "H6"
-        theme_text_color: "Primary"
+        VerticalButtonWithIcon:
+            id: admin_button
+            pos_hint: {"center_y": 0.5}
+            icon: "account-supervisor-circle"
+            label_text: "Beheer"
 
     MDSpinner:
         id: spinner
