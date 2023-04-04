@@ -1,6 +1,6 @@
 from kivy.clock import Clock
 from kivy.lang import Builder
-from kivy.uix.screenmanager import Screen
+from kivy.uix.screenmanager import Screen, SlideTransition
 
 from utils.Screens import Screens
 
@@ -33,6 +33,7 @@ class CreditsScreen(Screen):
     # Timeout callback function.
     #
     def on_timeout(self, dt):
+        self.manager.transition = SlideTransition(direction='right')
         self.manager.current = Screens.DEFAULT_SCREEN.value
 
     #

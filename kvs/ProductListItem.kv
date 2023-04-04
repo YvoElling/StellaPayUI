@@ -1,10 +1,10 @@
-<ItemListUX@@TwoLineAvatarIconListItem>
+<ProductListItem@@TwoLineAvatarIconListItem>
     MDIconButton:
         id: plus
         md_bg_color: app.theme_cls.green_button
         user_font_size: "25sp"
         icon: "plus"
-        pos_hint: {"center_x": 0.88,"center_y":0.5}
+        pos_hint: {"center_x": 0.9,"center_y":0.5}
         on_release: root.on_add_product()
 
     MDIconButton:
@@ -18,9 +18,9 @@
     MDIconButton:
         id: other_user
         font_size: "10sp"
-        #md_bg_color: app.theme_cls.accent_color
-        icon: "account"
-        pos_hint: {"center_x": 0.8,"center_y":0.5}
+        md_bg_color: app.theme_cls.purple_button
+        icon: "account-plus"
+        pos_hint: {"center_x": 0.85,"center_y":0.5}
         on_release: root.on_select_purchaser()
 
     MDLabel:

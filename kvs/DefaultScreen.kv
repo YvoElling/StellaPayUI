@@ -4,67 +4,99 @@
     
     MDIconButton:
         icon: 'img/STEmediumnobg.png'
-        user_font_size: "450sp"
+        icon_size: "450dp"
         size_hint: None, None
-        pos_hint: {"center_x":0.5,"center_y":0.7}
+        pos_hint: {"center_x":0.27,"center_y":0.63}
         on_release: root.to_credits()
 
     Label:
         id: stella_pay
         text: "[b]STELLA PAY[/b]"
-        font_size: '50sp'
-        pos_hint: {"center_x":0.5,"center_y":0.375}
+        font_size: '53sp'
+        pos_hint: {"center_x":0.27,"center_y":0.2}
+        size_hint_x: 0.4
+        size_hint_y: 0.2
         font_name: 'fonts/orbitron/Orbitron-Bold.ttf'
         markup: True
 
+    MDIconButton:
+        id: connection_state
+        icon_size: "25dp"
+        md_bg_color: app.theme_cls.purple_button
+        icon: "wifi-off"
+        pos_hint: {"center_x": 0.13,"center_y":0.79}
+
     MDFillRoundFlatButton:
-        text: "NFC kaart vergeten?"
-        font_size: '35sp'
-        pos_hint: {"center_x":0.5,"center_y":0.275}
-        size_hint: (None, 0.075) # Only increase size on Y part (because X part is done by KivyMD)
+        id: button_select_user
+        text: "Selecteer gebruiker"
+        font_size: '32sp'
+        pos_hint: {"center_x":0.7,"center_y":0.78}
+        size_hint: (0.3, 0.075) # Only increase size on Y part (because X part is done by KivyMD)
         text_color: 1, 1, 1, 1
-#        md_bg_color: 0.078, 0.537, 0.882, 1
         on_press: root.on_no_nfc()
         opacity: 0 if spinner.active else 1
 
-    MDIconButton:
-        icon: "account-clock"
-        text: "test"
-        user_font_size: "64sp"
-        pos_hint: {"center_x":0.4,"center_y":0.15}
-        on_press: root.on_select_guest()
+    Label:
+        id: title_text_recent_users
+        text: "Welkom! Je bent de eerste hier vandaag"
+        pos_hint: {"center_x":0.7,"center_y":0.71}
+        text_color: 0, 0, 1, 1
+        font_size: '23sp'
+        markup: True
 
-    MDLabel:
-        text: "Gasten"
-        pos_hint: {"x":0.375,"center_y":0.09}
-        font_style: "H6"
-        theme_text_color: "Primary"
+    MDTextButton:
+        id: recent_user_zero
+        text: ""
+        text_color: 0, 0, 1, 1
+        pos_hint: {"center_x":0.7,"center_y":0.59}
+        size_hint: (0.3, 0)
+        font_size: '25sp'
+        on_press: root.select_recent_user(recent_user_zero.text)
+        halign: "center"
 
-    MDIconButton:
-        icon: "account-supervisor-circle"
-        user_font_size: "64sp"
-        pos_hint: {"center_x":0.5,"center_y":0.15}
-        on_press: root.on_select_beheer()
+    MDTextButton:
+        id: recent_user_one
+        text: ""
+        text_color: 0, 0, 1, 1
+        pos_hint: {"center_x":0.7,"center_y":0.51}
+        size_hint: (0.3, 0)
+        font_size: '25sp'
+        on_press: root.select_recent_user(recent_user_one.text)
+        halign: "center"
 
-    MDLabel:
-        text: "Beheer"
-        pos_hint: {"x":0.475,"center_y":0.09}
-        font_style: "H6"
-        theme_text_color: "Primary"
+    MDTextButton:
+        id: recent_user_two
+        text: ""
+        text_color: 0, 0, 1, 1
+        pos_hint: {"center_x":0.7,"center_y":0.43}
+        size_hint: (0.3, 0)
+        font_size: '25sp'
+        on_press: root.select_recent_user(recent_user_two.text)
+        halign: "center"
 
-    MDIconButton:
-        icon: "tools"
-        user_font_size: "64sp"
-        pos_hint: {"center_x":0.6,"center_y":0.15}
-        on_press: root.on_select_onderhoud()
+    BoxLayout:
+        orientation: "horizontal"
+        size_hint_x: 0.4
+        size_hint_y: 0.25
+        pos_hint: {"center_x": (button_select_user.center_x / root.width), "center_y": (stella_pay.center_y / root.height)}
 
-    MDLabel:
-        text: "Onderhoud"
-        pos_hint: {"x":0.565,"center_y":0.09}
-        font_style: "H6"
-        theme_text_color: "Primary"
+        VerticalButtonWithIcon:
+            id: guest_button
+            pos_hint: {"center_y": 0.5}
+            icon: "account-clock"
+            label_text: "Gasten"
 
+        VerticalButtonWithIcon:
+            id: maintenance_button
+            pos_hint: {"center_y": 0.5}
+            icon: "tools"
+            label_text: "Onderhoud"
 
+        VerticalButtonWithIcon:
+            id: admin_button
+            pos_hint: {"center_y": 0.5}
+            icon: "account-supervisor-circle"
+            label_text: "Beheer"
 
     MDSpinner:
         id: spinner
@@ -74,7 +106,7 @@
 
     Label:
         id: copyright
-        text: "Copyright Vincent Bolta & Yvo Elling \xa9 %year%"
+        text: "Copyright Vincent Bolta & Yvo Elling \xa9 %year% - Started this instance on %date% (%connection_mode%)"
         font_size: '11sp'
         pos_hint: {"center_x":0.5,"center_y":0.02}
 

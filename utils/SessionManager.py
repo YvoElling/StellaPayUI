@@ -1,82 +1,138 @@
+import functools
 import json
 import os
+import sys
+import threading
+import traceback
 from typing import Optional
 
 import requests
 from kivy import Logger
+from kivy.app import App
 
 from utils import Connections
 
 
 class SessionManager:
+    AUTHENTICATION_FILE = "authenticate.json"
+
     def __init__(self):
         self.session = None
 
     @staticmethod
     def parse_to_json(file):
+        # Create the file if does not exist
+        SessionManager.create_authentication_file()
+
+        # The read from it.
         with open(file) as credentials:
             return json.load(credentials)
 
-    # This method authenticates to the backend and makes the session ready for use
-    def setup_session(self, on_finish=None):
+    @staticmethod
+    def create_authentication_file():
+        # Create the authentication file if it doesn't exist.
+        if not os.path.exists(SessionManager.AUTHENTICATION_FILE):
+            open(SessionManager.AUTHENTICATION_FILE, "w").close()
+
+    async def setup_session_async(self) -> bool:
         self.session = requests.Session()
 
-        self.__setup_authentication()
+        return await self._setup_authentication_async()
 
-        # Call callback if defined
-        if on_finish is not None:
-            on_finish()
-
-    def __setup_authentication(self):
+    async def _setup_authentication_async(self) -> bool:
         # Convert authentication.json to json dict
-
-        json_credentials = None
-
         try:
-            json_credentials = self.parse_to_json('authenticate.json')
+            json_credentials = self.parse_to_json(SessionManager.AUTHENTICATION_FILE)
         except Exception:
-            Logger.critical("You need to provide an 'authenticate.json' file for your backend credentials.")
-            os._exit(1)
+            Logger.critical(
+                "StellaPayUI: You need to provide an 'authenticate.json' file for your backend credentials."
+            )
+            sys.exit(1)
 
         # Attempt to log in
-        response = self.session.post(url=Connections.authenticate(), json=json_credentials)
+        try:
+            post_future = App.get_running_app().loop.run_in_executor(
+                None, functools.partial(self.session.post, Connections.authenticate(), json=json_credentials, timeout=5)
+            )
+            response = await post_future
+        except Exception:
+            Logger.critical(f"StellaPayUI: Something went wrong while setting up authentication to the backend server!")
+            return False
 
         # Break control flow if the user cannot identify himself
-        if not response.ok:
-            Logger.critical("Could not correctly authenticate, error code 8. Check your username and password")
-            os._exit(1)
+        if response is None or (response is not None and not response.ok):
+            Logger.critical(
+                "StellaPayUI: Could not correctly authenticate, error code 8. Check your username and password"
+            )
+            return False
         else:
-            Logger.debug("Authenticated correctly to backend.")
+            Logger.debug("StellaPayUI: Authenticated correctly to backend (async).")
+            return True
 
-    # Perform a get request to the given url. You can give do functions as callbacks (which will return the response)
-    def do_get_request(self, url: str) -> Optional[requests.Response]:
+    async def do_get_request_async(self, url: str) -> Optional[requests.Response]:
+        Logger.debug(f"StellaPayUI: ({threading.current_thread().name}) Async GET request to {url}")
+
+        if self.session is None:
+            Logger.warning(f"StellaPayUI: No session was found, so initializing a session.")
+
+            if not await self.setup_session_async():
+                Logger.critical(f"StellaPayUI: Could not authenticate in new session!")
+                return None
+
         try:
-            response = self.session.get(url)
+            get_future = App.get_running_app().loop.run_in_executor(
+                None, functools.partial(self.session.get, url, timeout=5)
+            )
+            response = await get_future
 
             return response
-        except requests.exceptions.ConnectionError as e1:
-            print("Connection was reset, so reauthenticating...")
+        except (requests.exceptions.ConnectionError, requests.exceptions.Timeout) as e1:
+            Logger.critical(f"StellaPayUI: Timeout on get request {e1}")
+            Logger.debug("StellaPayUI: Connection was reset, trying to reauthenticate...")
+            await self.setup_session_async()
 
-            self.session = requests.Session()
+            get_future = App.get_running_app().loop.run_in_executor(
+                None, functools.partial(self.session.get, url, timeout=5)
+            )
+            response = await get_future
 
-            self.__setup_authentication()
-
-            return self.session.get(url)
+            return response
         except Exception as e2:
+            Logger.critical(f"StellaPayUI: A problem with a GET request")
+            traceback.print_exception(None, e2, e2.__traceback__)
+
             return None
 
-    # Perform a post request to the given url. You can give do functions as callbacks (which will return the response)
-    def do_post_request(self, url: str, json_data=None) -> Optional[requests.Response]:
+    async def do_post_request_async(self, url: str, json_data=None) -> Optional[requests.Response]:
+
+        Logger.debug(f"StellaPayUI: ({threading.current_thread().name}) Async POST request to {url}")
+        if self.session is None:
+            Logger.warning(f"StellaPayUI: No session was found, so initializing a session.")
+
+            if not await self.setup_session_async():
+                Logger.critical(f"StellaPayUI: Could not authenticate in new session!")
+                return None
+
         try:
-            response = self.session.post(url, json=json_data)
+            post_future = App.get_running_app().loop.run_in_executor(
+                None, functools.partial(self.session.post, url, timeout=5, json=json_data)
+            )
+            response = await post_future
 
             return response
-        except requests.exceptions.ConnectionError as e1:
-            print("Connection was reset, so reauthenticating...")
-            self.session = requests.Session()
+        except (requests.exceptions.ConnectionError, requests.exceptions.Timeout) as e1:
+            Logger.critical(f"StellaPayUI: Timeout on post request {e1}")
+            Logger.debug("StellaPayUI: Connection was reset, trying to reauthenticate...")
+            await self.setup_session_async()
 
-            self.__setup_authentication()
+            post_future = App.get_running_app().loop.run_in_executor(
+                None, functools.partial(self.session.post, url, timeout=5, json=json_data)
+            )
+            response = await post_future
 
-            return self.session.post(url, json=json_data)
+            return response
         except Exception as e2:
+            Logger.critical(f"StellaPayUI: A problem with a POST request")
+            traceback.print_exception(None, e2, e2.__traceback__)
+
             return None

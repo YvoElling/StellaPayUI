@@ -1,0 +1,77 @@
+<SelectableLabel>:
+    # Draw a background to indicate selection
+    canvas.before:
+        Color:
+            a: 0.1 if self.selected else 0
+        Rectangle:
+            pos: self.pos
+            size: self.size
+
+<SelectOtherPurchaserContent>:
+    orientation: "vertical"
+    padding: "10dp"
+    size_hint_y: None
+    size_hint_x: 1
+    height: "400dp"
+    spacing: 10
+
+    MDTextField:
+        id: search_user_name_box
+        hint_text: "Name of user"
+        helper_text: "Start typing a name.."
+        helper_text_mode: "on_focus"
+        on_text: root.on_text_updated(self.text)
+        size_hint_y: 0.25
+
+    RecycleView:
+        id: matched_users
+        viewclass: 'SelectableLabel'
+        key_size: 'height'
+
+        SelectableRecycleBoxLayout:
+            id: selectable_users_box
+            padding: dp(10)
+            default_size: None, dp(45)
+            default_size_hint: 1, None
+            size_hint_y: None
+            height: self.minimum_height
+            orientation: 'vertical'
+
+    MDBoxLayout:
+        orientation: "horizontal"
+        size_hint_y: 0.25
+        spacing: 10
+
+        MDIconButton:
+            id: plus
+            md_bg_color: app.theme_cls.green_button
+            user_font_size: "25sp"
+            icon: "plus"
+
+        MDLabel:
+            id: count
+            text: "1"
+            theme_text_color: "Custom"
+            size_hint_x: 0.4
+            text_color: 1, 1, 1, 1
+            font_size: '25sp'
+            halign: "center"
+            valign: "center"
+
+        MDIconButton:
+            id: minus
+            user_font_size: "25sp"
+            md_bg_color: app.theme_cls.red_button
+            icon: "minus"
+
+        Widget:
+
+        MDRaisedButton:
+            id: select_user_button
+            text: "Pick user"
+
+        MDFlatButton:
+            id: cancel_button
+            text: "Cancel"
+
+

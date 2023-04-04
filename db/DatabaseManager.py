@@ -18,12 +18,11 @@ class DatabaseManager:
         # Connect to the database and return database connection object
         conn = None
 
-        Logger.debug(f"Creating static fun fact database")
+        Logger.debug(f"StellaPayUI: Creating static fun fact database")
 
         # Create all tables and add the the database file
         try:
             conn = sqlite3.connect('db/static_fun_fact_database.db')
-            print(sqlite3.version)
 
             # # SQLite command to create table with two fields, namely product and fun_fact
             static_fun_facts_table = "CREATE TABLE IF NOT EXISTS static_fun_facts(" \
@@ -55,13 +54,13 @@ class DatabaseManager:
             # db_conn.execute(one_month_fun_fact_table)
 
         except sqlite3.Error as e:
-            Logger.critical(e)
+            Logger.critical("StellaPayUI: " + e)
             os._exit(1)
 
         self.connection = conn
 
     def load_facts_database(self):
-        Logger.debug(f"Loading fun fact database")
+        Logger.debug(f"StellaPayUI: Loading fun fact database")
 
         cursor = self.connection.cursor()
 
@@ -79,7 +78,7 @@ class DatabaseManager:
 
             count += 1
 
-        Logger.debug(f"Loaded {count} fun facts from the database")
+        Logger.debug(f"StellaPayUI: Loaded {count} fun facts from the database")
 
     def get_random_fun_fact(self, product_name: str):
         # If we don't have any fun facts about this product, return a default string.

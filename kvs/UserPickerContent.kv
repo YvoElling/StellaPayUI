@@ -1,0 +1,40 @@
+<UserPickerContent>:
+    orientation: "vertical"
+    padding: "10dp"
+    size_hint_y: None
+    size_hint_x: 1
+    height: "400dp"
+    spacing: 10
+
+    MDTextField:
+        id: search_user_name_box
+        hint_text: "Name of user"
+        helper_text: "Start typing a name.."
+        helper_text_mode: "on_focus"
+        on_text: root.on_text_updated(self.text)
+        size_hint_y: 0.25
+
+    RecycleView:
+        id: matched_users
+        key_viewclass: 'viewclass'
+        key_size: 'height'
+
+        RecycleBoxLayout:
+            padding: dp(40)
+            default_size: None, dp(45)
+            default_size_hint: 1, None
+            size_hint_y: None
+            height: self.minimum_height
+            orientation: 'vertical'
+
+    MDBoxLayout:
+        orientation: "horizontal"
+        size_hint_y: 0.25
+
+        Widget:
+
+        MDRaisedButton:
+            id: cancel_button
+            text: "Cancel"
+
+

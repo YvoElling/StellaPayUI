@@ -1,15 +1,23 @@
-from kivy.app import App
+import sys
+
+from kivy import Logger
 from kivy.clock import Clock, mainthread
 from kivy.lang import Builder
+from kivy.properties import ObjectProperty
 from kivy.uix.screenmanager import Screen
 
 # Load KV file for this screen
 from utils.Screens import Screens
+from utils.async_requests.AsyncResult import AsyncResult
 
-Builder.load_file('kvs/StartupScreen.kv')
+Builder.load_file("kvs/StartupScreen.kv")
 
 
 class StartupScreen(Screen):
+    users_loaded: AsyncResult = ObjectProperty()
+    categories_loaded: AsyncResult = ObjectProperty()
+    products_loaded: AsyncResult = ObjectProperty()
+
     def __init__(self, **kwargs):
         # call to user with arguments
         super(StartupScreen, self).__init__(**kwargs)
@@ -17,30 +25,71 @@ class StartupScreen(Screen):
     # Calls upon entry of this screen
     #
     def on_enter(self, *args):
-        self.ids.loading_text.text = "Loading products from database..."
+        self.check_if_all_data_is_loaded()
 
-    # Called by the main app when all products are loaded from the backend.
-    @mainthread
-    def on_products_loaded(self):
-        print("Loaded products from database.")
-
-        self.ids.loading_text.text = "Loading user data..."
-
-        # Load users and their data
-        App.get_running_app().loop.call_soon_threadsafe(self.manager.get_screen(Screens.DEFAULT_SCREEN.value).load_user_data, self.on_users_loaded)
-
+    # Called when all data has loaded
     def finished_loading(self, dt):
-        print(f"Done loading startup screen in {dt} seconds")
-
         self.manager.current = Screens.DEFAULT_SCREEN.value
 
-    def on_users_loaded(self):
-        self.ids.loading_text.text = "Setting up products page..."
+    def on_users_loaded(self, _, _2):
+        self.check_if_all_data_is_loaded()
 
-        # Load product data
-        self.manager.get_screen(Screens.PRODUCT_SCREEN.value).load_category_data()
+    def on_categories_loaded(self, _, _2):
+        self.check_if_all_data_is_loaded()
 
-        self.ids.loading_text.text = "Ready!"
+    def on_products_loaded(self, _, _2):
+        self.check_if_all_data_is_loaded()
 
-        # Done loading, so call callback in one second.
+    @mainthread
+    def check_if_all_data_is_loaded(self) -> None:
+        self.set_loading_text("Waiting for data to load... (0/3)")
+
+        if self.users_loaded is None or self.users_loaded.result is None:
+            Logger.debug("StellaPayUI: Waiting for users to load..")
+            return
+        elif self.users_loaded.received_result is False or self.users_loaded.result.data is False:
+            self.set_loading_text("Failed to retrieve user data!")
+            self.on_failed_to_load()
+            return
+        elif self.users_loaded.result.data is True:
+            Logger.debug("StellaPayUI: Loaded user data!")
+
+        self.set_loading_text("Waiting for data to load... (1/3)")
+
+        if self.categories_loaded is None or self.categories_loaded.result is None:
+            Logger.debug("StellaPayUI: Waiting for categories to load..")
+            return
+        elif self.categories_loaded.received_result is False or self.categories_loaded.result.data is False:
+            self.set_loading_text("Failed to retrieve category data!")
+            self.on_failed_to_load()
+            return
+        elif self.categories_loaded.result.data is True:
+            Logger.debug("StellaPayUI: Loaded categories data!")
+
+        self.set_loading_text("Waiting for data to load... (2/3)")
+
+        if self.products_loaded is None or self.products_loaded.result is None:
+            Logger.debug("StellaPayUI: Waiting for products to load..")
+            return
+        elif self.products_loaded.received_result is False or self.products_loaded.result.data is False:
+            self.set_loading_text("Failed to retrieve products data!")
+            self.on_failed_to_load()
+            return
+        elif self.products_loaded.result.data is True:
+            Logger.debug("StellaPayUI: Loaded products data!")
+
+        self.set_loading_text("Data has loaded!")
+
+        self.set_loading_spinner(False)
+
         Clock.schedule_once(self.finished_loading, 1)
+
+    def on_failed_to_load(self):
+        self.set_loading_spinner(False)
+        Clock.schedule_once(lambda: sys.exit(1), 3)
+
+    def set_loading_spinner(self, active: bool):
+        self.ids.spinner_startup.active = active
+
+    def set_loading_text(self, text: str):
+        self.ids.loading_text.text = text

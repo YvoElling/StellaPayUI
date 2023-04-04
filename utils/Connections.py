@@ -21,6 +21,10 @@ def create_transaction() -> str:
     return get_hostname() + "transactions/create"
 
 
+def get_all_transactions() -> str:
+    return get_hostname() + "transactions/all"
+
+
 def request_user_info() -> str:
     return get_hostname() + "identification/request-user/"
 
@@ -31,6 +35,14 @@ def get_users() -> str:
 
 def add_user_mapping() -> str:
     return get_hostname() + "identification/add-card-mapping"
+
+
+def connection_status() -> str:
+    return get_hostname() + "admin"
+
+
+def get_all_cards() -> str:
+    return get_hostname() + "identification/cards"
 
 # class BackendURLs:
 #     AUTHENTICATE = hostname + "authenticate"
