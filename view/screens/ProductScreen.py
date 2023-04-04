@@ -18,11 +18,11 @@ from kivymd.uix.spinner import MDSpinner
 from ds.Product import Product
 from ds.Purchase import Purchase
 from ds.ShoppingCart import ShoppingCart, ShoppingCartListener
-from scrs.TabDisplay import TabDisplay
 from utils.Screens import Screens
 from ux.CartDialog import CartDialog
 from ux.ProductListItem import ProductListItem
 from ux.ShoppingCartItem import ShoppingCartItem
+from view.screens.TabDisplay import TabDisplay
 
 
 class OnChangeShoppingCartListener(ShoppingCartListener):
@@ -67,7 +67,7 @@ class ProductScreen(Screen):
 
     def __init__(self, **kwargs):
         # Load screen
-        Builder.load_file("kvs/ProductScreen.kv")
+        Builder.load_file("view/layout/ProductScreen.kv")
         super(ProductScreen, self).__init__(**kwargs)
 
         # Class level variables

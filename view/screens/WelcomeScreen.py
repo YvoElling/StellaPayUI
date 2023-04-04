@@ -8,9 +8,8 @@ from utils.Screens import Screens
 
 
 class WelcomeScreen(Screen):
-
     def __init__(self, **kwargs):
-        Builder.load_file('kvs/WelcomeScreen.kv')
+        Builder.load_file("view/layout/WelcomeScreen.kv")
         super(WelcomeScreen, self).__init__(**kwargs)
 
         # timeout variables
@@ -22,7 +21,7 @@ class WelcomeScreen(Screen):
             widget=self.ids.info,
             title_text="Version Information",
             description_text=f"Build {App.get_running_app().build_version}\n",
-            widget_position="right_bottom"
+            widget_position="right_bottom",
         )
 
     def on_pre_enter(self, *args):
@@ -52,7 +51,7 @@ class WelcomeScreen(Screen):
     # Called when the stop button is pressed
     #
     def on_cancel(self):
-        self.manager.transition = SlideTransition(direction='right')
+        self.manager.transition = SlideTransition(direction="right")
         # Switch back to the default screen to welcome a new user
         self.manager.current = Screens.DEFAULT_SCREEN.value
 
@@ -60,7 +59,7 @@ class WelcomeScreen(Screen):
     # Called when buy is pressed
     #
     def on_buy(self):
-        self.manager.transition = SlideTransition(direction='left')
+        self.manager.transition = SlideTransition(direction="left")
         self.manager.get_screen(Screens.PRODUCT_SCREEN.value).user_name = self.ids.label.text
         self.manager.current = Screens.PRODUCT_SCREEN.value
 

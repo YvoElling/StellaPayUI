@@ -3,11 +3,10 @@ from kivymd.uix.list import OneLineAvatarIconListItem
 
 from ds.Purchase import Purchase
 
-Builder.load_file('kvs/ShoppingCartItem.kv')
+Builder.load_file("view/layout/ShoppingCartItem.kv")
 
 
 class ShoppingCartItem(OneLineAvatarIconListItem):
-
     def __init__(self, purchase: Purchase, **kwargs):
         super(ShoppingCartItem, self).__init__(**kwargs)
 

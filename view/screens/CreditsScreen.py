@@ -8,7 +8,7 @@ from utils.Screens import Screens
 class CreditsScreen(Screen):
     def __init__(self, **kwargs):
         # Load KV file for this screen
-        Builder.load_file('kvs/CreditsScreen.kv')
+        Builder.load_file("view/layout/CreditsScreen.kv")
 
         # call to user with arguments
         super(CreditsScreen, self).__init__(**kwargs)
@@ -33,7 +33,7 @@ class CreditsScreen(Screen):
     # Timeout callback function.
     #
     def on_timeout(self, dt):
-        self.manager.transition = SlideTransition(direction='right')
+        self.manager.transition = SlideTransition(direction="right")
         self.manager.current = Screens.DEFAULT_SCREEN.value
 
     #

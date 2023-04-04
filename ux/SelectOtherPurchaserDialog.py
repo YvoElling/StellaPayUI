@@ -11,35 +11,34 @@ from kivy.uix.recycleview.layout import LayoutSelectionBehavior
 from kivy.uix.recycleview.views import RecycleDataViewBehavior
 from kivymd.uix.dialog import MDDialog
 
-Builder.load_file('kvs/SelectOtherPurchaserContent.kv')
+Builder.load_file("view/layout/SelectOtherPurchaserContent.kv")
 
 
-class SelectableRecycleBoxLayout(FocusBehavior, LayoutSelectionBehavior,
-                                 RecycleBoxLayout):
-    ''' Adds selection and focus behaviour to the view. '''
+class SelectableRecycleBoxLayout(FocusBehavior, LayoutSelectionBehavior, RecycleBoxLayout):
+    """Adds selection and focus behaviour to the view."""
 
 
 class SelectableLabel(RecycleDataViewBehavior, Label):
-    ''' Add selection support to the Label '''
+    """Add selection support to the Label"""
+
     index = None
     selected = BooleanProperty(False)
     selectable = BooleanProperty(True)
 
     def refresh_view_attrs(self, rv, index, data):
-        ''' Catch and handle the view changes '''
+        """Catch and handle the view changes"""
         self.index = index
-        return super(SelectableLabel, self).refresh_view_attrs(
-            rv, index, data)
+        return super(SelectableLabel, self).refresh_view_attrs(rv, index, data)
 
     def on_touch_down(self, touch):
-        ''' Add selection on touch down '''
+        """Add selection on touch down"""
         if super(SelectableLabel, self).on_touch_down(touch):
             return True
         if self.collide_point(*touch.pos) and self.selectable:
             return self.parent.select_with_touch(self.index, touch)
 
     def apply_selection(self, rv, index, is_selected):
-        ''' Respond to the selection of items in the view. '''
+        """Respond to the selection of items in the view."""
         if is_selected:
             user_selected = rv.data[index]["text"]
             # Yeah, this looks dodgy (and it is!).
@@ -54,7 +53,6 @@ class SelectableLabel(RecycleDataViewBehavior, Label):
 
 # A dialog that allows the active user to select another user (and a quantity for the product)
 class SelectOtherPurchaserContent(BoxLayout):
-
     def __init__(self, **kwargs):
         super(SelectOtherPurchaserContent, self).__init__(**kwargs)
         self.eligible_users_to_select = list(App.get_running_app().user_mapping.keys())
@@ -68,9 +66,11 @@ class SelectOtherPurchaserContent(BoxLayout):
         user_name: str
         for user_name in self.eligible_users_to_select:
             if typed_text.lower() in user_name.lower():
-                self.ids.matched_users.data.append({
-                    "text": user_name,
-                })
+                self.ids.matched_users.data.append(
+                    {
+                        "text": user_name,
+                    }
+                )
 
     # Fired whenever a user is clicked in the list
     # Could be None!
@@ -85,12 +85,13 @@ class SelectOtherPurchaserContent(BoxLayout):
             dialog.selected_amount = 1
         else:
             # We selected a new user
-            from scrs.ProductScreen import ProductScreen
+            from view.screens.ProductScreen import ProductScreen
             from ds.Purchase import Purchase
 
             # Determine how much of the selected product is already in the shopping cart
             selected_amount_of_product = ProductScreen.shopping_cart.get_amount_of_product(
-                Purchase(user_clicked, dialog.product, 0))
+                Purchase(user_clicked, dialog.product, 0)
+            )
 
             # If it is more than zero, we adjust the number in the dialog
             if selected_amount_of_product > 0:

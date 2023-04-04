@@ -6,7 +6,7 @@ from kivy.properties import StringProperty
 from kivy.uix.boxlayout import BoxLayout
 from kivymd.uix.dialog import MDDialog
 
-Builder.load_file("kvs/UserPickerContent.kv")
+Builder.load_file("view/layout/UserPickerContent.kv")
 
 
 class UserPickerContent(BoxLayout):
@@ -58,6 +58,9 @@ class UserPickerContent(BoxLayout):
         # Update the user that was picked
         self.picked_user = view.text
 
+    def clear_user_input(self):
+        self.ids.search_user_name_box.text = ""
+
 
 class UserPickerDialog(MDDialog):
     """
@@ -105,3 +108,6 @@ class UserPickerDialog(MDDialog):
         Close the dialog
         """
         self.dismiss()
+
+    def clear_user_input(self):
+        self.content_cls.clear_user_input()

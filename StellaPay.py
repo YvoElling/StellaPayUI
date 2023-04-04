@@ -20,18 +20,19 @@ import utils.ConfigurationOptions as config
 from PythonNFCReader.NFCReader import CardConnectionManager
 from data.DataController import DataController
 from db.DatabaseManager import DatabaseManager
-from scrs.ConfirmedScreen import ConfirmedScreen
-from scrs.CreditsScreen import CreditsScreen
-from scrs.DefaultScreen import DefaultScreen
-from scrs.ProductScreen import ProductScreen
-from scrs.ProfileScreen import ProfileScreen
-from scrs.RegisterUIDScreen import RegisterUIDScreen
-from scrs.StartupScreen import StartupScreen
-from scrs.WelcomeScreen import WelcomeScreen
 from utils import Connections
 from utils.Screens import Screens
 from utils.SessionManager import SessionManager
 from utils.async_requests.AsyncResult import AsyncResult
+from view.screens.ConfirmedScreen import ConfirmedScreen
+from view.screens.CreditsScreen import CreditsScreen
+from view.screens.DefaultScreen import DefaultScreen
+from view.screens.ProductScreen import ProductScreen
+from view.screens.ProfileScreen import ProfileScreen
+from view.screens.RegisterUIDScreen import RegisterUIDScreen
+from view.screens.StartupScreen import StartupScreen
+from view.screens.WelcomeScreen import WelcomeScreen
+from view.viewmodels.DefaultScreenViewModel import DefaultScreenViewModel
 
 
 class StellaPay(MDApp):
@@ -135,8 +136,8 @@ class StellaPay(MDApp):
         Window.show_cursor = self.get_config_option(config.ConfigurationOption.DEVICE_SHOW_CURSOR) == "True"
 
         # Load .kv file
-        Builder.load_file("kvs/VerticalButtonWithIcon.kv")
-        Builder.load_file("kvs/DefaultScreen.kv")
+        Builder.load_file("view/layout/VerticalButtonWithIcon.kv")
+        Builder.load_file("view/layout/DefaultScreen.kv")
 
         Logger.debug("StellaPayUI: Starting event loop")
         self.event_loop_thread.start()
@@ -154,6 +155,7 @@ class StellaPay(MDApp):
 
         # Initialize defaultScreen (to create session cookies for API calls)
         ds_screen = DefaultScreen(name=Screens.DEFAULT_SCREEN.value)
+        ds_screen_viewmodel = DefaultScreenViewModel(ds_screen, self.card_connection_manager)
 
         # Load screenloader and add screens
         screen_manager.add_widget(StartupScreen(name=Screens.STARTUP_SCREEN.value))
@@ -164,9 +166,6 @@ class StellaPay(MDApp):
         screen_manager.add_widget(CreditsScreen(name=Screens.CREDITS_SCREEN.value))
         screen_manager.add_widget(ProductScreen(name=Screens.PRODUCT_SCREEN.value))
         screen_manager.add_widget(ProfileScreen(name=Screens.PROFILE_SCREEN.value))
-
-        Logger.debug("StellaPayUI: Registering default screen as card listener")
-        ds_screen.register_card_listener(self.card_connection_manager)
 
         Logger.debug("StellaPayUI: Starting NFC reader")
         self.card_connection_manager.start_nfc_reader()

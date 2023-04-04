@@ -18,7 +18,7 @@ class RegisterUIDScreen(Screen):
 
     def __init__(self, **kwargs):
         # Load KV file for this screen
-        Builder.load_file('kvs/RegisterUIDScreen.kv')
+        Builder.load_file("view/layout/RegisterUIDScreen.kv")
 
         # call to user with arguments
         super(RegisterUIDScreen, self).__init__(**kwargs)
@@ -67,14 +67,15 @@ class RegisterUIDScreen(Screen):
         selected_user_name = self.ids.chosen_user.text
         selected_user_email = App.get_running_app().user_mapping[selected_user_name]
 
-        asyncio.run_coroutine_threadsafe(self.register_card_mapping(selected_user_name, selected_user_email),
-                                         loop=App.get_running_app().loop)
+        asyncio.run_coroutine_threadsafe(
+            self.register_card_mapping(selected_user_name, selected_user_email), loop=App.get_running_app().loop
+        )
 
     async def register_card_mapping(self, selected_user_name, selected_user_email: str):
 
-        card_registered = await App.get_running_app() \
-            .data_controller.register_card_info(card_id=self.nfc_id, email=selected_user_email,
-                                                owner=selected_user_name)
+        card_registered = await App.get_running_app().data_controller.register_card_info(
+            card_id=self.nfc_id, email=selected_user_email, owner=selected_user_name
+        )
 
         if card_registered:
             self.card_registration_succeeded(selected_user_name)
@@ -83,7 +84,8 @@ class RegisterUIDScreen(Screen):
 
         Logger.debug(
             f"StellaPayUI: ({threading.current_thread().name}) "
-            f"Registration of card '{self.nfc_id}' successful: {card_registered}")
+            f"Registration of card '{self.nfc_id}' successful: {card_registered}"
+        )
 
     @mainthread
     def card_registration_succeeded(self, user: str):
@@ -94,8 +96,8 @@ class RegisterUIDScreen(Screen):
     @mainthread
     def card_registration_failed(self, user: str):
         toast(
-            f"Could not register this card to {user}. Try selecting your name on the home screen instead.",
-            duration=5)
+            f"Could not register this card to {user}. Try selecting your name on the home screen instead.", duration=5
+        )
         self.on_cancel()
 
     #

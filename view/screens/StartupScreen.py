@@ -10,7 +10,7 @@ from kivy.uix.screenmanager import Screen
 from utils.Screens import Screens
 from utils.async_requests.AsyncResult import AsyncResult
 
-Builder.load_file("kvs/StartupScreen.kv")
+Builder.load_file("view/layout/StartupScreen.kv")
 
 
 class StartupScreen(Screen):

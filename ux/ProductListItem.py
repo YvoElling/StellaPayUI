@@ -8,7 +8,7 @@ from kivymd.uix.list import TwoLineAvatarIconListItem
 
 from ux.SelectOtherPurchaserDialog import SelectOtherPurchaserDialog
 
-Builder.load_file('kvs/ProductListItem.kv')
+Builder.load_file("view/layout/ProductListItem.kv")
 
 
 class ProductListItem(TwoLineAvatarIconListItem):
@@ -89,9 +89,12 @@ class ProductListItem(TwoLineAvatarIconListItem):
         if ProductListItem.purchaser_list_dialog is None:
             ProductListItem.purchaser_list_dialog = SelectOtherPurchaserDialog()
             ProductListItem.purchaser_list_dialog.bind(
-                selected_user=lambda _, selected_user: ProductListItem.selected_other_purchaser(selected_user,
-                                                                                                ProductListItem.purchaser_list_dialog.selected_amount,
-                                                                                                ProductListItem.purchaser_list_dialog.product))
+                selected_user=lambda _, selected_user: ProductListItem.selected_other_purchaser(
+                    selected_user,
+                    ProductListItem.purchaser_list_dialog.selected_amount,
+                    ProductListItem.purchaser_list_dialog.product,
+                )
+            )
 
     @classmethod
     # Fired when the user selects a purchaser

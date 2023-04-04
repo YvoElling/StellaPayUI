@@ -7,7 +7,7 @@ from utils.Screens import Screens
 
 
 class ProfileScreen(Screen):
-    Builder.load_file('kvs/ProfileScreen.kv')
+    Builder.load_file("view/layout/ProfileScreen.kv")
 
     def __init__(self, **kwargs):
         super(ProfileScreen, self).__init__(**kwargs)
@@ -19,7 +19,9 @@ class ProfileScreen(Screen):
     # Called when the screen is loaded:
     # - for retrieving user name
     def on_enter(self, *args):
-        self.ids.username.text = App.get_running_app().active_user if App.get_running_app().active_user is not None else "Unknown"
+        self.ids.username.text = (
+            App.get_running_app().active_user if App.get_running_app().active_user is not None else "Unknown"
+        )
         self.timeout_event = Clock.schedule_once(self.on_timeout, self.timeout_time)
 
     # Return to the product page

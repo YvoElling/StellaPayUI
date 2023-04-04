@@ -3,11 +3,10 @@ from typing import Callable
 from kivy.lang import Builder
 from kivymd.uix.list import OneLineIconListItem
 
-Builder.load_file('kvs/SelectUserItem.kv')
+Builder.load_file("view/layout/SelectUserItem.kv")
 
 
 class SelectUserItem(OneLineIconListItem):
-
     def __init__(self, user_email: str, callback: Callable = None, **kwargs):
         # Store user email and callback
         self.user_email = user_email
