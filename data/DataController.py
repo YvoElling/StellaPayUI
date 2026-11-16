@@ -359,8 +359,7 @@ class DataController:
         start_time = time.perf_counter()
 
         await asyncio.sleep(
-            int(App.get_running_app().get_config_option(ConfigurationOption.TIME_TO_WAIT_BEFORE_AUTHENTICATING)),
-            loop=App.get_running_app().loop,
+            int(App.get_running_app().get_config_option(ConfigurationOption.TIME_TO_WAIT_BEFORE_AUTHENTICATING))
         )
 
         Logger.debug(f"StellaPayUI: Starting setup procedure after {time.perf_counter() - start_time} seconds")
@@ -390,7 +389,7 @@ class DataController:
         # Thread to keep updating the offline storage files with data from the caching manager
         while True:
             await self._update_offline_storage()
-            await asyncio.sleep(time_until_we_appear_again, loop=App.get_running_app().loop)
+            await asyncio.sleep(time_until_we_appear_again)
 
     # Get whether we can connect to the backend or not
     def running_in_online_mode(self) -> bool:

@@ -86,7 +86,7 @@ class StartupScreen(Screen):
 
     def on_failed_to_load(self):
         self.set_loading_spinner(False)
-        Clock.schedule_once(lambda: sys.exit(1), 3)
+        Clock.schedule_once(lambda _dt: sys.exit(1), 3)
 
     def set_loading_spinner(self, active: bool):
         self.ids.spinner_startup.active = active

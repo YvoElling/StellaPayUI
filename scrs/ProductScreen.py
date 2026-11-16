@@ -319,7 +319,7 @@ class ProductScreen(Screen):
         self.final_dialog = MDDialog(
             text="Het is niet gelukt je aankoop te registreren. Herstart de app svp.",
             buttons=[
-                MDRaisedButton(text="Herstart", on_release=lambda: sys.exit(1)),
+                MDRaisedButton(text="Herstart", on_release=lambda _button: sys.exit(1)),
             ],
         )
         self.final_dialog.open()

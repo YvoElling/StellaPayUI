@@ -12,7 +12,7 @@ from kivy.app import App
 from kivy.config import ConfigParser, Config
 from kivy.core.window import Window
 from kivy.lang import Builder
-from kivy.logger import ColoredFormatter
+from kivy.logger import ConsoleHandler, FileHandler, KivyFormatter, is_color_terminal
 from kivy.uix.screenmanager import ScreenManager
 from kivymd.app import MDApp
 
@@ -61,15 +61,26 @@ class StellaPay(MDApp):
         self.loop = asyncio.new_event_loop()
         self.event_loop_thread = threading.Thread(target=self.run_event_loop, args=(self.loop,), daemon=True)
 
-        # Set millisecond format to use a decimal because I'm in the US
-        logging.Formatter.default_msec_format = "%s.%03d"
-        # Add timestamp to log file
-        Logger.handlers[1].setFormatter(logging.Formatter("%(asctime)s %(message)s"))
-        # Add timestampt to console output
-        Logger.handlers[2].setFormatter(ColoredFormatter("[%(levelname)-18s] %(asctime)s %(message)s"))
+        self.add_timestamps_to_log_output()
 
         StellaPay.build_version = subprocess.check_output(["git", "rev-parse", "--short", "HEAD"]).strip()
         Logger.debug(f"StellaPayUI: Running build {self.build_version}")
+
+    @staticmethod
+    def add_timestamps_to_log_output():
+        # Set millisecond format to use a decimal because I'm in the US
+        logging.Formatter.default_msec_format = "%s.%03d"
+
+        # Depending on KIVY_LOG_MODE, Kivy attaches its handlers to the root logger or to its own logger.
+        for handler in logging.root.handlers + Logger.handlers:
+            if isinstance(handler, FileHandler):
+                # Add timestamp to log file
+                handler.setFormatter(logging.Formatter("%(asctime)s %(message)s"))
+            elif isinstance(handler, ConsoleHandler):
+                # Add timestamp to console output
+                use_color = is_color_terminal()
+                level_format = "[%(levelname)-18s]" if use_color else "[%(levelname)-7s]"
+                handler.setFormatter(KivyFormatter(f"{level_format} %(asctime)s %(message)s", use_color=use_color))
 
     def build(self):
         self.theme_cls.theme_style = "Dark"
